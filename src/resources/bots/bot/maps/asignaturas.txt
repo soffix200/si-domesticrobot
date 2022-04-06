@@ -1,0 +1,21 @@
+Jose Angel Cid: Analisis Matematico
+Ana Garriga: Fundamentos eticos
+Xabier Garcia: Fundamentos matematicos
+Juan Carlos Gonzalez: Sistemas Inteligentes
+Maria Jose Lado: ProgramacionI
+Carlos Castro: Sistemas Digitales
+Enrique Barreiro: Administracion de la tecnologia
+Rosalia Laza: Algoritmos y Estructuras de DatosI
+Emilio Faro: Algebra Lineal
+Matias Garcia: Arquitectura de ComputadoresI
+Trinidad Dominguez: Tecnicas de Comunicación
+Maria Reyes Pavon: Algoritmos y Estructuras de DatosII
+Jose Luís Trillo: Arquitectura de ComputadoresII
+Enrique Barreiro: Ingenieria de SoftwareI
+Tomas Cotos: Estadistica
+Maria Encarnacion Gonzalez: Sistemas OperativosI
+José Manuel Sotelo: Arquitecturas Paralelas
+Juan Francisco Galvez: Bases de DatosI
+Arturo Jose Mendez: Ingenieria de SoftwareII
+Silvana Gomez: Redes de ComputadoresI
+Xose Anton Vila: Sistemas OperativosII

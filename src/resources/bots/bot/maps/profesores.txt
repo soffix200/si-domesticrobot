@@ -1,0 +1,21 @@
+Analisis Matematico: Jose Angel Cid Araujo
+Fundamentos eticos: Ana Garriga Dominguez
+Fundamentos matematicos: Xabier Garcia Martinez
+Sistemas Inteligentes: Juan Carlos Gonzalez Moreno
+ProgramacionI: Maria Jose Lado Touriño
+Sistemas Digitales: Carlos Castro Miguens
+Administracion de la tecnologia: Enrique Barreiro Alonso
+Algoritmos y Estructuras de DatosI: Rosalia Laza Fidalgo
+Algebra Lineal: Emilio Faro Rivas
+Arquitectura de ComputadoresI: Matías García Rivera
+Tecnicas de Comunicación: Trinidad Domínguez Vila
+Algoritmos y Estructuras de DatosII: María Reyes Pavón Rial
+Arquitectura de ComputadoresII: José Luís Trillo Rodríguez
+Ingenieria de SoftwareI: Enrique Barreiro Alonso
+Estadistica: Tomas Cotos Yáñez
+Sistemas OperativosI: María Encarnación González Rufino
+Arquitecturas Paralelas: José Manuel Sotelo Martínez
+Bases de DatosI: Juan Francisco Gálvez Gálvez
+Ingenieria de SoftwareII: Arturo José Méndez Penín
+Redes de ComputadoresI: Silvana Gómez Meire
+Sistemas OperativosII: Xosé Antón Vila Sobrino

@@ -1,0 +1,11 @@
+rubio 
+gris 
+pelirrojo
+blanco 
+castanho
+negro
+azul
+
+
+
+

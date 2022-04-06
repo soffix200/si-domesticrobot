@@ -1,0 +1,21 @@
+Analisis Matematico
+Fundamentos eticos
+Fundamentos matematicos
+Sistemas Inteligentes
+ProgramacionI
+Sistemas Digitales
+Administracion de la tecnologia
+Algoritmos y Estructuras de DatosI
+Algebra Lineal
+Arquitectura de ComputadoresI
+Tecnicas de Comunicación
+Algoritmos y Estructuras de DatosII
+Arquitectura de ComputadoresII
+Ingenieria de SoftwareI
+Estadistica
+Sistemas OperativosI
+Arquitecturas Paralelas
+Bases de DatosI
+Ingenieria de SoftwareII
+Redes de ComputadoresI
+Sistemas OperativosII

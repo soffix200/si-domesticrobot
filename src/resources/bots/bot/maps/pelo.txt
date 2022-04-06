@@ -1,0 +1,16 @@
+juan:rubio 
+maria:gris 
+julia:pelirrojo
+marcial:blanco 
+ivan:castanho
+xurxo:rubio
+xose:negro
+ariadna:negro
+ethiel:azul
+lucas:negro
+jimena:gris
+milagros:castanho
+tatiana:castanho
+
+
+

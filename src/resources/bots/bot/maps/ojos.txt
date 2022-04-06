@@ -1,0 +1,16 @@
+juan:azules 
+maria:grises 
+julia:negros
+marcial:marrones 
+ivan:marrones
+ariadna:grises
+ethiel:rojos
+johanna:grises
+marc:azules
+andrew:verdes
+lucas:negros
+jimena:negros
+
+
+
+

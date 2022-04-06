@@ -1,0 +1,11 @@
+azules: juan marc 
+grises: maria ariadna johanna 
+negros: julia lucas jimena
+marrones: marcial 
+rojos: ethiel
+verdes: andrew
+
+
+
+
+

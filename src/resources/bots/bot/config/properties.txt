@@ -1,0 +1,16 @@
+url:http://jcmoreno.webs.uvigo.es
+name:jcBot
+email:masterssia@gmail.com
+gender:male
+botmaster:Juan Carlos González Moreno
+organization:ESEI-UNIVERSIDADE DE VIGO
+version:2.0
+age:19
+job:Estudiante
+ocio:Musica
+estudios:Informática
+curso:segundo
+procedencia:Edificio Politécnico D-407, As Lagoas s/n, 32004 Ourense, Galiza (Spain)
+address:Edificio Politécnico D-407, As Lagoas s/n, 32004 Ourense, Galiza (Spain)
+date:201402madre:ines
+

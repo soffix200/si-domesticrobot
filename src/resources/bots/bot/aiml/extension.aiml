@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aiml version="2.0">
+
+
+<!-- Reglas de extensión de servicios -->
+
+<category>
+<pattern>DONDESI</pattern>
+<template>Puedes ver el siguiente video: 
+<video> http://http://ssia.esei.uvigo.es:8080/media/Teaching/IntroduccionSI.m4v </video> 
+</template>
+</category>
+
+<category>
+<pattern>* presentacion ^ sistemas inteligentes</pattern>
+<template> <srai>DONDESI</srai> </template>
+</category>
+
+<category>
+<pattern>* web * esei</pattern>
+<template>La web de la ESEI se encuentra en <src> http://esei.uvigo.es </src> </template>
+</category>
+
+<category>
+<pattern> EMAIL </pattern>
+<template><bot name="email"/></template>
+</category>
+
+<category>
+<pattern> ^ tu email ^ </pattern>
+<template><srai>EMAIL</srai></template>
+</category>
+
+<category>
+<pattern> ^ correo electrónico ^ </pattern>
+<template><srai>EMAIL</srai></template>
+</category>
+
+<category>
+<pattern>Traduce al * la frase *</pattern>
+<template> Respondo: <translate> <to><map name="idioma"><star/></map></to> <msg><star index="2"/></msg> </translate> </template>
+</category>
+
+<category>
+<pattern> * contestaste hace * ^ </pattern>
+<template> <response> <index><star index="2"/></index></response> </template>
+</category>
+
+<category>
+<pattern>Crea como propiedad nueva * con valor *</pattern>
+<template> Añade <botprop> <name><star/></name> <val><star index="2"/></val> </botprop></template>
+</category>
+
+</aiml>

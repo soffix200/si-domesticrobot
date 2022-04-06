@@ -1,0 +1,14 @@
+rojo
+verde
+azul
+blanco
+negro
+violeta
+rosa
+magenta
+cian
+amarillo
+naranja
+marron
+ocre
+gris

@@ -1,0 +1,20 @@
+juan: maria julia ivan andrew lucas 
+maria: julia ivan milagros juan
+julia: maria juan ariadna jimena 
+marcial: tatiana milagros marc
+ivan: juan maria xurxo xose
+xurxo: juan xose johanna tatiana
+xose: juan xurxo ariadna andrew
+ariadna: julia maria marc andrew jimena
+ethiel: johanna marc andrew
+johanna: xurxo ethiel milagros lucas
+marc: marcial ariadna jimena tatiana
+andrew: juan xose ethiel lucas
+lucas: andrew juan johanna milagros
+jimena: julia ariadna marc tatiana
+milagros: maria marcial johanna lucas
+tatiana: marcial marc xurxo jimena
+me: juan ivan xurxo xose maria jimena andrew marc johanna milagros
+
+
+

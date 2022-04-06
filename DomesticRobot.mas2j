@@ -1,0 +1,20 @@
+/* Jason Project
+
+   See Prometheus specification in doc folder
+
+*/
+
+MAS domestic_robot {
+	environment: MyHouseEnv 
+	// use "nogui" as parameter to not show the GUI
+	agents:
+		myOwner
+			agentArchClass MixedAgentArch
+			agentArchClass jaca.CAgentArch;
+		myRobot
+			agentArchClass MixedAgentArch
+			agentArchClass jaca.CAgentArch;
+		mySupermarket;
+			
+	aslSourcePath: "src/asl";	
+}                         

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aiml version="2.0">
+
+<!-- Regla 1 -->
+<category>                           
+	<pattern>Hola *</pattern>
+	<template>Hola, ¿qué tal?</template>
+</category>
+
+<!-- Regla 2 -->
+<category>                           
+	<pattern>^ que tal tu</pattern>
+	<template>Estoy genial!!!</template>
+</category>
+
+<!-- Regla 3 -->
+<category>                           
+	<pattern>^ me llamo *</pattern>
+	<template>
+		Vale <set name="nombre"><star index="2"/></set>.
+		<get name="nombre"/> es un bonito nombre.
+	</template>
+</category>
+
+<!-- Regla 4 -->
+<category>                           
+	<pattern>Hola</pattern>
+	<template>Hola de nuevo, ¿qué tal?</template>
+</category>
+
+<!-- Regla 5 -->
+<category>                           
+	<pattern>Cual es tu edad</pattern>
+	<template>Tengo <bot name="age"/> años</template>
+</category>
+
+<category>                           
+	<pattern>* tu nombre ^</pattern>
+	<template>Me llamo <bot name="name"/></template>
+</category>
+
+<!-- Regla 6 -->
+<category>                           
+	<pattern>Cual es mi nombre</pattern>
+	<template>
+		<condition name="nombre">
+			<li value="unknown"> Aun no me has dicho tu nombre </li>
+			<li>Tu nombre es <get name="nombre"/></li>
+		</condition>
+	</template>
+</category>
+
+<!-- Regla 7 -->
+<category>                           
+	<pattern>Mi color favorito es el *</pattern>
+	<template>
+		<think>
+			<set var="color"><star/></set>
+		</think>
+		El <get var="color"/> es un color distinguido.
+	</template>
+</category>
+
+<!-- Regla 8 --> 
+<category>                           
+	<pattern>* mi nombre</pattern>
+	<template>
+		<srai>CUAL ES MI NOMBRE</srai>
+	</template>
+</category>
+
+<!-- Regla 9 --> 
+<category>                           
+	<pattern>^ como me llamo</pattern>
+	<template>
+		<srai>CUAL ES MI NOMBRE</srai>
+	</template>
+</category>
+
+<!-- Regla 10 -->
+<category>                           
+	<pattern> El <set>color</set> es un color ^ </pattern>
+	<template>
+		A mi el color <star/> me parece muy bonito.
+	</template>
+</category>
+
+<!-- Regla 11 -->
+<category>                           
+	<pattern> El * es un color ^ </pattern>
+	<template>
+		No sabía que <star/> fuera un color <star index="2"/>.
+	</template>
+</category>
+
+<!-- Regla 12 -->
+<category>                           
+	<pattern>Cual es la capital de <set>pais</set></pattern>
+	<template>
+		La capital de <star/> es <map name="capital"><star/></map>.
+	</template>
+</category>
+
+<!-- Regla 13 -->  
+<category>                           
+	<pattern>Cual es la capital de *</pattern>
+	<template>No lo se</template>
+</category>
+
+<!-- Regla 14 -->  
+<category>                           
+	<pattern>^ cafe ^</pattern>
+	<template>
+		te gusta el cafe
+	</template>
+</category>
+
+<!-- Regla 15 -->  
+<category>                           
+	<pattern>SI</pattern>
+	<that>TE GUSTA EL CAFE</that>
+	<template>
+		Y como lo prefieres, ¿solo o con leche?
+	</template>
+</category>
+
+<!-- Regla 16 --> 
+<category>                           
+	<pattern>NO</pattern>
+	<that>TE GUSTA EL CAFE</that>
+	<template>
+		Entonces, ¿eres de infusiones?
+	</template>
+</category>
+
+<!-- Regla 17 --> 
+<category>                           
+	<pattern>La capital de * es *</pattern>
+	<template>
+		<think>
+			<set var="cap"><srai>CUAL ES LA CAPITAL DE <star/></srai></set>
+		</think>
+		<condition var="cap">
+			<li value="No lo se">
+				<learn>
+					<category>                           
+						<pattern>
+							Cual es la capital de <eval><star/></eval>
+						</pattern>
+						<template>
+							La capital de <eval><star/></eval> es <eval><star index="2"/></eval>.
+						</template>
+					</category>
+				</learn>
+				No sabía que <star index="2"/> era la capital de <star/>, pero a partir de ahora lo recordaré.
+			</li>
+			<li> 
+				Ya sabía que <get var="cap"/>
+			</li>
+		</condition>
+	</template>
+</category>
+
+</aiml>

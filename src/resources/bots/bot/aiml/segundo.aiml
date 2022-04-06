@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aiml version="2.0">
+ 
+<!-- Reglas para color de ojos -->
+<category>
+	<pattern>$Cual es el color de ojos de * </pattern>
+	<template> <srai>OJOS <star/></srai> </template>
+</category>
+
+<category>
+	<pattern>* color ^ ojos de * </pattern>
+	<template> <srai>OJOS <star index="3"/></srai> </template>
+</category>
+
+<category>
+	<pattern>OJOS <set>compi</set></pattern>
+	<template>
+		<think>
+			<set var="color"><map name="ojos"><star/></map></set>
+		</think>
+		<condition>
+			<li value="UNKNOWN"> No se de que color son</li>
+			<li>Los ojos de <star/> son de color <map name="ojos"><star/></map></li>
+		</condition>	
+	</template>
+</category>
+
+<category>
+	<pattern>OJOS *</pattern>
+	<template>No se quien es <star/></template>
+</category>
+
+<!-- Reglas para color de pelo -->
+<category>
+	<pattern>$Cual es el color de pelo de * </pattern>
+	<template> <srai>PELO <star/></srai> </template>
+</category>
+
+<category>
+	<pattern>* color ^ pelo de * </pattern>
+	<template> <srai>PELO <star index="3"/></srai> </template>
+</category>
+
+<category>
+	<pattern>PELO <set>compi</set></pattern>
+	<template>
+		<think>
+			<set var="color"><map name="pelo"><star/></map></set>
+		</think>
+		<condition>
+			<li value="UNKNOWN"> No se de que color es</li>
+			<li>El color de pelo de <star/> es <map name="pelo"><star/></map></li>
+		</condition>	
+	</template>
+</category>
+
+<category>
+	<pattern>PELO *</pattern>
+	<template>No se quien es <star/></template>
+</category>
+
+<!-- Regla para aprender colores de ojos y pelo -->
+<category>
+<pattern>_ tiene los ojos * y el pelo *</pattern>
+<template>
+	<think>
+		<set var="ojos"><srai>CUAL ES EL COLOR DE OJOS DE <star/></srai></set>  <!-- variable global ojos -->
+		<set var="pelo"><srai>CUAL ES EL COLOR DE PELO DE <star/></srai></set>  <!-- variable global pelo -->
+	</think>
+	<condition var="ojos">
+		<li value="No se de que color son">No sabia que el color de ojos de <star/> era <star index="2"/> pero ya no se me olvida.
+			<learnf>
+				<category>
+				<pattern>$OJOS <eval><star/></eval> ^ </pattern>
+				<template>El color de ojos de <eval><star/></eval> es <eval><star index="2"/></eval></template>
+				</category>
+			</learnf> 
+		</li>
+		<li>Ya sabia que <get var="ojos"/> </li>
+	</condition>
+	<condition var="pelo"> 
+		<li><value>No se de que color es</value>Como podia saber que el color de pelo de <star/> es <star index="3"/> si carezco de ojos, pero ahora lo recordare.
+			<learnf>
+				<category>
+				<pattern>$PELO <eval><star/></eval> ^ </pattern>
+				<template>El color de pelo de <eval><star/></eval> es <eval><star index="3"/></eval></template>
+				</category>
+			</learnf> 
+		</li>
+		<li>Ya sabia que <get var="pelo"/> </li>
+	</condition>
+</template>
+</category>
+
+<category>                           
+	<pattern>Cuenta hasta <set>number</set></pattern>
+	<template>
+		<think>
+			<set var="contador">1</set>
+			<set var="salida">1</set>
+		</think>
+		<condition var="contador">
+			<li>
+				<value><star/></value><get var="salida"/>
+			</li>
+			<li>
+				<think>
+					<set var="contador">
+						<map name="successor"><get var="contador"/></map>
+					</set>
+					<set var="salida"><get var="salida"/>, <get var="contador"/></set>
+				</think>
+				<loop/>
+			</li>
+		</condition>
+	</template>
+</category>
+
+<category>
+	<pattern>$DIALOGO5</pattern>
+	<template> 
+	Este es un histórico del diálogo mantenido hasta la fecha con el bot 
+	<bot name="name"/> de profundidad 5:
+        Human: <request index="5"/>
+        <bot name="name"/>: <response index="5"/>
+        Human: <request index="4"/>
+        <bot name="name"/>: <response index="4"/>
+        Human: <request index="3"/>
+        <bot name="name"/>: <response index="3"/>
+        Human: <request index="2"/>
+        <bot name="name"/>: <response index="2"/>
+        Human: <request index="1"/>
+        <bot name="name"/>: <response index="1"/>	
+	</template>
+</category>
+
+</aiml>
