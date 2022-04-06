@@ -93,10 +93,10 @@ public class HouseModel extends GridWorldModel {
 		Location loc = getAgPos(agentCode);
 		if (dest.equals(lOwner) || dest.equals(lDelivery) || dest.equals(lDumpster)) {
 			if (!nearPos(loc, dest)) {
-				if (loc.x < dest.x)      loc.x++;
-				else if (loc.x > dest.x) loc.x--;
-				else if (loc.y < dest.y) loc.y++;
-				else if (loc.y > dest.y) loc.y--;
+				if (loc.x < dest.x+1)      loc.x++;
+				else if (loc.x > dest.x-1) loc.x--;
+				else if (loc.y < dest.y+1) loc.y++;
+				else if (loc.y > dest.y-1) loc.y--;
 			}
 		} else {
 			if (!atPos(loc, dest)) {
