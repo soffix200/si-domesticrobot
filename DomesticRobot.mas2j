@@ -5,16 +5,16 @@
 */
 
 MAS domestic_robot {
-	environment: MyHouseEnv 
+	environment: HouseEnv
 	// use "nogui" as parameter to not show the GUI
 	agents:
-		myOwner
+		owner
 			agentArchClass MixedAgentArch
 			agentArchClass jaca.CAgentArch;
-		myRobot
+		robot
 			agentArchClass MixedAgentArch
 			agentArchClass jaca.CAgentArch;
-		mySupermarket;
-			
+		market;
+
 	aslSourcePath: "src/asl";	
-}                         
+}

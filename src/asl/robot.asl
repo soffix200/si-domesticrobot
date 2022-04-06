@@ -84,18 +84,18 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.println("Le contesto al ",Ag," ",Answer);
 	.send(Ag,tell,answer(Answer)). //modificar adecuadamente
 
-+!bring(myOwner, beer) [source(myOwner)] <-
++!bring(owner, beer) [source(owner)] <-
 	+asked(beer).
 	
 +!bringBeer : healthMsg(_) <- 
-	!go_at(myRobot,base);
+	!go_at(robot,base);
 	.println("El Robot descansa porque Owner ha bebido mucho hoy.").
 +!bringBeer : asked(beer) & not healthMsg(_) <- 
 	.println("Owner me ha pedido una cerveza.");
-	!go_at(myRobot,fridge);
+	!go_at(robot,fridge);
 	!take(fridge,beer);
-	!go_at(myRobot,myOwner);
-	!hasBeer(myOwner);
+	!go_at(robot,owner);
+	!hasBeer(owner);
 	.println("Ya he servido la cerveza y elimino la petición.");
 	.abolish(asked(Beer));
 	!bringBeer.
@@ -122,7 +122,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.println("El robot cierra la nevera.").
 +!check(fridge, beer) : not ordered(beer) & not available(beer,fridge) <-
 	.println("El robot está en el frigorífico y hace un pedido de cerveza.");
-	!orderBeer(mySupermarket);
+	!orderBeer(supermarket);
 	!check(fridge, beer).
 +!check(fridge, beer) <-
 	.println("El robot está esperando ................");
@@ -131,35 +131,35 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 +!orderBeer(Supermarket) : not ordered(beer) <-
 	.println("El robot ha realizado un pedido al supermercado.");
-	!go_at(myRobot,delivery);
+	!go_at(robot,delivery);
 	.println("El robot va a la ZONA de ENTREGA.");
 	.send(Supermarket, achieve, order(beer,3)); // Modificar adecuadamente
 	+ordered(beer).
 +!orderBeer(Supermarket).
 
-+!hasBeer(myOwner) : not too_much(beer) <-
++!hasBeer(owner) : not too_much(beer) <-
 	hand_in(beer);
 	.println("He preguntado si Owner ha cogido la cerveza.");
-	?has(myOwner,beer);
+	?has(owner,beer);
 	.println("Se que Owner tiene la cerveza.");
 	// remember that another beer has been consumed
 	.date(YY,MM,DD); .time(HH,NN,SS);
 	+consumed(YY,MM,DD,HH,NN,SS,beer).
-+!hasBeer(myOwner) : too_much(beer) & healthMsg(M) <- 
++!hasBeer(owner) : too_much(beer) & healthMsg(M) <- 
 	//.abolish(msg(_));
-	.send(myOwner,tell,msg(M)).
+	.send(owner,tell,msg(M)).
 
-+!go_at(myRobot,P) : at(myRobot,P) <- true.
-+!go_at(myRobot,P) : not at(myRobot,P)
++!go_at(robot,P) : at(robot,P) <- true.
++!go_at(robot,P) : not at(robot,P)
   <- move_towards(P);
-     !go_at(myRobot,P).
+     !go_at(robot,P).
 
 // when the supermarket makes a delivery, try the 'has' goal again
-+delivered(beer,_Qtd,_OrderId)[source(mySupermarket)] <- 
++delivered(beer,_Qtd,_OrderId)[source(supermarket)] <- 
 	-ordered(beer);
 	+available(beer,fridge);
 	.wait(1000);
-	!go_at(myRobot,fridge).
+	!go_at(robot,fridge).
 
 // when the fridge is opened, the beer stock is perceived
 // and thus the available belief is updated

@@ -7,7 +7,7 @@ last_order_id(1).
 
 !deliverBeer.
 
-// plans from file: mySupermarket.asl
+// plans from file: supermarket.asl
 
 +!createStore <-
 	.create_agent(store, "store.asl");
