@@ -1,65 +1,102 @@
-/* Initial beliefs and rules */
+waitTime(min,  2000).
+waitTime(max, 10000).
 
-/* Initial goals */
+// has(owner, beer).         // Perceived from environment
+// has(owner, can).          // Not perceived from environment
+// has(owner, halfemptycan). // Not perceived from environment
 
-!drink(beer). 
-
-!bored.
+politeness(owner, 0).
+status(owner, animado).
 
 !setupTool("Owner", "Robot").
 
-/* Plans */
+!talkRobot
+// !cleanHouse // TODO
+!drinkBeer
+// !wakeUp // TODO
 
-// if I have not beer finish, in other case while I have beer, sip
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN setupTool
+// -------------------------------------------------------------------------
 
-+!setupTool(Name, Id)
-	<- 	makeArtifact("GUI","gui.Console",[],GUI);
-		setBotMasterName(Name);
-		setBotName(Id);
-		focus(GUI). 
-		
-+say(Msg) <-
-	.println("Owner esta aburrido y desde la consola le dice ", Msg, " al Robot");
-	.send(robot,tell,msg(Msg)).
++!setupTool(Master, Robot) <-
+	makeArtifact("GUI","gui.Console",[],GUI);
+	setBotMasterName(Master);
+	setBotName(Robot);
+	focus(GUI). 
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN talkRobot
+// -------------------------------------------------------------------------
+
++!talkRobot <-
+	.send(robot, tell, msg("Test message")); // TODO IMPLEMENT AIML
+	.random(X);
+	?waitTime(min, MinWaitTime);
+	?waitTime(max, MaxWaitTime);
+	.wait(MinWaitTime + (MaxWaitTime - MinWaitTime)*X);
+	!talkRobot.
 	
-+!bored <-
-	.println("Owner esta aburrido y le dice Hola al Robot");
-	.send(robot,tell,msg("Hola")).
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN cleanHouse
+// -------------------------------------------------------------------------
 
-+!drink(beer) : ~couldDrink(beer) <-
-	.println("Owner ha bebido demasiado por hoy.").	
-+!drink(beer) : has(owner,beer) & asked(beer) <-
-	.println("Owner va a empezar a beber cerveza.");
-	-asked(beer);
++!cleanHouse <- // Execute randomly
+	// TODO; not yet implemented
+	!cleanHouse.
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN drinkBeer
+// -------------------------------------------------------------------------
+
++!drinkBeer : healthConstraint <-
+	.println("Owner ha bebido demasiado por hoy.");
+	.wait(10000);
+	-asked(robot, beer);
+	!drinkBeer.
++!drinkBeer : has(owner, beer) & asked(robot, beer) <-
+	.println("Voy a empezar a beber cerveza.");
+	-asked(robot, beer);
 	sip(beer);
+	+has(owner, halfemptycan);
 	!drink(beer).
-+!drink(beer) : has(owner,beer) & not asked(beer) <-
++!drinkBeer : has(owner, beer) & not asked(robot, beer) <-
+	.println("Voy a beber un sorbo de cerveza.");
 	sip(beer);
-	.println("Owner está bebiendo cerveza.");
+	+has(owner, halfemptycan);
 	!drink(beer).
-+!drink(beer) : not has(owner,beer) & not asked(beer) <-
-	.println("Owner no tiene cerveza.");
-	!get(beer);
++!drinkBeer : not has(owner, beer) & asked(robot, beer) <-
+	.println("Sigo esperando mi cerveza");
+	.wait(1000);
 	!drink(beer).
-+!drink(beer) : not has(owner,beer) & asked(beer) <- 
-	.println("Owner está esperando una cerveza.");
-	.wait(5000);                                                                          
++!drinkBeer : not has(owner, beer) & not asked(robot, beer) <-
+	.println("Pido una cerveza al robot");
+	.send(robot, tell, bring(beer));
+	+asked(robot, beer);
 	!drink(beer).
-	                                                                                                         
-+!get(beer) : not asked(beer) <-
-	.send(robot, achieve, bring(owner,beer)); //modificar adecuadamente
-	//.send(robot, tell, msg("Necesito urgentemente una cerveza"));
-	.println("Owner ha pedido una cerveza al robot.");
-	+asked(beer).                                                                              
 
-//Esta regla debe modificarse adecuadamente
-+msg(M)[source(Ag)] <- 
-	.print("Message from ",Ag,": ",M);
-	+~couldDrink(beer);
-	-msg(M).
++has(owner, halfemptycan) : has(owner, beer) <-
+	-has(owner, halfemptycan).
++has(owner, halfemptycan) : not has(owner, beer) <-
+	-has(owner, halfemptycan);
+	+has(owner, can).
 
-+answer(Request) <-
-	.println("El Robot ha contestado: ", Request);
-	show(Request).
-	
--answer(What) <- .println("He recibido desde el robot: ", What).
++has(owner, can) : politeness(owner, 0) <-
+	.println("Voy a tirar una lata");
+	throw(can);
+	-has(owner, can);
+	.send(robot, tell, msg("He tirado una lata")).
++has(owner, can) : politeness(owner, 1) <-
+	.println("Voy a pedirle al robot que venga a por la lata");
+	.send(robot, tell, msg("Ven a por la lata")).
++has(owner, can) : politeness(owner, 2) <-
+	.println("Voy a llevar la lata al cubo de basura").
+	// TODO
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN wakeUp
+// -------------------------------------------------------------------------
+
++!wakeup <-
+	// TODO
+	!wakeup.
