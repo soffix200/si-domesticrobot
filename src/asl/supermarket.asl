@@ -47,7 +47,6 @@ price(beer, 3).
 	-+has(beer, StoredQtty-OrderedQtty);
 	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty));
 	-order(OrderId, _, _, _);
-	
 	!sellBeer.
 +!sellBeer :
 	currentOrderId(OrderId) & order(OrderId, Ag, beer, OrderedQtty) &
