@@ -1,30 +1,67 @@
-// beliefs and rules
-last_order_id(1).
+currentOrderId(1).
 
-// initial goals
+has(beer,  0).
+has(money, 100).
 
-!createStore.
+buyBatch(beer, 10).
+minBatch(beer, 10).
 
-!deliverBeer.
+cost(beer, 1). // TODO REMOVE; dependent on market
+price(beer, 3).
 
-// plans from file: supermarket.asl
+!offerBeer.
+!buyBeer.
+!sellBeer.
 
-+!createStore <-
-	.create_agent(store, "store.asl");
-	.send(store, askOne, beer(N), beer(N)); // Modificar adecuadamente
-	+beer(N).
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN offerBeer
+// -------------------------------------------------------------------------
 
-+!deliverBeer : (last_order_id(N) & (orderFrom(Ag,Qtd) & beer(QtdB))) <- 
-	-+last_order_id((N+1)); 
-	-+beer((QtdB-Qtd)); 
-	deliver(Product,Qtd); 
-	.send(Ag,tell,delivered(Product,Qtd,OrderId)); // Modificar adecuadamente
-	.send(store, achieve, delStore(beer,Qtd)); // Modificar adecuadamente
-	-orderFrom(Ag,Qtd); 
-	!deliverBeer.
-+!deliverBeer <- !deliverBeer.
++!offerBeer : price(beer, Price) <-
+	.send(robot, tell, price(beer, Price)).
 
-+!order(beer,Qtd)[source(Ag)] <- 
-	+orderFrom(Ag,Qtd); 
-	.println("Pedido de ",Qtd," cervezas recibido de ",Ag).
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN buyBeer
+// -------------------------------------------------------------------------
 
++!buyBeer :
+	has(beer, StoredQtty) & minBatch(beer, Min) & StoredQtty < Min &
+	has(money, Balance) & cost(beer, Cost) & minBatch(beer, BatchQtty) & Amount >= Cost*BatchQtty
+<-
+	-+has(beer, StoredQtty+BatchQtty);
+	-+has(money, Balance-Cost*BatchQtty);
+	!buyBeer.
++!buyBeer <- !buyBeer.
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN sellBeer
+// -------------------------------------------------------------------------
+
++!sellBeer :
+	currentOrderId(OrderId) & order(OrderId, Ag, beer, OrderedQtty) &
+	has(beer, StoredQtty) & StoredQtty >= OrderedQtty
+<-
+	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (en stock)");
+	-+currentOrderId(OrderId+1);
+	deliver(beer, OrderedQtty);
+	-+has(beer, StoredQtty-OrderedQtty);
+	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty));
+	-order(OrderId, _, _, _);
+	
+	!sellBeer.
++!sellBeer :
+	currentOrderId(OrderId) & order(OrderId, Ag, beer, OrderedQtty) &
+	has(beer, StoredQtty) & StoredQtty < OrderedQtty
+<-
+	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (rechazado)");
+	-+currentOrderId(OrderId+1);
+	.send(Ag, tell, notEnough(OrderId, beer, OrderedQtty));
+	-order(OrderId, _, _, _);
+	!sellBeer.
++!sellBeer <- !sellBeer.
+
++order(Product, Qtty)[source(Ag)] <-
+	.println("Pedido de ", Qtty, " ", Product, " recibido de ", Ag);
+	?currentOrderId(OrderId);
+	+order(OrderId, Ag, Product, Qtty);
+	.abolish(order(Product, Qtty)[source(Ag)]).
