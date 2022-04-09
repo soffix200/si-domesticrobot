@@ -12,7 +12,7 @@ dailyPayment(50).
 paidToday(robot) :-
    .date(YY,MM,DD) &
    .count(paid(YY,MM,DD,Money),QtdB) &
-   QtdB > 1.
+   QtdB > 0.
    
 !setupTool("Owner", "Robot").
 
@@ -35,7 +35,7 @@ paidToday(robot) :-
 	.wait(1000);
 	.send(robot, achieve , receive(money)). //TODO en AIML	
 +!pay(robot) :  paidToday(robot) <-
-	.println("No puedo gastar más en cervezas hoy o me desahuciarán, pídemelo mañana").
+	.println("No puedo gastar mÃ¡s en cervezas hoy o me desahuciarÃ¡n, pÃ­demelo maÃ±ana").
 	
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN setupTool
