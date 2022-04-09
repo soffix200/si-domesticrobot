@@ -1,29 +1,44 @@
-/* Initial beliefs and rules */
+has(robot, money, 100).
 
-// initially, I believe that there is some beer in the fridge
-available(beer,fridge).
+stored(beer, fridge, 3).
+threshold(beer, 5).
+buyBatch(beer, 10).
 
-// my owner should not consume more than 10 beers a day :-)
-limit(beer,5).
+available(Product, Location) :-
+	stored(Product, Location, Qtty) &
+	Qtty > 0.
 
-too_much(B) :-
-   .date(YY,MM,DD) &
-   .count(consumed(YY,MM,DD,_,_,_,B),QtdB) &
-   limit(B,Limit) &
-   QtdB > Limit.
+overThreshold(Product, Location) :-
+	threshold(Product, Threshold) &
+	stored(Product, Location, Qtty) & Qtty > Threshold.
+
+cheapest(Product, Provider, Price) :-
+	price(Product, Price)[source(Provider)] &
+	price(Product, Price2)[source(Provider2)] &
+	Price <= Price2.
+
+limit(beer, owner, 10, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
+
+healthConstraint(Product, Agent, Message) :-
+	limit(Product, Agent, Limit, Message) &
+	.date(YY,MM,DD) &
+	.count(consumed(YY,MM,DD,_,_,_,beer), Consumed) &
+	Consumed > Limit.
+
+// -------------------------------------------------------------------------
+// SERVICE INIT AND HELPER METHODS // TODO: PLACEHOLDER
+// -------------------------------------------------------------------------
 
 // Check if bot answer requires a service
-service(Answer, translating):- 			// Translating service
+service(Answer, translating) :- // Translating service
 	checkTag("<translate>",Answer).
-service(Answer, addingBot):- 			// Adding a bot property service
+service(Answer, addingBot) :-   // Adding a bot property service
 	checkTag("<botprop>",Answer).
 
-	
 // Checking a concrete service required by the bot ia as simple as find the required tag
 // as a substring on the string given by the second parameter
 checkTag(Service,String) :-
 	.substring(Service,String).
-
 
 // Gets into Val the first substring contained by a tag Tag into String
 getValTag(Tag,String,Val) :- 
@@ -39,43 +54,55 @@ getValTag(Tag,String,Val) :-
 		in order to let only the required Val
 	*/  
 
-
 // Filter the answer to be showed when the service indicated as second arg is done
 filter(Answer, translating, [To,Msg]):-
 	getValTag("<to>",Answer,To) &
 	getValTag("<msg>",Answer,Msg).
-	
+
 filter(Answer, addingBot, [ToWrite,Route]):-
 	getValTag("<name>",Answer,Name) &
 	getValTag("<val>",Answer,Val) &
 	.concat(Name,":",Val,ToWrite) &
 	bot(Bot) &
 	.concat("/bots/",Bot,BotName) &
-	.concat(BotName,"/config/properties.txt",Route).	
+	.concat(BotName,"/config/properties.txt",Route).
 
-/* Initial goals */
+// -------------------------------------------------------------------------
+// PRIORITIES AND PLAN INITIALIZATION
+// -------------------------------------------------------------------------
+
 !initBot.
 
-!answerOwner.
+!dialogWithOwner. // TODO
+!doHouseWork.
 
-!bringBeer.
++!doHouseWork <-
+	!manageBeer;
+	!cleanHouse;
+	!doHouseWork.
 
-/* Plans */
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN initBot // TODO: PLACEHOLDER
+// -------------------------------------------------------------------------
 
 +!initBot <-
 	makeArtifact("BOT","bot.ChatBOT",["bot"],BOT);
 	focus(BOT);
 	+bot("bot").
 
-+!answerOwner : msg(Msg)[source(Ag)] & bot(Bot) <-
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN dialogWithOwner // TODO: PLACEHOLDER
+// -------------------------------------------------------------------------
+
++!dialogWithOwner : msg(Msg)[source(Ag)] & bot(Bot) <-
 	chatSincrono(Msg,Answer);
 	//chat(Msg) // De manera asíncrona devuelve una signal => answer(Answer)
 	-msg(Msg)[source(Ag)];   
 	.println("El agente ",Ag," ha dicho ",Msg);
 	!doSomething(Answer,Ag);
 	//.send(Ag,tell,answer(Answer)); //modificar adecuadamente
-	!answerOwner.
-+!answerOwner <- !answerOwner.
+	!dialogWithOwner.
++!dialogWithOwner <- !dialogWithOwner.
 
 +!doSomething(Answer,Ag) : service(Answer, Service) <-
 	.println("Aqui debe ir el código del servicio:", Service," para el agente ",Ag).
@@ -84,90 +111,105 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.println("Le contesto al ",Ag," ",Answer);
 	.send(Ag,tell,answer(Answer)). //modificar adecuadamente
 
-+!bring(owner, beer) [source(owner)] <-
-	+asked(beer).
-	
-+!bringBeer : healthMsg(_) <- 
-	!go_at(robot,base);
-	.println("El Robot descansa porque Owner ha bebido mucho hoy.").
-+!bringBeer : asked(beer) & not healthMsg(_) <- 
-	.println("Owner me ha pedido una cerveza.");
-	!go_at(robot,fridge);
-	!take(fridge,beer);
-	!go_at(robot,owner);
-	!hasBeer(owner);
-	.println("Ya he servido la cerveza y elimino la petición.");
-	.abolish(asked(Beer));
-	!bringBeer.
-+!bringBeer : not asked(beer) & not healthMsg(_) <- 
-	.wait(2000);
-	.println("Robot esperando la petición de Owner.");
-	!bringBeer.
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN cleanHouse // TODO
+// -------------------------------------------------------------------------
 
-+!take(fridge, beer) : not too_much(beer) <-
-	.println("El robot está cogiendo una cerveza.");
-	!check(fridge, beer).
-+!take(fridge,beer) : too_much(beer) & limit(beer, L) <-
-	.concat("The Department of Health does not allow me to give you more than ", L," beers a day! I am very sorry about that!", M);
-	-+healthMsg(M).
-	
-+!check(fridge, beer) : not ordered(beer) & available(beer,fridge) <-
-	.println("El robot está en el frigorífico y coge una cerveza.");
-	.wait(1000);
-	open(fridge);
-	.println("El robot abre la nevera.");
-	get(beer);
-	.println("El robot coge una cerveza.");
-	close(fridge);
-	.println("El robot cierra la nevera.").
-+!check(fridge, beer) : not ordered(beer) & not available(beer,fridge) <-
-	.println("El robot está en el frigorífico y hace un pedido de cerveza.");
-	!orderBeer(supermarket);
-	!check(fridge, beer).
-+!check(fridge, beer) <-
-	.println("El robot está esperando ................");
-	.wait(5000);
-	!check(fridge, beer).
++!cleanHouse : requestedRetrieval(can, floor) <-
+	!goAtPlace(robot, owner);
+	!goSearch(robot, can);
+	get(can);
+	!goAtPlace(robot, dumpster);
+	recycle(can);
+	-requestedRetrieval(can, floor).
++!cleanHouse : requestedRetrieval(can, owner) <-
+	!goAtPlace(robot, owner);
+	get(can);
+	send(owner, tell, retrieved(can)); // TODO not implemented
+	!goAtPlace(robot, dumpster);
+	recycle(can);
+	-requestedRetrieval(can, owner).
++!cleanHouse <- true. // Execute randomly
+	// TODO; not yet implemented
 
-+!orderBeer(Supermarket) : not ordered(beer) <-
-	.println("El robot ha realizado un pedido al supermercado.");
-	!go_at(robot,delivery);
-	.println("El robot va a la ZONA de ENTREGA.");
-	.send(Supermarket, achieve, order(beer,3)); // Modificar adecuadamente
++msg("He tirado una lata") <-
+	+requestedRetrieval(can, floor);
+	.abolish(msg("He tirado una lata")).
+
++msg("Ven a por la lata") <-
+	+requestedRetrieval(can, owner);
+	.abolish(msg("Ven a por la lata")).
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN manageBeer
+// -------------------------------------------------------------------------
+
++!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(beer, Provider, Price) <-
+	.println("Tengo menos cerveza de la que debería, voy a comprar más");
+	?buyBatch(beer, Batch);
+	.send(Provider, tell, order(beer, Batch));
 	+ordered(beer).
-+!orderBeer(Supermarket).
++!manageBeer : asked(Ag, beer) & available(beer, fridge) & not healthConstraint(beer, Ag, _) <-
+	.println(Ag, " me ha pedido un ", "beer", ", se lo llevo");
+	!goAtPlace(robot, fridge);
+	open(fridge);
+	if (available(beer, fridge)) {
+		get(beer, fridge);
+		close(fridge);
+		!goAtPlace(robot, owner);
+		hand_in(beer);
+		.date(YY,MM,DD); .time(HH,NN,SS);
+		+consumed(YY,MM,DD,HH,NN,SS,beer);
+		-asked(Ag, beer);
+	} else {
+		close(fridge);
+		.send(Ag, tell, msg("No me queda, voy a comprar más"));
+	}.
++!manageBeer : asked(Ag, beer) & healthConstraint(beer, Ag, Msg) <-
+	.println(Ag, " no puede beber más ", "beer");
+	.send(Ag, tell, msg(Msg)).
++!manageBeer <- true.
 
-+!hasBeer(owner) : not too_much(beer) <-
-	hand_in(beer);
-	.println("He preguntado si Owner ha cogido la cerveza.");
-	?has(owner,beer);
-	.println("Se que Owner tiene la cerveza.");
-	// remember that another beer has been consumed
-	.date(YY,MM,DD); .time(HH,NN,SS);
-	+consumed(YY,MM,DD,HH,NN,SS,beer).
-+!hasBeer(owner) : too_much(beer) & healthMsg(M) <- 
-	//.abolish(msg(_));
-	.send(owner,tell,msg(M)).
++bring(Product)[source(Ag)] <- // TODO AIML
+	+asked(Ag, Product);
+	.abolish(bring(Product)[source(Ag)]).
 
-+!go_at(robot,P) : at(robot,P) <- true.
-+!go_at(robot,P) : not at(robot,P)
-  <- move_towards(P);
-     !go_at(robot,P).
++delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] :
+	has(robot, money, Balance) & Balance >= TotalPrice 
+<-
+	.println("Recibido pedido de ", Qtty, " ", Product);
+	!goAtPlace(robot, delivery);
+	// TODO robot should grab the beers in inventory
+	!goAtPlace(robot, fridge);
+	open(fridge);
+	// TODO robot should place the beers into fridge
+	close(fridge);
+	.send(Provider, tell, received(OrderId));
+	.send(Provider, tell, pay(TotalPrice)); // TODO not implemented
+	?has(robot, money, Amount);
+	-+has(robot, money, Amount-TotalPrice);
+	-ordered(beer).
++delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] :
+	has(robot, money, Balance) & Balance < TotalPrice 
+<-
+	.println("Recibido pedido de ", Qtty, " ", Product, " (sin dinero)");
+	.send(Provider, tell, reject(OrderId)); // TODO not implemented
+	-ordered(beer). // TODO request money to owner...
 
-// when the supermarket makes a delivery, try the 'has' goal again
-+delivered(beer,_Qtd,_OrderId)[source(supermarket)] <- 
-	-ordered(beer);
-	+available(beer,fridge);
-	.wait(1000);
-	!go_at(robot,fridge).
++stock(beer, N) <-
+	-+stored(beer, fridge, N);
+	.abolish(stock(beer, N)).
 
-// when the fridge is opened, the beer stock is perceived
-// and thus the available belief is updated
-+stock(beer,0) :  available(beer,fridge) <-
-	-available(beer,fridge).
-+stock(beer,N) :  N > 0 & not available(beer,fridge) <-
-	-+available(beer,fridge).
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN goAtPlace
+// -------------------------------------------------------------------------
 
-+?time(T) : true
-  <-  time.check(T).
++!goAtPlace(robot, Place) : at(robot, Place) <- true.
++!goAtPlace(robot, Place) : not at(robot, Place) <-
+	move_towards(robot, Place);
+	!goAtPlace(robot, Place).
 
++!goSearch(robot, can) : at(robot, can) <- true.
++!goSearch(robot, can) : not at(robot, can) <-
+	next_search_step(robot, can);
+	!goSearch(robot, can).

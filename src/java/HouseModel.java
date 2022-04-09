@@ -1,6 +1,8 @@
 import jason.environment.grid.GridWorldModel;
 import jason.environment.grid.Location;
 
+import java.util.Random;
+
 /** class that implements the Model of Domestic Robot application */
 public class HouseModel extends GridWorldModel {
 
@@ -36,6 +38,7 @@ public class HouseModel extends GridWorldModel {
 	boolean atDelivery = false;
 	boolean atDumpster = false;
 	boolean atExit     = false;
+	boolean atCan      = false;
 
 	public HouseModel() {
 		// create a 11x11 grid with two mobile agents
@@ -87,16 +90,16 @@ public class HouseModel extends GridWorldModel {
 		int agentCode = -1;
 		if (agent.equals("robot")) {
 			agentCode = ROBOT;
-		} else if (agent.equals("dustman")) {
-			agentCode = DUSTMAN;
+		} else if (agent.equals("owner")) {
+			agentCode = OWNER;
 		}
 		Location loc = getAgPos(agentCode);
-		if (dest.equals(lOwner) || dest.equals(lDelivery) || dest.equals(lDumpster)) {
+		if (dest.equals(lOwner) || dest.equals(lFridge) || dest.equals(lDumpster)) {
 			if (!nearPos(loc, dest)) {
-				if (loc.x < dest.x+1)      loc.x++;
-				else if (loc.x > dest.x-1) loc.x--;
-				else if (loc.y < dest.y+1) loc.y++;
-				else if (loc.y > dest.y-1) loc.y--;
+				if (loc.x < dest.x)      loc.x++;
+				else if (loc.x > dest.x) loc.x--;
+				else if (loc.y < dest.y) loc.y++;
+				else if (loc.y > dest.y) loc.y--;
 			}
 		} else {
 			if (!atPos(loc, dest)) {
@@ -110,10 +113,11 @@ public class HouseModel extends GridWorldModel {
 
 		atBase     = atPos(loc, lBase);
 		atOwner    = nearPos(loc, lOwner);
-		atFridge   = atPos(loc, lFridge);
-		atDelivery = nearPos(loc, lDelivery);
+		atFridge   = nearPos(loc, lFridge);
+		atDelivery = atPos(loc, lDelivery);
 		atDumpster = nearPos(loc, lDumpster);
 		atExit     = atPos(loc, lExit);
+		atCan      = lCan != null && atPos(loc, lCan);
 
 		if (view != null) {
 			view.update(lBase.x,     lBase.y);
@@ -122,7 +126,55 @@ public class HouseModel extends GridWorldModel {
 			view.update(lDelivery.x, lDelivery.y);
 			view.update(lDumpster.x, lDumpster.y);
 			view.update(lExit.x,     lExit.y);
+			if (lCan != null) view.update(lCan.x, lCan.y);
 		}
+		return true;
+	}
+
+	boolean nextSearchStep(String agent, String object) {
+		int agentCode = -1;
+		if (agent.equals("robot")) {
+			agentCode = ROBOT;
+		} else if (agent.equals("owner")) {
+			agentCode = OWNER;
+		}
+		Location loc = getAgPos(agentCode);
+		if (object.equals("can")) {
+			if (loc.x == 0 && loc.y == 0) return false;
+			if (loc.y % 2 == 0) { // Then move left
+				if (loc.x == 0) {
+					loc.y--;
+				} else {
+					loc.x--;
+				}
+			} else { // Then move right
+				if (loc.x == GSize-1) {
+					loc.y--;
+				} else {
+					loc.x++;
+				}
+			}
+		}
+		setAgPos(agentCode, loc);
+
+		atBase     = atPos(loc, lBase);
+		atOwner    = nearPos(loc, lOwner);
+		atFridge   = nearPos(loc, lFridge);
+		atDelivery = atPos(loc, lDelivery);
+		atDumpster = nearPos(loc, lDumpster);
+		atExit     = atPos(loc, lExit);
+		atCan      = lCan != null && atPos(loc, lCan);
+
+		if (view != null) {
+			view.update(lBase.x,     lBase.y);
+			view.update(lOwner.x,    lOwner.y);
+			view.update(lFridge.x,   lFridge.y);
+			view.update(lDelivery.x, lDelivery.y);
+			view.update(lDumpster.x, lDumpster.y);
+			view.update(lExit.x,     lExit.y);
+			if (lCan != null) view.update(lCan.x, lCan.y);
+		}
+		
 		return true;
 	}
 

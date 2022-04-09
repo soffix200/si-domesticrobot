@@ -10,9 +10,9 @@ status(owner, animado).
 
 !setupTool("Owner", "Robot").
 
-!talkRobot
+!talkRobot.
 // !cleanHouse // TODO
-!drinkBeer
+!drinkBeer.
 // !wakeUp // TODO
 
 // -------------------------------------------------------------------------
@@ -59,27 +59,28 @@ status(owner, animado).
 	-asked(robot, beer);
 	sip(beer);
 	+has(owner, halfemptycan);
-	!drink(beer).
+	!drinkBeer.
 +!drinkBeer : has(owner, beer) & not asked(robot, beer) <-
 	.println("Voy a beber un sorbo de cerveza.");
 	sip(beer);
 	+has(owner, halfemptycan);
-	!drink(beer).
-+!drinkBeer : not has(owner, beer) & asked(robot, beer) <-
+	!drinkBeer.
++!drinkBeer : hasnot(owner, beer) & asked(robot, beer) <-
 	.println("Sigo esperando mi cerveza");
 	.wait(1000);
-	!drink(beer).
-+!drinkBeer : not has(owner, beer) & not asked(robot, beer) <-
+	!drinkBeer.
++!drinkBeer : hasnot(owner, beer) & not asked(robot, beer) <-
 	.println("Pido una cerveza al robot");
 	.send(robot, tell, bring(beer));
 	+asked(robot, beer);
-	!drink(beer).
+	!drinkBeer.
++!drinkBeer <- !drinkBeer.
 
-+has(owner, halfemptycan) : has(owner, beer) <-
-	-has(owner, halfemptycan).
-+has(owner, halfemptycan) : not has(owner, beer) <-
++has(owner, halfemptycan) : hasnot(owner, beer) <-
 	-has(owner, halfemptycan);
 	+has(owner, can).
++has(owner, halfemptycan) <-
+	-has(owner, halfemptycan).
 
 +has(owner, can) : politeness(owner, 0) <-
 	.println("Voy a tirar una lata");

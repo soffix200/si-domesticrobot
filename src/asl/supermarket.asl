@@ -17,7 +17,8 @@ price(beer, 3).
 // DEFINITION FOR PLAN offerBeer
 // -------------------------------------------------------------------------
 
-+!offerBeer : price(beer, Price) <-
++!offerBeer <-
+	?price(beer, Price);
 	.send(robot, tell, price(beer, Price)).
 
 // -------------------------------------------------------------------------
@@ -28,8 +29,8 @@ price(beer, 3).
 	has(beer, StoredQtty) & minBatch(beer, Min) & StoredQtty < Min &
 	has(money, Balance) & cost(beer, Cost) & minBatch(beer, BatchQtty) & Amount >= Cost*BatchQtty
 <-
-	-+has(beer, StoredQtty+BatchQtty);
-	-+has(money, Balance-Cost*BatchQtty);
+	.abolish(has(beer, _)); +has(beer, StoredQtty+BatchQtty);
+	.abolish(has(money, _)); +has(money, Balance-Cost*BatchQtty);
 	!buyBeer.
 +!buyBeer <- !buyBeer.
 
@@ -44,8 +45,9 @@ price(beer, 3).
 	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (en stock)");
 	-+currentOrderId(OrderId+1);
 	deliver(beer, OrderedQtty);
-	-+has(beer, StoredQtty-OrderedQtty);
-	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty));
+	.abolish(has(beer, _)); +has(beer, StoredQtty-OrderedQtty);
+	?price(beer, Price);
+	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price));
 	-order(OrderId, _, _, _);
 	!sellBeer.
 +!sellBeer :
