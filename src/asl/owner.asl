@@ -7,13 +7,34 @@ waitTime(max, 10000).
 
 politeness(owner, 0).
 status(owner, animado).
+dailyPayment(50).
+
+paidToday(robot) :-
+   .date(YY,MM,DD) &
+   .count(paid(YY,MM,DD,Money),QtdB) &
+   QtdB > 0.
 
 !setupTool("Owner", "Robot").
 
 !talkRobot.
 // !cleanHouse // TODO
 !drinkBeer.
+
 // !wakeUp // TODO
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN dailyPayout
+// -------------------------------------------------------------------------
+
++!pay(robot): not paidToday(robot) & dailyPayment(DailyPayout) <-
+	.date(YY,MM,DD);
+	+paid(YY,MM,DD,DailyPayout); //TODO PERSISTENCE
+	.send(robot, tell, msg("Ten tus ", dailyPayout, " diarios."));
+	.send(robot, tell, pay(money,50)); //TODO en AIML
+	.wait(1000);
+	.send(robot, achieve , receive(money)). //TODO en AIML	
++!pay(robot) :  paidToday(robot) <-
+	.println("No puedo gastar más en cervezas hoy o me desahuciarán, pídemelo mañana").
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN setupTool
