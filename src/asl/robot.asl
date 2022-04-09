@@ -18,7 +18,7 @@ cheapest(Product, Provider, Price) :-
 	Price <= Price2.
 
 limit(beer, owner, 10, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
- 
+
 healthConstraint(Product, Agent, Message) :-
 	limit(Product, Agent, Limit, Message) &
 	.date(YY,MM,DD) &
@@ -97,24 +97,24 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 +!askForMoney(owner) : has(robot, money, 0) <-
-		-has(robot, money, 0); //TODO UPDATE MONEY NOT DELETE
-		.println("Necesito dinero mi señor");
-		.send(owner,achieve,pay(robot)). //TODO send in AIML
+	-has(robot, money, 0); //TODO UPDATE MONEY NOT DELETE
+	.println("Necesito dinero mi señor");
+	.send(owner,achieve,pay(robot)). //TODO send in AIML
 +!askForMoney(owner) : not has(robot, money, 0) <-
-	    .println("Aún tengo dinero, no debería pedir más").
+	.println("Aún tengo dinero, no debería pedir más").
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN receive(money)
 // -------------------------------------------------------------------------
 
 +!receive(money) : pay(money, Qtd)[source(owner)] <-
-		.println("Gracias por la paga de ", Qtd, " mi señor");
-		 +has(robot, money, Qtd); //TODO UPDATE MONEY NOT DELETE
-		 .abolish(pay(money, Qtd)).
+	.println("Gracias por la paga de ", Qtd, " mi señor");
+	+has(robot, money, Qtd); //TODO UPDATE MONEY NOT DELETE
+	.abolish(pay(money, Qtd)).
 +!receive(money) : not pay(money, Qtd)[source(owner)] <-
-		.println("Estoy esperando a que Owner me pague");
-		.wait(1000);
-		!receive(money). //TODO consider delete this line if "extravío" is a possibility.
+	.println("Estoy esperando a que Owner me pague");
+	.wait(1000);
+	!receive(money). //TODO consider delete this line if "extravío" is a possibility.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN dialogWithOwner // TODO: PLACEHOLDER
