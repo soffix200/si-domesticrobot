@@ -246,8 +246,24 @@ public class HouseModel extends GridWorldModel {
 	boolean throwCan() {
 		Random rand = new Random();
 		lCan = new Location(rand.nextInt(GSize-1), rand.nextInt(GSize-1));
+		while(!noObstacle(lCan.x,lCan.y)){ 
+			System.out.println("La lata ha chocado con un obstáculo y ha rebotado");
+			lCan =	new Location(rand.nextInt(GSize-1), rand.nextInt(GSize-1));
+		}
 		add(CAN, lCan);
 		return true;
+	}
+
+	//Checks if the given location is an obstacle
+	boolean noObstacle(int x, int y) { 
+		if(
+			(x == lOwner.x && y == lOwner.y) ||
+			(x == lFridge.x && y == lFridge.y) ||
+			(x == lDelivery.x && y == lDelivery.y) ||
+			(x == lDumpster.x && y == lDumpster.y) 
+		)return false;
+		else
+			return true;
 	}
 
 	boolean collectTrash() {
