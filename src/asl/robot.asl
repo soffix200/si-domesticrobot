@@ -122,7 +122,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 +!dialogWithOwner : msg(Msg)[source(Ag)] & bot(Bot) <-
 	chatSincrono(Msg,Answer);
-	//chat(Msg) // De manera asÃ­ncrona devuelve una signal => answer(Answer)
+	//chat(Msg) // De manera asíncrona devuelve una signal => answer(Answer)
 	-msg(Msg)[source(Ag)];   
 	.println("El agente ",Ag," ha dicho ",Msg);
 	!doSomething(Answer,Ag);
@@ -131,7 +131,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 +!dialogWithOwner <- !dialogWithOwner.
 
 +!doSomething(Answer,Ag) : service(Answer, Service) <-
-	.println("Aqui debe ir el cÃ³digo del servicio:", Service," para el agente ",Ag).
+	.println("Aqui debe ir el código del servicio:", Service," para el agente ",Ag).
 	
 +!doSomething(Answer,Ag) : not service(Answer, Service) <-
 	.println("Le contesto al ",Ag," ",Answer);
@@ -171,7 +171,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 +!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(beer, Provider, Price) <-
-	.println("Tengo menos cerveza de la que deberÃ­a, voy a comprar mÃ¡s");
+	.println("Tengo menos cerveza de la que debería, voy a comprar más");
 	?buyBatch(beer, Batch);
 	.send(Provider, tell, order(beer, Batch));
 	+ordered(beer).
@@ -189,10 +189,10 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 		-asked(Ag, beer);
 	} else {
 		close(fridge);
-		.send(Ag, tell, msg("No me queda, voy a comprar mÃ¡s"));
+		.send(Ag, tell, msg("No me queda, voy a comprar más"));
 	}.
 +!manageBeer : asked(Ag, beer) & healthConstraint(beer, Ag, Msg) <-
-	.println(Ag, " no puede beber mÃ¡s ", "beer");
+	.println(Ag, " no puede beber más ", "beer");
 	.send(Ag, tell, msg(Msg)).
 +!manageBeer <- true.
 
