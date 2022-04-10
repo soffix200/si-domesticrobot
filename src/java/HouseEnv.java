@@ -67,9 +67,29 @@ public class HouseEnv extends Environment {
 			  
 	/** creates the agents percepts based on the HouseModel */
 	void updatePercepts() {
-		// get the robot location
-		Location lRobot = model.getAgPos(0);
+		clearPercepts("robot");
+		clearPercepts("owner");
 
+		Location lRobot = model.getAgPos(model.ROBOT);
+
+		addPercept("robot", Literal.parseLiteral("bounds("+(model.GSize-1)+","+(model.GSize-1)+")"));
+		addPercept("owner", Literal.parseLiteral("bounds("+(model.GSize-1)+","+(model.GSize-1)+")"));
+
+		addPercept("robot", Literal.parseLiteral("location(base,"+    "position,"+model.lBase.x+    ","+model.lBase.y+    ")"));
+		addPercept("robot", Literal.parseLiteral("location(owner,"+   "obstacle,"+model.lOwner.x+   ","+model.lOwner.y+   ")"));
+		addPercept("robot", Literal.parseLiteral("location(fridge,"+  "obstacle,"+model.lFridge.x+  ","+model.lFridge.y+  ")"));
+		addPercept("robot", Literal.parseLiteral("location(delivery,"+"position,"+model.lDelivery.x+","+model.lDelivery.y+")"));
+		addPercept("robot", Literal.parseLiteral("location(dumpster,"+"obstacle,"+model.lDumpster.x+","+model.lDumpster.y+")"));
+		addPercept("robot", Literal.parseLiteral("location(exit,"+    "position,"+model.lExit.x+    ","+model.lExit.y+    ")"));
+		
+		addPercept("owner", Literal.parseLiteral("location(base,"+    "position,"+model.lBase.x+    ","+model.lBase.y+    ")"));
+		addPercept("owner", Literal.parseLiteral("location(owner,"+   "obstacle,"+model.lOwner.x+   ","+model.lOwner.y+   ")"));
+		addPercept("owner", Literal.parseLiteral("location(fridge,"+  "obstacle,"+model.lFridge.x+  ","+model.lFridge.y+  ")"));
+		addPercept("owner", Literal.parseLiteral("location(delivery,"+"position,"+model.lDelivery.x+","+model.lDelivery.y+")"));
+		addPercept("owner", Literal.parseLiteral("location(dumpster,"+"obstacle,"+model.lDumpster.x+","+model.lDumpster.y+")"));
+		addPercept("owner", Literal.parseLiteral("location(exit,"+    "position,"+model.lExit.x+    ","+model.lExit.y+    ")"));
+
+		addPercept("robot", Literal.parseLiteral("at(robot,"+lRobot.x+","+lRobot.y+")"));
 		if (model.atBase)     addPercept("robot", ab);
 		if (model.atOwner)    addPercept("robot", ao);
 		if (model.atFridge)   addPercept("robot", af);
@@ -77,6 +97,7 @@ public class HouseEnv extends Environment {
 		if (model.atDumpster) addPercept("robot", adu);
 		if (model.atExit)     addPercept("robot", ae);
 		if (model.atCan)      addPercept("robot", ac);
+
 
 		// add beer "status" the percepts
 		if (model.fridgeOpen) {
@@ -96,8 +117,6 @@ public class HouseEnv extends Environment {
 	@Override
 	public boolean executeAction(String ag, Structure action) {
 		System.out.println("["+ag+"] doing: " + action);
-		clearPercepts("robot");
-		clearPercepts("owner");
 
 		boolean succeed = false;
 
@@ -106,32 +125,10 @@ public class HouseEnv extends Environment {
 		} else if (action.equals(clf) & ag.equals("robot")) {
 			succeed = model.closeFridge();
 		} else if (action.getFunctor().equals("move_towards")) {
-			String agent = action.getTerm(0).toString();
-			String location = action.getTerm(1).toString();
-			Location dest = null;
-			if (location.equals("base")) {
-				dest = model.lBase;
-			} else if (location.equals("owner")) {
-				dest = model.lOwner;
-			} else if (location.equals("fridge")) {
-				dest = model.lFridge;
-			} else if (location.equals("delivery")) {
-				dest = model.lDelivery;
-			} else if (location.equals("dumpster")) {
-				dest = model.lDumpster;
-			} else if (location.equals("exit")) {
-				dest = model.lExit;
-			}
+			String agent     = action.getTerm(0).toString();
+			String direction = action.getTerm(1).toString();
 			try {
-				succeed = model.moveTowards(agent, dest);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} else if (action.getFunctor().equals("next_search_step") & ag.equals("robot")) {
-			String agent = action.getTerm(0).toString();
-			String object = action.getTerm(1).toString();
-			try {
-				succeed = model.nextSearchStep(agent, object);
+				succeed = model.moveTowards(agent, direction);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -146,8 +143,17 @@ public class HouseEnv extends Environment {
 			} catch (Exception e) {
 				logger.info("Failed to execute action sip!"+e);
 			}
-		} else if (action.equals(tc) & ag.equals("owner")) {
-			succeed = model.throwCan();
+		} else if (action.getFunctor().equals("throw") & ag.equals("owner")) {
+			try {
+				String object   = action.getTerm(0).toString();
+				Location location = new Location (
+					(int)((NumberTerm)((Structure)action.getTerm(1)).getTerm(0)).solve(),
+					(int)((NumberTerm)((Structure)action.getTerm(1)).getTerm(1)).solve()
+				);
+				succeed = model.throwCan(location);
+			} catch (Exception e) {
+				logger.info("Failed to execute action deliver!"+e);
+			}
 		} else if (action.equals(gc) & ag.equals("robot")) {
 			succeed = model.getCan();
 		} else if (action.equals(rc) & (ag.equals("robot") || ag.equals("owner"))) {
