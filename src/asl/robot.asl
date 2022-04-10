@@ -104,7 +104,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.println("Necesito dinero mi señor");
 	.send(owner,achieve,pay(robot)). //TODO send in AIML
 +!askForMoney(owner) : not has(robot, money, 0) <-
-	.println("A�n tengo dinero, no debería pedir más").
+	.println("A�n tengo dinero, no debería pedir más").
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN receive(money)
@@ -172,11 +172,6 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR PLAN manageBeer
 // -------------------------------------------------------------------------
 
-+!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(beer, Provider, Price) <-
-	.println("Tengo menos cerveza de la que debería, voy a comprar más");
-	?buyBatch(beer, Batch);
-	.send(Provider, tell, order(beer, Batch));
-	+ordered(beer).
 +!manageBeer : asked(Ag, beer) & available(beer, fridge) & not healthConstraint(beer, Ag, _) <-
 	.println(Ag, " me ha pedido un ", "beer", ", se lo llevo");
 	!goAtPlace(robot, fridge);
@@ -193,6 +188,21 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 		close(fridge);
 		.send(Ag, tell, msg("No me queda, voy a comprar más"));
 	}.
++!manageBeer : requestedPickUp(beer, delivery) <-
+	.println("Voy a recoger las cervezas que me han entregado");
+	!goAtPlace(robot, delivery);
+	// TODO robot should grab the beers in inventory
+	!goAtPlace(robot, fridge);
+	open(fridge);
+	// TODO robot should place the beers into fridge
+	close(fridge);
+	-requestedPickUp(beer, delivery);
+	-ordered(beer).
++!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(beer, Provider, Price) <-
+	.println("Tengo menos cerveza de la que debería, voy a comprar más");
+	?buyBatch(beer, Batch);
+	.send(Provider, tell, order(beer, Batch));
+	+ordered(beer).
 +!manageBeer : asked(Ag, beer) & healthConstraint(beer, Ag, Msg) <-
 	.println(Ag, " no puede beber más ", "beer");
 	.send(Ag, tell, msg(Msg)).
@@ -202,21 +212,15 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	+asked(Ag, Product);
 	.abolish(bring(Product)[source(Ag)]).
 
-+delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] :
++delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] : // THIS COLLIDES
 	has(robot, money, Balance) & Balance >= TotalPrice 
 <-
 	.println("Recibido pedido de ", Qtty, " ", Product);
-	!goAtPlace(robot, delivery);
-	// TODO robot should grab the beers in inventory
-	!goAtPlace(robot, fridge);
-	open(fridge);
-	// TODO robot should place the beers into fridge
-	close(fridge);
+	+requestedPickUp(Product, delivery);
 	.send(Provider, tell, received(OrderId));
 	.send(Provider, tell, pay(TotalPrice));
 	?has(robot, money, Amount);
-	-+has(robot, money, Amount-TotalPrice);
-	-ordered(beer).
+	-+has(robot, money, Amount-TotalPrice).
 +delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] :
 	has(robot, money, Balance) & Balance < TotalPrice 
 <-
@@ -233,17 +237,29 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 +!goAtPlace(robot, Place) : at(robot, Place) <- true.
-+!goAtPlace(robot, Place) : not at(robot, Place) <-
-	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
-	?at(robot, OX, OY);	?location(Place, Type, DX, DY);	?placement(Type, Placement); ?bounds(BX, BY);
++!goAtPlace(robot, Place) :
+	not at(robot, Place) &
+	at(robot, OX, OY) & location(Place, Type, DX, DY) & placement(Type, Placement) & bounds(BX, BY)
+<-
+	.println("Going towards ", Place);
+	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
 	movement.getDirection(origin(OX, OY), destination(DX, DY, Placement), bounds(BX, BY), Obstacles, Direction);
 	move_towards(robot, Direction);
 	!goAtPlace(robot, Place).
++!goAtPlace(robot, Place) <-
+	.wait(100);
+	!goAtPlace(robot, Place).
 
 +!goAtLocation(robot, location(DX, DY)) : at(robot, DX, DY) <- true.
-+!goAtLocation(robot, location(DX, DY)) : not at(robot, DX, DY) <-
-	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
-	?at(robot, OX, OY); ?bounds(BX, BY);
++!goAtLocation(robot, location(DX, DY)) : 
+	not at(robot, DX, DY) &
+	at(robot, OX, OY) & bounds(BX, BY)
+<-
+	.println("Going towards can");
+	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
 	movement.getDirection(origin(OX, OY), destination(DX, DY, top), bounds(BX, BY), Obstacles, Direction);
 	move_towards(robot, Direction);
+	!goAtLocation(robot, location(DX, DY)).
++!goAtLocation(robot, location(DX, DY)) <-
+	.wait(100);
 	!goAtLocation(robot, location(DX, DY)).
