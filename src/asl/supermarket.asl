@@ -18,10 +18,10 @@ price(beer, 3).
 +!createStore <-
 	.create_agent(store, "store.asl");
 	.wait(1000);
-	.send(store, askOne, has(beer, N), has(beer, N));
+	.send(store, askOne, has(beer, N));
 	//.send(store, askOne, has(beer, N));
 	+has(beer, N);
-	.send(store, askOne, has(money, N), has(money, N));
+	.send(store, askOne, has(money, N));
 	+has(money, N).
 
 // -------------------------------------------------------------------------
@@ -59,7 +59,7 @@ price(beer, 3).
 	.abolish(has(beer, _)); +has(beer, StoredQtty-OrderedQtty);
 	?price(beer, Price);
 	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price));
-	.send(store, achieve, del(beer,Qtd));
+	.send(store, achieve, del(beer, OrderedQtty));
 	-order(OrderId, _, _, _);
 	!sellBeer.
 +!sellBeer :
