@@ -79,102 +79,53 @@ public class HouseModel extends GridWorldModel {
 			a.equals(new Location(b.x, b.y+1)) ||
 			a.equals(new Location(b.x, b.y-1)) ||
 			a.equals(new Location(b.x+1, b.y)) ||
-			a.equals(new Location(b.x-1, b.y+1));
+			a.equals(new Location(b.x-1, b.y));
 	}
 	boolean atPos(Location a, Location b) {
 		return a.equals(b);
 	}
 
-	// TODO MAY NEED TO AVOID OBJECTS AS OBSTACLES
-	boolean moveTowards(String agent, Location dest) {
+	boolean moveTowards(String agent, String direction) {
 		int agentCode = -1;
 		if (agent.equals("robot")) {
 			agentCode = ROBOT;
 		} else if (agent.equals("owner")) {
 			agentCode = OWNER;
-		}
-		Location loc = getAgPos(agentCode);
-		if (dest.equals(lOwner) || dest.equals(lFridge) || dest.equals(lDumpster)) {
-			if (!nearPos(loc, dest)) {
-				if (loc.x < dest.x)      loc.x++;
-				else if (loc.x > dest.x) loc.x--;
-				else if (loc.y < dest.y) loc.y++;
-				else if (loc.y > dest.y) loc.y--;
-			}
-		} else {
-			if (!atPos(loc, dest)) {
-				if (loc.x < dest.x)      loc.x++;
-				else if (loc.x > dest.x) loc.x--;
-				else if (loc.y < dest.y) loc.y++;
-				else if (loc.y > dest.y) loc.y--;
-			}
-		}
-		setAgPos(agentCode, loc);
-
-		atBase     = atPos(loc, lBase);
-		atOwner    = nearPos(loc, lOwner);
-		atFridge   = nearPos(loc, lFridge);
-		atDelivery = atPos(loc, lDelivery);
-		atDumpster = nearPos(loc, lDumpster);
-		atExit     = atPos(loc, lExit);
-		atCan      = lCan != null && atPos(loc, lCan);
-
-		if (view != null) {
-			view.update(lBase.x,     lBase.y);
-			view.update(lOwner.x,    lOwner.y);
-			view.update(lFridge.x,   lFridge.y);
-			view.update(lDelivery.x, lDelivery.y);
-			view.update(lDumpster.x, lDumpster.y);
-			view.update(lExit.x,     lExit.y);
-			if (lCan != null) view.update(lCan.x, lCan.y);
-		}
-		return true;
-	}
-
-	boolean nextSearchStep(String agent, String object) {
-		int agentCode = -1;
-		if (agent.equals("robot")) {
-			agentCode = ROBOT;
-		} else if (agent.equals("owner")) {
-			agentCode = OWNER;
-		}
-		Location loc = getAgPos(agentCode);
-		if (object.equals("can")) {
-			if (loc.x == 0 && loc.y == 0) return false;
-			if (loc.y % 2 == 0) { // Then move left
-				if (loc.x == 0) {
-					loc.y--;
-				} else {
-					loc.x--;
-				}
-			} else { // Then move right
-				if (loc.x == GSize-1) {
-					loc.y--;
-				} else {
-					loc.x++;
-				}
-			}
-		}
-		setAgPos(agentCode, loc);
-
-		atBase     = atPos(loc, lBase);
-		atOwner    = nearPos(loc, lOwner);
-		atFridge   = nearPos(loc, lFridge);
-		atDelivery = atPos(loc, lDelivery);
-		atDumpster = nearPos(loc, lDumpster);
-		atExit     = atPos(loc, lExit);
-		atCan      = lCan != null && atPos(loc, lCan);
-
-		if (view != null) {
-			view.update(lBase.x,     lBase.y);
-			view.update(lOwner.x,    lOwner.y);
-			view.update(lFridge.x,   lFridge.y);
-			view.update(lDelivery.x, lDelivery.y);
-			view.update(lDumpster.x, lDumpster.y);
-			view.update(lExit.x,     lExit.y);
-			if (lCan != null) view.update(lCan.x, lCan.y);
 		}
 		
+		Location loc = getAgPos(agentCode);
+		if (direction.equals("left")) {
+			loc.x--;
+		}
+		else if (direction.equals("right")) {
+			loc.x++;
+		}
+		else if (direction.equals("down")) {
+			loc.y++;
+		}
+		else if (direction.equals("up")) {
+			loc.y--;
+		}
+
+		setAgPos(agentCode, loc);
+
+		atBase     = atPos(loc, lBase);
+		atOwner    = nearPos(loc, lOwner);
+		atFridge   = nearPos(loc, lFridge);
+		atDelivery = atPos(loc, lDelivery);
+		atDumpster = nearPos(loc, lDumpster);
+		atExit     = atPos(loc, lExit);
+		atCan      = lCan != null && atPos(loc, lCan);
+
+		if (view != null) {
+			view.update(lBase.x,     lBase.y);
+			view.update(lOwner.x,    lOwner.y);
+			view.update(lFridge.x,   lFridge.y);
+			view.update(lDelivery.x, lDelivery.y);
+			view.update(lDumpster.x, lDumpster.y);
+			view.update(lExit.x,     lExit.y);
+			if (lCan != null) view.update(lCan.x, lCan.y);
+		}
 		return true;
 	}
 
@@ -243,25 +194,10 @@ public class HouseModel extends GridWorldModel {
 	}
 
 	// TODO MAY NEED TO BE MORE THAN ONE CAN
-	boolean throwCan() {
-		Random rand = new Random();
-		lCan = new Location(rand.nextInt(GSize-1), rand.nextInt(GSize-1));
-		while(isObstacle(lCan)){ 
-			System.out.println("La lata ha chocado con un obstáculo y ha rebotado");
-			lCan = new Location(rand.nextInt(GSize-1), rand.nextInt(GSize-1));
-		}
+	boolean throwCan(Location loc) {
+		lCan = loc;
 		add(CAN, lCan);
 		return true;
-	}
-
-	//Checks if the given location is an obstacle
-	boolean isObstacle(Location loc) {
-		if (
-			loc.equals(lOwner) ||
-			loc.equals(lFridge) ||
-			loc.equals(lDumpster)
-		) return true;
-		return false;
 	}
 
 	boolean collectTrash() {

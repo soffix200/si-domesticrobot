@@ -105,9 +105,17 @@ paidToday(robot) :-
 
 +has(owner, can) : politeness(owner, 0) <-
 	.println("Voy a tirar una lata");
-	throw(can);
+	?bounds(BX, BY);
+	.random(X); .random(Y);
+	basemath.floor(X*BX, PX); basemath.floor(Y*BY, PY);
+	while (location(_, obstacle, PX, PY)) {
+		.random(X); .random(Y);
+		basemath.floor(X*BX, PX); basemath.floor(Y*BY, PY);
+	}
+	throw(can, position(PX, PY));
 	-has(owner, can);
-	.send(robot, tell, msg("He tirado una lata")).
+	.send(robot, tell, msg("He tirado una lata"));
+	.send(robot, tell, can(PX, PY)). // TODO AIML
 +has(owner, can) : politeness(owner, 1) <-
 	.println("Voy a pedirle al robot que venga a por la lata");
 	.send(robot, tell, msg("Ven a por la lata")).

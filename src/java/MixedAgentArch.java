@@ -23,7 +23,6 @@ public class MixedAgentArch extends AgArch {
 		jasonEnvActions.add("finished");
 		jasonEnvActions.add("at");
 		jasonEnvActions.add("move_towards");
-		jasonEnvActions.add("next_search_step");
 		jasonEnvActions.add("deliver");
 		jasonEnvActions.add("reject");
 		// add other actions here

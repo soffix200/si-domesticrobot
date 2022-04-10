@@ -1,3 +1,6 @@
+placement(obstacle, side).
+placement(position, top ).
+
 has(robot, money, 0). //TODO PERSISTENCE
 
 stored(beer, fridge, 3).
@@ -141,13 +144,12 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR PLAN cleanHouse // TODO
 // -------------------------------------------------------------------------
 
-+!cleanHouse : requestedRetrieval(can, floor) <-
-	!goAtPlace(robot, owner);
-	!goSearch(robot, can);
++!cleanHouse : requestedRetrieval(can, floor(PX, PY)) <-
+	!goAtLocation(robot, location(PX, PY));
 	get(can);
 	!goAtPlace(robot, dumpster);
 	recycle(can);
-	-requestedRetrieval(can, floor).
+	-requestedRetrieval(can, floor(PX, PY)).
 +!cleanHouse : requestedRetrieval(can, owner) <-
 	!goAtPlace(robot, owner);
 	get(can);
@@ -158,9 +160,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 +!cleanHouse <- true. // Execute randomly
 	// TODO; not yet implemented
 
-+msg("He tirado una lata") <-
-	+requestedRetrieval(can, floor);
-	.abolish(msg("He tirado una lata")).
++can(PX, PY) <-
+	+requestedRetrieval(can, floor(PX, PY));
+	.abolish(can(PX, PY)).
 
 +msg("Ven a por la lata") <-
 	+requestedRetrieval(can, owner);
@@ -232,10 +234,16 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 +!goAtPlace(robot, Place) : at(robot, Place) <- true.
 +!goAtPlace(robot, Place) : not at(robot, Place) <-
-	move_towards(robot, Place);
+	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
+	?at(robot, OX, OY);	?location(Place, Type, DX, DY);	?placement(Type, Placement); ?bounds(BX, BY);
+	movement.getDirection(origin(OX, OY), destination(DX, DY, Placement), bounds(BX, BY), Obstacles, Direction);
+	move_towards(robot, Direction);
 	!goAtPlace(robot, Place).
 
-+!goSearch(robot, can) : at(robot, can) <- true.
-+!goSearch(robot, can) : not at(robot, can) <-
-	next_search_step(robot, can);
-	!goSearch(robot, can).
++!goAtLocation(robot, location(DX, DY)) : at(robot, DX, DY) <- true.
++!goAtLocation(robot, location(DX, DY)) : not at(robot, DX, DY) <-
+	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
+	?at(robot, OX, OY); ?bounds(BX, BY);
+	movement.getDirection(origin(OX, OY), destination(DX, DY, top), bounds(BX, BY), Obstacles, Direction);
+	move_towards(robot, Direction);
+	!goAtLocation(robot, location(DX, DY)).
