@@ -3,9 +3,9 @@ placement(position, top ).
 
 has(robot, money, 0). //TODO PERSISTENCE
 
-stored(beer, fridge, 3).
+stored(beer, fridge, 1).
 threshold(beer, 5).
-buyBatch(beer, 10).
+buyBatch(beer, 3).
 
 available(Product, Location) :-
 	stored(Product, Location, Qtty) &
@@ -104,7 +104,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.println("Necesito dinero mi señor");
 	.send(owner,achieve,pay(robot)). //TODO send in AIML
 +!askForMoney(owner) : not has(robot, money, 0) <-
-	.println("Aún tengo dinero, no debería pedir más").
+	.println("A�n tengo dinero, no debería pedir más").
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN receive(money)
@@ -213,7 +213,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	// TODO robot should place the beers into fridge
 	close(fridge);
 	.send(Provider, tell, received(OrderId));
-	.send(Provider, tell, pay(TotalPrice)); // TODO not implemented
+	.send(Provider, tell, pay(TotalPrice));
 	?has(robot, money, Amount);
 	-+has(robot, money, Amount-TotalPrice);
 	-ordered(beer).
