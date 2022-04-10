@@ -2,30 +2,43 @@
 has(beer, 0).
 has(money, 100).
 
+!initStore.
+
 // -------------------------------------------------------------------------
-// DEFINITION FOR substract
+// DEFINITION FOR PLAN initStore
 // -------------------------------------------------------------------------
 
-+!del(beer,N) : has(beer, M) <-
-	.println("Store had ", M, " and now has ", M-N);
++!initStore <-
+	.my_name(StoreName);
+	.concat("./tmp/", StoreName, ".asl", Filename);
+	+filename(Filename).
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN substract
+// -------------------------------------------------------------------------
+
++!del(beer,N) : has(beer, M) & M >= N <-
+	?filename(Filename);
 	.abolish(has(beer, _)); +has(beer, (M-N));
-	//-+has(beer,(M-N)); 
-	.save_agent("store.asl").
-+!del(beer,N) <- // This seems not to be necessary
-	.println("Holaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-	+has(beer,0); 
-	.save_agent("store.asl").
-+!del(money,N) : has(money, M) <- 
+	.save_agent(Filename).
++!del(beer,N) : has(beer, M) & M < N <-
+	?filename(Filename);
+	// TODO response: not enough
+	.save_agent(Filename).
++!del(money,N) : has(money, M) <-
+	?filename(Filename);
 	.abolish(has(money, _)); +has(money, (M-N));
-	.save_agent("store.asl").
+	.save_agent(Filename).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN add
 // -------------------------------------------------------------------------
 
-+!add(beer,N) : has(beer, M) <- 
-	.abolish(has(beer, _)); +has(beer, (M+N)); 
-	.save_agent("store.asl").
-+!add(money,N) : has(money, M) <- 
-	.abolish(has(money, _)); +has(money, (M+N)); 
-	.save_agent("store.asl").
++!add(beer,N) : has(beer, M) <-
+	?filename(Filename);
+	.abolish(has(beer, _)); +has(beer, (M+N));
+	.save_agent(Filename).
++!add(money,N) : has(money, M) <-
+	?filename(Filename);
+	.abolish(has(money, _)); +has(money, (M+N));
+	.save_agent(Filename).

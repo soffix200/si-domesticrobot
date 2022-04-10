@@ -6,23 +6,32 @@ minBatch(beer, 10).
 cost(beer, 1). // TODO REMOVE; dependent on market
 price(beer, 3).
 
+!createStore.
 !offerBeer.
 !buyBeer.
 !sellBeer.
-!createStore.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN createStore
 // -------------------------------------------------------------------------
 
 +!createStore <-
-	.create_agent(store, "store.asl");
-	.wait(1000);
-	.send(store, askOne, has(beer, N));
-	//.send(store, askOne, has(beer, N));
-	+has(beer, N);
-	.send(store, askOne, has(money, N));
-	+has(money, N).
+	.my_name(Name);
+	.concat("store", Name, StoreName);
+	.term2string(Store, StoreName);
+	+store(Store);
+	.concat(StoreName, ".asl", FileName);
+	.list_files("./tmp/", FileName, L);
+	if (.length(L, 0)) {
+		.create_agent(Store, "store.asl");
+	} else {
+		.concat("tmp/", FileName, FilePath);
+		.create_agent(Store, FilePath);
+	}
+	.send(Store, askOne, has(beer, X), BeerResponse);
+	+BeerResponse;
+	.send(Store, askOne, has(money, X), MoneyResponse);
+	+MoneyResponse.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN offerBeer
@@ -40,8 +49,9 @@ price(beer, 3).
 	has(beer, StoredQtty) & minBatch(beer, Min) & StoredQtty < Min &
 	has(money, Balance) & cost(beer, Cost) & minBatch(beer, BatchQtty) & Amount >= Cost*BatchQtty
 <-
-	.abolish(has(beer, _)); +has(beer, StoredQtty+BatchQtty); .send(store, achieve, add(beer,BatchQtty));
-	.abolish(has(money, _)); +has(money, Balance-Cost*BatchQtty); .send(store, achieve, del(money,Cost*BatchQtty));
+	?store(Store);
+	.abolish(has(beer, _)); +has(beer, StoredQtty+BatchQtty); .send(Store, achieve, add(beer,BatchQtty));
+	.abolish(has(money, _)); +has(money, Balance-Cost*BatchQtty); .send(Store, achieve, del(money,Cost*BatchQtty));
 	!buyBeer.
 +!buyBeer <- !buyBeer.
 
@@ -53,13 +63,13 @@ price(beer, 3).
 	currentOrderId(OrderId) & order(OrderId, Ag, beer, OrderedQtty) &
 	has(beer, StoredQtty) & StoredQtty >= OrderedQtty
 <-
+	?store(Store); ?price(beer, Price);
 	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (en stock)");
 	-+currentOrderId(OrderId+1);
 	deliver(beer, OrderedQtty);
 	.abolish(has(beer, _)); +has(beer, StoredQtty-OrderedQtty);
-	?price(beer, Price);
 	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price));
-	.send(store, achieve, del(beer, OrderedQtty));
+	.send(Store, achieve, del(beer, OrderedQtty));
 	-order(OrderId, _, _, _);
 	!sellBeer.
 +!sellBeer :
@@ -84,6 +94,7 @@ price(beer, 3).
 // -------------------------------------------------------------------------
 
 +pay(TotalPrice)[source(Ag)] : has(money,Qtd) <-
+	?store(Store);
 	.println("Pago de ", TotalPrice, " recibido de ", Ag);
-	-+has(money,Qtd+TotalPrice);
-	 .send(store, achieve, add(money,TotalPrice)).
+	.abolish(has(money, _)); +has(money, Qtd+TotalPrice);
+	.send(Store, achieve, add(money,TotalPrice)).
