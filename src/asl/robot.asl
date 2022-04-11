@@ -13,10 +13,9 @@ overThreshold(Product, Location) :-
 	threshold(Product, Threshold) &
 	stored(Product, Location, Qtty) & Qtty > Threshold.
 
-cheapest(Product, Provider, Price) :-
-	price(Product, Price)[source(Provider)] &
-	price(Product, Price2)[source(Provider2)] &
-	Price <= Price2.
+cheapest(Provider, Product, Price) :-
+	price(Provider, Product, Price) &
+	not (price(Provider2, Product, Price2) & Provider2 \== Provider & Price2 < Price).
 
 limit(beer, owner, 1, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
 
@@ -213,8 +212,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	close(fridge);
 	-requestedPickUp(beer, delivery);
 	-ordered(beer).
-+!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(beer, Provider, Price) <-
++!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(Provider, beer, Price) <-
 	.println("Tengo menos cerveza de la que debería, voy a comprar más");
+	.println("Cheapest is ", Provider, " @", Price);
 	?buyBatch(beer, Batch);
 	.send(Provider, tell, order(beer, Batch));
 	+ordered(beer).
@@ -226,9 +226,23 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	-asked(Ag, beer).
 +!manageBeer <- true.
 
+// ## HELPER TRIGGER bring
+
 +bring(Product)[source(Ag)] <- // TODO AIML
 	+asked(Ag, Product);
 	.abolish(bring(Product)[source(Ag)]).
+
+// ## HELPER THIGGER price
+
++price(beer, NewPrice)[source(Provider)] :
+	(not price(Provider, beer, OldPrice)) | (NewPrice \== OldPrice)
+<-
+	.println("Entendido, ", Provider, " ahora me vendes una beer a ", NewPrice);
+	.abolish(price(Provider, beer, _));
+	+price(Provider, beer, NewPrice);
+	.abolish(price(beer, _)[source(Provider)]).
+
+// ## HELPER TRIGGER delivered
 
 +delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] : // THIS COLLIDES
 	has(money, Balance) & Balance >= TotalPrice 
@@ -249,12 +263,14 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	-ordered(beer);
 	!askForMoney(owner).
 
+// ## HELPER TRIGGER stock
+
 +stock(beer, N) <-
 	-+stored(beer, fridge, N);
 	.abolish(stock(beer, N)).
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR PLAN goAtPlace
+// DEFINITION FOR PLANS goAtX
 // -------------------------------------------------------------------------
 
 +!goAtPlace(robot, Place) : at(robot, Place) <- true.

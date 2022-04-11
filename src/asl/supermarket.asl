@@ -1,4 +1,5 @@
 currentOrderId(1).
+priceReevalTimeout(20000). // Take care: if too low, there may be not enough time to receive an order, if too high, supermarket can receive too many orders.
 
 buyBatch(beer, 10).
 minBatch(beer, 10).
@@ -10,46 +11,6 @@ price(beer, 3).
 !offerBeer.
 !buyBeer.
 !sellBeer.
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN evaluatePrice(beer)
-// -------------------------------------------------------------------------
-
-+!evaluatePrice(beer) <-
-	?currentOrderId(N);
-	+lastOrderId(N);
-	.wait(20000); //Take care: if too low, there may be no enough time to receive an order, if its too high, supermarket can receive too many orders.
-	!calculatePrice(beer).
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN calculatePrice(beer)
-// -------------------------------------------------------------------------
-
-+!calculatePrice(beer) : currentOrderId(N) & lastOrderId(M) & N=M <- //No se han vendido cervezas, debe reducirse el precio
-	?price(beer, Price);
-	?cost(beer, Cost);
-	-price(beer,Price);
-	if(Price/2+1 > Cost){
-	+price(beer,Price/2+1);
-	}else{
-		if(Price-1 > Cost){
-		+price(beer,Price-1);
-		}else{	//El precio no puede bajar más
-		+price(beer,Price);
-			}
-	}
-	-lastOrderId(_);
-	.send(robot, tell, deleteOffers(beer));
-	!offerBeer;
-	!evaluatePrice(beer).
-+!calculatePrice(beer) : currentOrderId(N) & lastOrderId(M) & N>M <- //Se han vendido cervezas, debe aumentarse el precio
-	?price(beer, Price);
-	+price(beer, Price+1);
-	-price(beer, Price);
-	-lastOrderId(_);
-	.send(robot, tell, deleteOffers(beer));
-	!offerBeer;
-	!evaluatePrice(beer).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN createStore
@@ -79,10 +40,37 @@ price(beer, 3).
 
 +!offerBeer <-
 	?price(beer, Price);
-	.println("Ahora vendo beer a ",Price);
-	.wait(500); //DO NOT DELETE OR IT WILL CRASH
+	.println("Ahora vendo beer a ", Price);
 	.send(robot, tell, price(beer, Price));
 	!evaluatePrice(beer).
+
+// ## HELPER PLAN evaluatePrice(beer)
+
++!evaluatePrice(beer) <-
+	?currentOrderId(N); ?priceReevalTimeout(Timeout);
+	-+lastEvaluatedOrderId(N);
+	.wait(Timeout);
+	!calculatePrice(beer).
+
+// ## HELPER PLAN calculatePrice(beer)
+
++!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N == M <- // No beers sold; price must be reduced.
+	?price(beer, Price); ?cost(beer, Cost);
+	if(Price/2+1 > Cost) { // TODO this should be expressed mathematically. Take notice that may be float.
+		-+price(beer, Price/2+1);
+		!offerBeer;
+	} else {
+		if(Price-1 > Cost){
+			-+price(beer, Price-1);
+			!offerBeer;
+		} else {
+			!evaluatePrice(beer);
+		}
+	}.
++!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N > M <- // Beers sold; price must be increased.
+	?price(beer, Price);
+	-+price(beer, Price+1);
+	!offerBeer.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN buyBeer
@@ -113,7 +101,7 @@ price(beer, 3).
 	.abolish(has(beer, _)); +has(beer, StoredQtty-OrderedQtty);
 	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price));
 	.send(Store, achieve, del(beer, OrderedQtty));
-	-order(OrderId, _, _, _);
+	.abolish(order(OrderId, _, _, _));
 	!sellBeer.
 +!sellBeer :
 	currentOrderId(OrderId) & order(OrderId, Ag, beer, OrderedQtty) &
@@ -122,9 +110,11 @@ price(beer, 3).
 	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (rechazado)");
 	-+currentOrderId(OrderId+1);
 	.send(Ag, tell, notEnough(OrderId, beer, OrderedQtty));
-	-order(OrderId, _, _, _);
+	.abolish(order(OrderId, _, _, _));
 	!sellBeer.
 +!sellBeer <- !sellBeer.
+
+// ## HELPER TRIGGER order
 
 +order(Product, Qtty)[source(Ag)] <-
 	.println("Pedido de ", Qtty, " ", Product, " recibido de ", Ag);
@@ -132,9 +122,7 @@ price(beer, 3).
 	+order(OrderId, Ag, Product, Qtty);
 	.abolish(order(Product, Qtty)[source(Ag)]).
 
-// -------------------------------------------------------------------------
-// DEFINITION FOR receive the money
-// -------------------------------------------------------------------------
+// ## HELPER TRIGGER pay
 
 +pay(TotalPrice)[source(Ag)] : has(money,Qtd) <-
 	?store(Store);
