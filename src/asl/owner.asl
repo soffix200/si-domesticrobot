@@ -14,6 +14,10 @@ paidToday(robot) :-
    .count(paid(YY,MM,DD,Money),QtdB) &
    QtdB > 0.
 
+healthConstraint(Product) :-
+	.date(YY,MM,DD) &
+	healthConstraint(Product,YY,MM,DD).
+
 !setupTool("Owner", "Robot").
 
 !talkRobot.
@@ -70,7 +74,7 @@ paidToday(robot) :-
 // DEFINITION FOR PLAN drinkBeer
 // -------------------------------------------------------------------------
 
-+!drinkBeer : healthConstraint <-
++!drinkBeer : healthConstraint(beer) <-
 	.println("Owner ha bebido demasiado por hoy.");
 	.wait(10000);
 	-asked(robot, beer);
