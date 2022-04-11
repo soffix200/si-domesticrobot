@@ -14,6 +14,10 @@ paidToday(robot) :-
    .count(paid(YY,MM,DD,Money),QtdB) &
    QtdB > 0.
 
+healthConstraint(Product) :-
+	.date(YY,MM,DD) &
+	healthConstraint(Product,YY,MM,DD).
+
 !setupTool("Owner", "Robot").
 
 !talkRobot.
@@ -33,8 +37,9 @@ paidToday(robot) :-
 	.send(robot, tell, pay(money,50)); //TODO en AIML
 	.wait(1000);
 	.send(robot, achieve , receive(money)). //TODO en AIML	
-+!pay(robot) :  paidToday(robot) <-
-	.println("No puedo gastar más en cervezas hoy o me desahuciarán, pídemelo mañana").
++!pay(robot) : paidToday(robot) <-
+	.println("No puedo gastar más en cervezas hoy o me desahuciarán, pídemelo mañana");
+	.send(robot, tell, noMoneyLeftToday).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN setupTool
@@ -70,7 +75,7 @@ paidToday(robot) :-
 // DEFINITION FOR PLAN drinkBeer
 // -------------------------------------------------------------------------
 
-+!drinkBeer : healthConstraint <-
++!drinkBeer : healthConstraint(beer) <-
 	.println("Owner ha bebido demasiado por hoy.");
 	.wait(10000);
 	-asked(robot, beer);
