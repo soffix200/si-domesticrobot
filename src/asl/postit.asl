@@ -1,10 +1,6 @@
 //REMEMBER TO DELETE TEMP IF THIS FILE IS CHANGED
 // Beliefs and rules
-has(money, 0).
-
-qtdConsumed(YY,MM,DD,beer,Qtd) :-
-	.date(YY,MM,DD) &
-	.count(consumed(YY,MM,DD,_,_,_,beer), Qtd).
+has(money, 50).
 
 !initStore.
 
@@ -32,9 +28,10 @@ qtdConsumed(YY,MM,DD,beer,Qtd) :-
 
 +!add(money,N) : has(money, M) <-
 	?filename(Filename);
-	.abolish(has(money, _)); +has(money, (M+N));
+	.abolish(has(money, _)); 
+	+has(money, (M+N));
 	.save_agent(Filename).
-+!add(consumed,YY,MM,DD,HH,NN,SS,beer) <-
++!add(paid,YY,MM,DD,DailyPayout) <-
 	?filename(Filename);
-	+consumed(YY,MM,DD,HH,NN,SS,beer);
-	.save_agent(Filename). 
+	+paid(YY,MM,DD, DailyPayout);
+	.save_agent(Filename).

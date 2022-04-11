@@ -17,13 +17,14 @@ cheapest(Provider, Product, Price) :-
 	price(Provider, Product, Price) &
 	not (price(Provider2, Product, Price2) & Provider2 \== Provider & Price2 < Price).
 
-limit(beer, owner, 1, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
+limit(beer, owner, 5, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
 
 healthConstraint(Product, Agent, Message) :-
 	limit(Product, Agent, Limit, Message) &
 	.date(YY,MM,DD) &
 	.count(consumed(YY,MM,DD,_,_,_,beer), Consumed) &
-	Consumed > Limit.
+	qtdConsumed(YY,MM,DD,beer,Qtd)&
+	Consumed+Qtd > Limit.
 
 // -------------------------------------------------------------------------
 // SERVICE INIT AND HELPER METHODS // TODO: PLACEHOLDER
@@ -104,7 +105,8 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 		.create_agent("database", "./tmp/database.asl"); 
 	}
 	.send(database, askOne, has(money, X), MoneyResponse);
-	.send(database, askOne, consumed(YY,MM,DD,_,_,_,beer), ConsumedResponse);
+	.date(YY,MM,DD);
+	.send(database, askOne, qtdConsumed(YY,MM,DD,beer,Qtd), ConsumedResponse);
 	+MoneyResponse;
 	+ConsumedResponse.
 
