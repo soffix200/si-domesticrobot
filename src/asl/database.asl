@@ -1,5 +1,10 @@
+//REMEMBER TO DELETE TEMP IF THIS FILE IS CHANGED
 // Beliefs and rules
 has(money, 0).
+
+qtdConsumed(YY,MM,DD,beer,Qtd) :-
+	.date(YY,MM,DD) &
+	.count(consumed(YY,MM,DD,_,_,_,beer), Qtd).
 
 !initStore.
 
@@ -32,4 +37,4 @@ has(money, 0).
 +!add(consumed,YY,MM,DD,HH,NN,SS,beer) <-
 	?filename(Filename);
 	+consumed(YY,MM,DD,HH,NN,SS,beer);
-	.save_agent(Filename).
+	.save_agent(Filename). 
