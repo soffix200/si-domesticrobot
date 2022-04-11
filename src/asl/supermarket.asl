@@ -39,7 +39,6 @@ price(beer, 3).
 			}
 	}
 	-lastOrderId(_);
-	.send(robot, tell, deleteOffers(beer));
 	!offerBeer;
 	!evaluatePrice(beer).
 +!calculatePrice(beer) : currentOrderId(N) & lastOrderId(M) & N>M <- //Se han vendido cervezas, debe aumentarse el precio
@@ -47,7 +46,6 @@ price(beer, 3).
 	+price(beer, Price+1);
 	-price(beer, Price);
 	-lastOrderId(_);
-	.send(robot, tell, deleteOffers(beer));
 	!offerBeer;
 	!evaluatePrice(beer).
 

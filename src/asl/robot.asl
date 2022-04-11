@@ -16,8 +16,8 @@ overThreshold(Product, Location) :-
 	stored(Product, Location, Qtty) & Qtty > Threshold.
 
 cheapest(Product, Provider, Price) :-
-	price(Product, Price)[source(Provider)] &
-	price(Product, Price2)[source(Provider2)] &
+	price(Product, Price,  Provider ) &
+	price(Product, Price2, Provider2) &
 	Price <= Price2.
 
 limit(beer, owner, 10, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
@@ -89,12 +89,13 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR deleteOffers(beer)
 // -------------------------------------------------------------------------
 
-+deleteOffers(beer)[source(Ag)] <-
-	//.println("Entendido, ",Ag," por favor, dime los nuevos precios"); //DEBUG
-	.abolish(price(beer,_)[source(Ag)]).
-
-/*+price(beer,Price)[source(Ag)] <- //DEBUG
-	.println("Entendido, ",Ag," ahora me vendes una beer a ", Price). */
++price(beer, NewPrice)[source(Provider)] :
+	(not price(beer, OldPrice, Provider)) | (NewPrice \== OldPrice)
+<-
+	.println("Entendido, ", Provider, " ahora me vendes una beer a ", NewPrice);
+	.abolish(price(beer, _, Provider));
+	+price(beer, NewPrice, Provider);
+	.abolish(price(beer, _)[source(Provider)]).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN initBot // TODO: PLACEHOLDER
