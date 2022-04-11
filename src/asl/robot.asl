@@ -16,9 +16,8 @@ overThreshold(Product, Location) :-
 	stored(Product, Location, Qtty) & Qtty > Threshold.
 
 cheapest(Provider, Product, Price) :-
-	price(Provider,  Product, Price ) &
-	price(Provider2, Product, Price2) &
-	Price <= Price2.
+	price(Provider, Product, Price) &
+	not (price(Provider2, Product, Price2) & Provider2 \== Provider & Price2 < Price).
 
 limit(beer, owner, 10, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
 
