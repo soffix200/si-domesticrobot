@@ -77,7 +77,6 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 !initBot.
 
 !askForMoney(owner). //TODO ask only when neccesary
-
 !dialogWithOwner. // TODO
 !doHouseWork.
 
@@ -85,6 +84,17 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	!manageBeer;
 	!cleanHouse;
 	!doHouseWork.
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR deleteOffers(beer)
+// -------------------------------------------------------------------------
+
++deleteOffers(beer)[source(Ag)] <-
+	//.println("Entendido, ",Ag," por favor, dime los nuevos precios"); //DEBUG
+	.abolish(price(beer,_)[source(Ag)]).
+
+/*+price(beer,Price)[source(Ag)] <- //DEBUG
+	.println("Entendido, ",Ag," ahora me vendes una beer a ", Price). */
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN initBot // TODO: PLACEHOLDER
