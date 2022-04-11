@@ -15,9 +15,9 @@ overThreshold(Product, Location) :-
 	threshold(Product, Threshold) &
 	stored(Product, Location, Qtty) & Qtty > Threshold.
 
-cheapest(Product, Provider, Price) :-
-	price(Product, Price,  Provider ) &
-	price(Product, Price2, Provider2) &
+cheapest(Provider, Product, Price) :-
+	price(Provider,  Product, Price ) &
+	price(Provider2, Product, Price2) &
 	Price <= Price2.
 
 limit(beer, owner, 10, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
@@ -90,11 +90,11 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 +price(beer, NewPrice)[source(Provider)] :
-	(not price(beer, OldPrice, Provider)) | (NewPrice \== OldPrice)
+	(not price(Provider, beer, OldPrice)) | (NewPrice \== OldPrice)
 <-
 	.println("Entendido, ", Provider, " ahora me vendes una beer a ", NewPrice);
-	.abolish(price(beer, _, Provider));
-	+price(beer, NewPrice, Provider);
+	.abolish(price(Provider, beer, _));
+	+price(Provider, beer, NewPrice);
 	.abolish(price(beer, _)[source(Provider)]).
 
 // -------------------------------------------------------------------------
@@ -115,7 +115,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.println("Necesito dinero mi señor");
 	.send(owner,achieve,pay(robot)). //TODO send in AIML
 +!askForMoney(owner) : not has(robot, money, 0) <-
-	.println("A�n tengo dinero, no debería pedir más").
+	.println("Aún tengo dinero, no debería pedir más").
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN receive(money)
@@ -209,8 +209,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	close(fridge);
 	-requestedPickUp(beer, delivery);
 	-ordered(beer).
-+!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(beer, Provider, Price) <-
++!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(Provider, beer, Price) <-
 	.println("Tengo menos cerveza de la que debería, voy a comprar más");
+	.println("Cheapest is ", Provider, " @", Price);
 	?buyBatch(beer, Batch);
 	.send(Provider, tell, order(beer, Batch));
 	+ordered(beer).
