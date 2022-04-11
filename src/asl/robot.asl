@@ -95,7 +95,8 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR createDatabase
 // -------------------------------------------------------------------------
 
-+!createDatabase : .date(YY,MM,DD) <-
++!createDatabase <-
+	.date(YY,MM,DD);
 	.list_files("./tmp/","database.asl", L);
 	if (.length(L, 0)) {
 		.create_agent("database", "database.asl");
@@ -103,7 +104,6 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 		.create_agent("database", "./tmp/database.asl"); 
 	}
 	.send(database, askOne, has(money, X), MoneyResponse);
-	.date(YY,MM,DD);
 	.send(database, askOne, consumed(YY,MM,DD,_,_,_,beer), ConsumedResponse);
 	+MoneyResponse;
 	+ConsumedResponse.
