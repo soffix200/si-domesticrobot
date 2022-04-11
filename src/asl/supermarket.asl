@@ -12,6 +12,46 @@ price(beer, 3).
 !sellBeer.
 
 // -------------------------------------------------------------------------
+// DEFINITION FOR PLAN evaluatePrice(beer)
+// -------------------------------------------------------------------------
+
++!evaluatePrice(beer) <-
+	?currentOrderId(N);
+	+lastOrderId(N);
+	.wait(20000); //Take care: if too low, there may be no enough time to receive an order, if its too high, supermarket can receive too many orders.
+	!calculatePrice(beer).
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN calculatePrice(beer)
+// -------------------------------------------------------------------------
+
++!calculatePrice(beer) : currentOrderId(N) & lastOrderId(M) & N=M <- //No se han vendido cervezas, debe reducirse el precio
+	?price(beer, Price);
+	?cost(beer, Cost);
+	-price(beer,Price);
+	if(Price/2+1 > Cost){
+	+price(beer,Price/2+1);
+	}else{
+		if(Price-1 > Cost){
+		+price(beer,Price-1);
+		}else{	//El precio no puede bajar más
+		+price(beer,Price);
+			}
+	}
+	-lastOrderId(_);
+	.send(robot, tell, deleteOffers(beer));
+	!offerBeer;
+	!evaluatePrice(beer).
++!calculatePrice(beer) : currentOrderId(N) & lastOrderId(M) & N>M <- //Se han vendido cervezas, debe aumentarse el precio
+	?price(beer, Price);
+	+price(beer, Price+1);
+	-price(beer, Price);
+	-lastOrderId(_);
+	.send(robot, tell, deleteOffers(beer));
+	!offerBeer;
+	!evaluatePrice(beer).
+
+// -------------------------------------------------------------------------
 // DEFINITION FOR PLAN createStore
 // -------------------------------------------------------------------------
 
@@ -39,7 +79,10 @@ price(beer, 3).
 
 +!offerBeer <-
 	?price(beer, Price);
-	.send(robot, tell, price(beer, Price)).
+	.println("Ahora vendo beer a ",Price);
+	.wait(500); //DO NOT DELETE OR IT WILL CRASH
+	.send(robot, tell, price(beer, Price));
+	!evaluatePrice(beer).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN buyBeer
