@@ -4,12 +4,34 @@ buyBatch(beer, 10).
 minBatch(beer, 10).
 
 cost(beer, 1). // TODO REMOVE; dependent on market
-price(beer, 3).
+price(beer, 15).
 
 !createStore.
 !offerBeer.
 !buyBeer.
 !sellBeer.
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN createStore
+// -------------------------------------------------------------------------
+
++!createStore <-
+	.my_name(Name);
+	.concat("store", Name, StoreName);
+	.term2string(Store, StoreName);
+	+store(Store);
+	.concat(StoreName, ".asl", FileName);
+	.list_files("./tmp/", FileName, L);
+	if (.length(L, 0)) {
+		.create_agent(Store, "store.asl");
+	} else {
+		.concat("tmp/", FileName, FilePath);
+		.create_agent(Store, FilePath);
+	}
+	.send(Store, askOne, has(beer, X), BeerResponse);
+	+BeerResponse;
+	.send(Store, askOne, has(money, X), MoneyResponse);
+	+MoneyResponse.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN evaluatePrice(beer)
@@ -40,6 +62,7 @@ price(beer, 3).
 	}
 	-lastOrderId(_);
 	.send(robot, tell, deleteOffers(beer));
+	.wait(500); //DO NOT DELETE OR IT WILL CRASH
 	!offerBeer;
 	!evaluatePrice(beer).
 +!calculatePrice(beer) : currentOrderId(N) & lastOrderId(M) & N>M <- //Se han vendido cervezas, debe aumentarse el precio
@@ -48,30 +71,9 @@ price(beer, 3).
 	-price(beer, Price);
 	-lastOrderId(_);
 	.send(robot, tell, deleteOffers(beer));
+	.wait(500); //DO NOT DELETE OR IT WILL CRASH
 	!offerBeer;
 	!evaluatePrice(beer).
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN createStore
-// -------------------------------------------------------------------------
-
-+!createStore <-
-	.my_name(Name);
-	.concat("store", Name, StoreName);
-	.term2string(Store, StoreName);
-	+store(Store);
-	.concat(StoreName, ".asl", FileName);
-	.list_files("./tmp/", FileName, L);
-	if (.length(L, 0)) {
-		.create_agent(Store, "store.asl");
-	} else {
-		.concat("tmp/", FileName, FilePath);
-		.create_agent(Store, FilePath);
-	}
-	.send(Store, askOne, has(beer, X), BeerResponse);
-	+BeerResponse;
-	.send(Store, askOne, has(money, X), MoneyResponse);
-	+MoneyResponse.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN offerBeer

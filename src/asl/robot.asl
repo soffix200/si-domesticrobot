@@ -116,7 +116,8 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 +deleteOffers(beer)[source(Ag)] <-
 	//.println("Entendido, ",Ag," por favor, dime los nuevos precios"); //DEBUG
-	.abolish(price(beer,_)[source(Ag)]).
+	.abolish(price(beer,_)[source(Ag)]);
+	-deleteOffers(beer)[source(Ag)].
 
 /*+price(beer,Price)[source(Ag)] <- //DEBUG
 	.println("Entendido, ",Ag," ahora me vendes una beer a ", Price). */
