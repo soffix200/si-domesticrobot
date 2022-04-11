@@ -111,7 +111,7 @@ price(beer, 3).
 	.abolish(has(beer, _)); +has(beer, StoredQtty-OrderedQtty);
 	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price));
 	.send(Store, achieve, del(beer, OrderedQtty));
-	-order(OrderId, _, _, _);
+	.abolish(order(OrderId, _, _, _));
 	!sellBeer.
 +!sellBeer :
 	currentOrderId(OrderId) & order(OrderId, Ag, beer, OrderedQtty) &
@@ -120,7 +120,7 @@ price(beer, 3).
 	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (rechazado)");
 	-+currentOrderId(OrderId+1);
 	.send(Ag, tell, notEnough(OrderId, beer, OrderedQtty));
-	-order(OrderId, _, _, _);
+	.abolish(order(OrderId, _, _, _));
 	!sellBeer.
 +!sellBeer <- !sellBeer.
 
