@@ -3,7 +3,7 @@ placement(position, top ).
 
 stored(beer, fridge, 1).
 threshold(beer, 5).
-buyBatch(beer, 8).
+buyBatch(beer, 3).
 
 available(Product, Location) :-
 	stored(Product, Location, Qtty) &
