@@ -93,14 +93,13 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	+bot("bot").
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR deleteOffers(beer)
+// DEFINITION FOR createDatabase
 // -------------------------------------------------------------------------
 
-+!createDatabase : 	.date(YY,MM,DD) <-
-
++!createDatabase : .date(YY,MM,DD) <-
 	.list_files("./tmp/","database.asl", L);
 	if (.length(L, 0)) {
-	.create_agent("database", "database.asl");
+		.create_agent("database", "database.asl");
 	} else {
 		.create_agent("database", "./tmp/database.asl"); 
 	}
