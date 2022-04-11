@@ -18,7 +18,7 @@ price(beer, 3).
 +!evaluatePrice(beer) <-
 	?currentOrderId(N);
 	+lastOrderId(N);
-	.wait(20000); //Take care: if too low, there may be no enough time to receive an order, if too high, supermarket can receve too many orders.
+	.wait(20000); //Take care: if too low, there may be not enough time to receive an order, if too high, supermarket can receive too many orders.
 	!calculatePrice(beer).
 
 // -------------------------------------------------------------------------
@@ -34,7 +34,7 @@ price(beer, 3).
 	}else{
 		if(Price-1 > Cost){
 		+price(beer,Price-1);
-		}else{	//El precio no puede bajar más
+		}else{	//El precio no puede bajar mï¿½s
 		+price(beer,Price);
 			}
 	}
