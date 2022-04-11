@@ -13,38 +13,6 @@ price(beer, 3).
 !sellBeer.
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR PLAN evaluatePrice(beer)
-// -------------------------------------------------------------------------
-
-+!evaluatePrice(beer) <-
-	?currentOrderId(N); ?priceReevalTimeout(Timeout);
-	-+lastEvaluatedOrderId(N);
-	.wait(Timeout);
-	!calculatePrice(beer).
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN calculatePrice(beer)
-// -------------------------------------------------------------------------
-
-+!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N == M <- // No beers sold; price must be reduced.
-	?price(beer, Price); ?cost(beer, Cost);
-	if(Price/2+1 > Cost) { // TODO this should be expressed mathematically. Take notice that may be float.
-		-+price(beer, Price/2+1);
-		!offerBeer;
-	} else {
-		if(Price-1 > Cost){
-			-+price(beer, Price-1);
-			!offerBeer;
-		} else {
-			!evaluatePrice(beer);
-		}
-	}.
-+!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N > M <- // Beers sold; price must be increased.
-	?price(beer, Price);
-	-+price(beer, Price+1);
-	!offerBeer.
-
-// -------------------------------------------------------------------------
 // DEFINITION FOR PLAN createStore
 // -------------------------------------------------------------------------
 
@@ -76,6 +44,34 @@ price(beer, 3).
 	.wait(500); //DO NOT DELETE OR IT WILL CRASH
 	.send(robot, tell, price(beer, Price));
 	!evaluatePrice(beer).
+
+// ## HELPER PLAN evaluatePrice(beer)
+
++!evaluatePrice(beer) <-
+	?currentOrderId(N); ?priceReevalTimeout(Timeout);
+	-+lastEvaluatedOrderId(N);
+	.wait(Timeout);
+	!calculatePrice(beer).
+
+// ## HELPER PLAN calculatePrice(beer)
+
++!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N == M <- // No beers sold; price must be reduced.
+	?price(beer, Price); ?cost(beer, Cost);
+	if(Price/2+1 > Cost) { // TODO this should be expressed mathematically. Take notice that may be float.
+		-+price(beer, Price/2+1);
+		!offerBeer;
+	} else {
+		if(Price-1 > Cost){
+			-+price(beer, Price-1);
+			!offerBeer;
+		} else {
+			!evaluatePrice(beer);
+		}
+	}.
++!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N > M <- // Beers sold; price must be increased.
+	?price(beer, Price);
+	-+price(beer, Price+1);
+	!offerBeer.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN buyBeer
@@ -119,15 +115,15 @@ price(beer, 3).
 	!sellBeer.
 +!sellBeer <- !sellBeer.
 
+// ## HELPER TRIGGER order
+
 +order(Product, Qtty)[source(Ag)] <-
 	.println("Pedido de ", Qtty, " ", Product, " recibido de ", Ag);
 	?currentOrderId(OrderId);
 	+order(OrderId, Ag, Product, Qtty);
 	.abolish(order(Product, Qtty)[source(Ag)]).
 
-// -------------------------------------------------------------------------
-// DEFINITION FOR receive the money
-// -------------------------------------------------------------------------
+// ## HELPER TRIGGER pay
 
 +pay(TotalPrice)[source(Ag)] : has(money,Qtd) <-
 	?store(Store);

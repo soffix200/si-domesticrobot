@@ -85,18 +85,6 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	!doHouseWork.
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR deleteOffers(beer)
-// -------------------------------------------------------------------------
-
-+price(beer, NewPrice)[source(Provider)] :
-	(not price(Provider, beer, OldPrice)) | (NewPrice \== OldPrice)
-<-
-	.println("Entendido, ", Provider, " ahora me vendes una beer a ", NewPrice);
-	.abolish(price(Provider, beer, _));
-	+price(Provider, beer, NewPrice);
-	.abolish(price(beer, _)[source(Provider)]).
-
-// -------------------------------------------------------------------------
 // DEFINITION FOR PLAN initBot // TODO: PLACEHOLDER
 // -------------------------------------------------------------------------
 
@@ -219,9 +207,23 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(Ag, tell, msg(Msg)).
 +!manageBeer <- true.
 
+// ## HELPER TRIGGER bring
+
 +bring(Product)[source(Ag)] <- // TODO AIML
 	+asked(Ag, Product);
 	.abolish(bring(Product)[source(Ag)]).
+
+// ## HELPER THRIGGER price
+
++price(beer, NewPrice)[source(Provider)] :
+	(not price(Provider, beer, OldPrice)) | (NewPrice \== OldPrice)
+<-
+	.println("Entendido, ", Provider, " ahora me vendes una beer a ", NewPrice);
+	.abolish(price(Provider, beer, _));
+	+price(Provider, beer, NewPrice);
+	.abolish(price(beer, _)[source(Provider)]).
+
+// ## HELPER TRIGGER delivered
 
 +delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] : // THIS COLLIDES
 	has(robot, money, Balance) & Balance >= TotalPrice 
@@ -239,12 +241,14 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(Provider, tell, reject(OrderId)); // TODO not implemented
 	-ordered(beer). // TODO request money to owner...
 
+// ## HELPER TRIGGER stock
+
 +stock(beer, N) <-
 	-+stored(beer, fridge, N);
 	.abolish(stock(beer, N)).
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR PLAN goAtPlace
+// DEFINITION FOR PLANS goAtX
 // -------------------------------------------------------------------------
 
 +!goAtPlace(robot, Place) : at(robot, Place) <- true.
