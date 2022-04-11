@@ -213,7 +213,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	+asked(Ag, Product);
 	.abolish(bring(Product)[source(Ag)]).
 
-// ## HELPER THRIGGER price
+// ## HELPER THIGGER price
 
 +price(beer, NewPrice)[source(Provider)] :
 	(not price(Provider, beer, OldPrice)) | (NewPrice \== OldPrice)
