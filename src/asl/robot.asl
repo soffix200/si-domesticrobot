@@ -15,10 +15,9 @@ overThreshold(Product, Location) :-
 	threshold(Product, Threshold) &
 	stored(Product, Location, Qtty) & Qtty > Threshold.
 
-cheapest(Product, Provider, Price) :-
-	price(Product, Price)[source(Provider)] &
-	price(Product, Price2)[source(Provider2)] &
-	Price <= Price2.
+cheapest(Provider, Product, Price) :-
+	price(Provider, Product, Price) &
+	not (price(Provider2, Product, Price2) & Provider2 \== Provider & Price2 < Price).
 
 limit(beer, owner, 10, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
 
@@ -77,7 +76,6 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 !initBot.
 
 !askForMoney(owner). //TODO ask only when neccesary
-
 !dialogWithOwner. // TODO
 !doHouseWork.
 
@@ -104,7 +102,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.println("Necesito dinero mi señor");
 	.send(owner,achieve,pay(robot)). //TODO send in AIML
 +!askForMoney(owner) : not has(robot, money, 0) <-
-	.println("A�n tengo dinero, no debería pedir más").
+	.println("Aún tengo dinero, no debería pedir más").
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN receive(money)
@@ -198,8 +196,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	close(fridge);
 	-requestedPickUp(beer, delivery);
 	-ordered(beer).
-+!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(beer, Provider, Price) <-
++!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(Provider, beer, Price) <-
 	.println("Tengo menos cerveza de la que debería, voy a comprar más");
+	.println("Cheapest is ", Provider, " @", Price);
 	?buyBatch(beer, Batch);
 	.send(Provider, tell, order(beer, Batch));
 	+ordered(beer).
@@ -208,9 +207,23 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(Ag, tell, msg(Msg)).
 +!manageBeer <- true.
 
+// ## HELPER TRIGGER bring
+
 +bring(Product)[source(Ag)] <- // TODO AIML
 	+asked(Ag, Product);
 	.abolish(bring(Product)[source(Ag)]).
+
+// ## HELPER THIGGER price
+
++price(beer, NewPrice)[source(Provider)] :
+	(not price(Provider, beer, OldPrice)) | (NewPrice \== OldPrice)
+<-
+	.println("Entendido, ", Provider, " ahora me vendes una beer a ", NewPrice);
+	.abolish(price(Provider, beer, _));
+	+price(Provider, beer, NewPrice);
+	.abolish(price(beer, _)[source(Provider)]).
+
+// ## HELPER TRIGGER delivered
 
 +delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] : // THIS COLLIDES
 	has(robot, money, Balance) & Balance >= TotalPrice 
@@ -228,12 +241,14 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(Provider, tell, reject(OrderId)); // TODO not implemented
 	-ordered(beer). // TODO request money to owner...
 
+// ## HELPER TRIGGER stock
+
 +stock(beer, N) <-
 	-+stored(beer, fridge, N);
 	.abolish(stock(beer, N)).
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR PLAN goAtPlace
+// DEFINITION FOR PLANS goAtX
 // -------------------------------------------------------------------------
 
 +!goAtPlace(robot, Place) : at(robot, Place) <- true.
