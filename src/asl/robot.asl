@@ -1,8 +1,6 @@
 placement(obstacle, side).
 placement(position, top ).
 
-has(robot, money, 0). //TODO PERSISTENCE
-
 stored(beer, fridge, 1).
 threshold(beer, 5).
 buyBatch(beer, 3).
@@ -19,7 +17,7 @@ cheapest(Provider, Product, Price) :-
 	price(Provider, Product, Price) &
 	not (price(Provider2, Product, Price2) & Provider2 \== Provider & Price2 < Price).
 
-limit(beer, owner, 10, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
+limit(beer, owner, 1, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
 
 healthConstraint(Product, Agent, Message) :-
 	limit(Product, Agent, Limit, Message) &
@@ -74,8 +72,8 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 !initBot.
+!createDatabase.
 
-!askForMoney(owner). //TODO ask only when neccesary
 !dialogWithOwner. // TODO
 !doHouseWork.
 
@@ -94,15 +92,29 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	+bot("bot").
 
 // -------------------------------------------------------------------------
+// DEFINITION FOR createDatabase
+// -------------------------------------------------------------------------
+
++!createDatabase <-
+	.date(YY,MM,DD);
+	.list_files("./tmp/","database.asl", L);
+	if (.length(L, 0)) {
+		.create_agent("database", "database.asl");
+	} else {
+		.create_agent("database", "./tmp/database.asl"); 
+	}
+	.send(database, askOne, has(money, X), MoneyResponse);
+	.send(database, askOne, consumed(YY,MM,DD,_,_,_,beer), ConsumedResponse);
+	+MoneyResponse;
+	+ConsumedResponse.
+
+// -------------------------------------------------------------------------
 // DEFINITION FOR PLAN askForMoney(owner)
 // -------------------------------------------------------------------------
 
-+!askForMoney(owner) : has(robot, money, 0) <-
-	-has(robot, money, 0); //TODO UPDATE MONEY NOT DELETE
++!askForMoney(owner) <-
 	.println("Necesito dinero mi señor");
 	.send(owner,achieve,pay(robot)). //TODO send in AIML
-+!askForMoney(owner) : not has(robot, money, 0) <-
-	.println("Aún tengo dinero, no debería pedir más").
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN receive(money)
@@ -110,7 +122,10 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 +!receive(money) : pay(money, Qtd)[source(owner)] <-
 	.println("Gracias por la paga de ", Qtd, " mi señor");
-	+has(robot, money, Qtd); //TODO UPDATE MONEY NOT DELETE
+	?has(money, TotalMoney);
+	+has(money, TotalMoney + Qtd);
+	.abolish(has(money, TotalMoney));
+	.send(database, achieve, add(money, Qtd));
 	.abolish(pay(money, Qtd)).
 +!receive(money) : not pay(money, Qtd)[source(owner)] <-
 	.println("Estoy esperando a que Owner me pague");
@@ -181,6 +196,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 		hand_in(beer);
 		.date(YY,MM,DD); .time(HH,NN,SS);
 		+consumed(YY,MM,DD,HH,NN,SS,beer);
+		.send(database, achieve, add(consumed,YY,MM,DD,HH,NN,SS,beer));
 		-asked(Ag, beer);
 	} else {
 		close(fridge);
@@ -204,7 +220,10 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	+ordered(beer).
 +!manageBeer : asked(Ag, beer) & healthConstraint(beer, Ag, Msg) <-
 	.println(Ag, " no puede beber más ", "beer");
-	.send(Ag, tell, msg(Msg)).
+	.send(Ag, tell, msg(Msg));
+	.date(YY,MM,DD);
+	.send(Ag, tell, healthConstraint(beer,YY,MM,DD));
+	-asked(Ag, beer).
 +!manageBeer <- true.
 
 // ## HELPER TRIGGER bring
@@ -226,20 +245,23 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // ## HELPER TRIGGER delivered
 
 +delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] : // THIS COLLIDES
-	has(robot, money, Balance) & Balance >= TotalPrice 
+	has(money, Balance) & Balance >= TotalPrice 
 <-
 	.println("Recibido pedido de ", Qtty, " ", Product);
 	+requestedPickUp(Product, delivery);
 	.send(Provider, tell, received(OrderId));
 	.send(Provider, tell, pay(TotalPrice));
-	?has(robot, money, Amount);
-	-+has(robot, money, Amount-TotalPrice).
+	.send(database, achieve, del(money, TotalPrice));
+	?has(money, Amount);
+	+has(money, Amount-TotalPrice);
+	.abolish(has(money, Amount)).
 +delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] :
-	has(robot, money, Balance) & Balance < TotalPrice 
+	has(money, Balance) & Balance < TotalPrice 
 <-
 	.println("Recibido pedido de ", Qtty, " ", Product, " (sin dinero)");
 	.send(Provider, tell, reject(OrderId)); // TODO not implemented
-	-ordered(beer). // TODO request money to owner...
+	-ordered(beer);
+	!askForMoney(owner).
 
 // ## HELPER TRIGGER stock
 
