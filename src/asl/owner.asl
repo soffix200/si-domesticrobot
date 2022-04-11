@@ -8,6 +8,7 @@ waitTime(max, 10000).
 politeness(owner, 0).
 status(owner, animado).
 dailyPayment(50).
+pensionPayout(500).
 
 paidToday(robot) :-
 	.date(YY,MM,DD) &
@@ -19,6 +20,7 @@ healthConstraint(Product) :-
 	healthConstraint(Product,YY,MM,DD).
 
 !setupTool("Owner", "Robot").
+!createPostIt.
 
 !talkRobot.
 // !cleanHouse // TODO
@@ -27,18 +29,58 @@ healthConstraint(Product) :-
 // !wakeUp // TODO
 
 // -------------------------------------------------------------------------
+// DEFINITION FOR createPostIt
+// -------------------------------------------------------------------------
+
++!createPostIt <-
+	.list_files("./tmp/","postit.asl", L);
+	if (.length(L, 0)) {
+	.create_agent("postit", "postit.asl");
+	} else {
+		.create_agent("postit", "./tmp/postit.asl"); 
+	}
+	.send(postit, askOne, has(money, X), MoneyResponse);
+	.date(YY,MM,DD);
+	.send(postit, askOne, paid(YY,MM,DD, Money), PaidResponse);
+	+MoneyResponse;
+	+PaidResponse.
+
+// -------------------------------------------------------------------------
 // DEFINITION FOR PLAN dailyPayout
 // -------------------------------------------------------------------------
 
-+!pay(robot): not paidToday(robot) & dailyPayment(DailyPayout) <-
++!pay(robot) : not paidToday(robot) & dailyPayment(DailyPayout) & has(money, Balance) & Balance >= DailyPayout <- //El owner tiene dinero y no ha pagado hoy
 	.date(YY,MM,DD);
-	+paid(YY,MM,DD,DailyPayout); //TODO PERSISTENCE
+	+paid(YY,MM,DD,DailyPayout);
 	.send(robot, tell, msg("Ten tus ", dailyPayout, " diarios."));
-	.send(robot, tell, pay(money,50)); //TODO en AIML
+	.send(robot, tell, pay(money,DailyPayout)); //TODO en AIML
+	.send(postit, achieve, del(money, DailyPayout));
+	.send(postit, achieve, add(paid,YY,MM,DD, DailyPayout));
 	.wait(1000);
-	.send(robot, achieve, receive(money)). //TODO en AIML
-+!pay(robot) :  paidToday(robot) <-
+	.send(robot, achieve , receive(money)). //TODO en AIML	
++!pay(robot) : paidToday(robot) & dailyPayment(DailyPayout) & has(money, Balance) & Balance >= DailyPayout <- //El owner tiene dinero pero no puede pagarle hasta mañana
 	.println("No puedo gastar mÃ¡s en cervezas hoy o me desahuciarÃ¡n, pÃ­demelo maÃ±ana").
++!pay(robot) : not waitingPension & dailyPayment(DailyPayout) & has(money, Balance) & Balance < DailyPayout <- //El owner no tiene dinero y debe esperar a recibir su pensión
+	.println("No me queda dinero, a ver si la pensión llega pronto...");
+	!requestPension.
++!pay(robot) : waitingPension & dailyPayment(DailyPayout) & has(money, Balance) & Balance < DailyPayout <- //El owner no tiene dinero y debe esperar a recibir su pensión
+	.println("Ojalá me llegue pronto la pensión...").
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN requestPension
+// -------------------------------------------------------------------------
+
++!requestPension : not waitingPension <-
+	+waitingPension;
+	.random(X);
+	.wait(X*3000+5000); //VERYFY IF "!pay" WORKS IF CHANGED
+	.println("Qué felicidad!!! Me ha llegado la pensión!!");
+	?has(money,Qtd);
+	.abolish(has(money,Qtd));
+	?pensionPayout(Amount);
+	+has(money(Qtd+Amount));
+	-waitingPension;
+	.send(postit, achieve, add(money, Amount)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN setupTool
