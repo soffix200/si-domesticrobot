@@ -29,14 +29,14 @@ price(beer, 3).
 	?price(beer, Price);
 	?cost(beer, Cost);
 	-price(beer,Price);
-	if(Price/2+1 > Cost){
-	+price(beer,Price/2+1);
-	}else{
+	if(Price/2+1 > Cost) {
+		+price(beer,Price/2+1);
+	} else {
 		if(Price-1 > Cost){
 		+price(beer,Price-1);
-		}else{	//El precio no puede bajar m�s
-		+price(beer,Price);
-			}
+		} else { //El precio no puede bajar más
+			+price(beer,Price);
+		}
 	}
 	-lastOrderId(_);
 	!offerBeer;
