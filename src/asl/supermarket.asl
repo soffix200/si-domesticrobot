@@ -41,7 +41,6 @@ price(beer, 3).
 +!offerBeer <-
 	?price(beer, Price);
 	.println("Ahora vendo beer a ", Price);
-	.wait(500); //DO NOT DELETE OR IT WILL CRASH
 	.send(robot, tell, price(beer, Price));
 	!evaluatePrice(beer).
 
