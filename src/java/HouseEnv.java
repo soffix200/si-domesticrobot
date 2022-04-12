@@ -123,6 +123,7 @@ public class HouseEnv extends Environment {
 		if (action.equals(of)) {
 			succeed = model.openFridge();
 			if (succeed) {
+				updatePercepts(ag, new LinkedList<Literal>());
 				addPercept(ag, Literal.parseLiteral("stock(beer,fridge,"+model.availableBeers+")"));
 			}
 		} else if (action.equals(clf)) {

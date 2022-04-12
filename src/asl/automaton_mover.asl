@@ -75,13 +75,16 @@ available(Object, LocationDescriptor) :-
 		.send(robot, tell, moved(failure, Object, LocationDescriptor, DDescriptor));
 		.fail;
 	}.
++!pick(Object, LocationDescriptor, DDescriptor) :
+	Object == beer & LocationDescriptor == delivery
+<-
+	.wait(100).
+	// TODO grab them
 
 // ## HELPER TRIGGER stock
 
 +stock(Object, LocationDescriptor, Qtty) <-
-	.abolish(stored(Object, LocationDescriptor, _));
-	+stored(Object, LocationDescriptor, Qtty);
-	.abolish(stock(Object, LocationDescriptor, Qtty)).
+	-+stored(Object, LocationDescriptor, Qtty).
 
 // ## HELPER PLAN drop
 
@@ -89,6 +92,14 @@ available(Object, LocationDescriptor) :-
 	Object == beer & LocationDescriptor == owner
 <-
 	hand_in(Object).
++!drop(Object, LocationDescriptor) :
+	Object == beer & LocationDescriptor == fridge
+<-
+	open(LocationDescriptor);
+	// TODO deposit in fridge
+	close(LocationDescriptor);
+	?stored(Object, LocationDescriptor, Qtty);
+	.send(robot, tell, stock(Object, LocationDescriptor, Qtty)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN goAtLocation

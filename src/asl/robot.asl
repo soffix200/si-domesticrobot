@@ -241,9 +241,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR PLAN manageBeer
 // -------------------------------------------------------------------------
 
-+!manageBeer : asked(Ag, beer) & available(beer, fridge) & not serving(_, beer, fridge, Ag) & not healthConstraint(beer, Ag, _) <-
++!manageBeer : asked(Ag, beer) & available(beer, fridge) & not moving(_, beer, fridge, Ag) & not healthConstraint(beer, Ag, _) <-
 	.println(Ag, " me ha pedido un ", "beer", ", activo un autómata para que se lo lleve");
-	+serving(mover, beer, fridge, Ag);
+	+moving(mover, beer, fridge, Ag);
 	if (automaton(mover, inactive)) {
 		?location(depot, _, DepX, DepY); ?bounds(BX, BY);
 		.send(mover, tell, activate(mover, depot(DepX, DepY), bounds(BX, BY)));
@@ -254,16 +254,19 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	?location(Ag, DType, DX, DY); ?placement(DType, DPlacement);
 	?location(fridge, OType, OX, OY); ?placement(OType, OPlacement);
 	.send(mover, tell, move(beer, location(fridge, OX, OY, OPlacement), location(Ag, DX, DY, DPlacement), Obstacles)).
-+!manageBeer : requestedPickUp(beer, delivery) <-
++!manageBeer : requestedPickUp(beer, delivery) & not moving(_, beer, delivery, fridge) <-
 	.println("Voy a recoger las cervezas que me han entregado");
-	!goAtPlace(robot, delivery);
-	// TODO robot should grab the beers in inventory
-	!goAtPlace(robot, fridge);
-	open(fridge);
-	// TODO robot should place the beers into fridge
-	close(fridge);
-	-requestedPickUp(beer, delivery);
-	-ordered(beer).
+	+moving(mover, beer, delivery, fridge);
+	if (automaton(mover, inactive)) {
+		?location(depot, _, DepX, DepY); ?bounds(BX, BY);
+		.send(mover, tell, activate(mover, depot(DepX, DepY), bounds(BX, BY)));
+		.abolish(automaton(mover, inactive));
+		+automaton(mover, active);
+	}
+	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
+	?location(delivery, OType, OX, OY); ?placement(OType, OPlacement);
+	?location(fridge, DType, DX, DY); ?placement(DType, DPlacement);
+	.send(mover, tell, move(beer, location(delivery, OX, OY, OPlacement), location(fridge, DX, DY, DPlacement), Obstacles)).
 +!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(Provider, beer, Price) <-
 	.println("Tengo menos cerveza de la que debería, voy a comprar más");
 	.println("Cheapest is ", Provider, " @", Price);
@@ -278,21 +281,30 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	-asked(Ag, beer).
 +!manageBeer <- true.
 
-// ## HELPER TRIGGER movement
+// ## HELPER TRIGGER moved
 
-+moved(success, Product, Origin, Receiver)[source(Mover)] <-
-	.println("Movement success");
-	.date(YY,MM,DD); .time(HH,NN,SS);
-	+consumed(YY,MM,DD,HH,NN,SS, Product);
-	.send(database, achieve, add(consumed,YY,MM,DD,HH,NN,SS, Product));
-	.abolish(asked(Receiver, Product));
-	.abolish(serving(Mover, Product, Origin, Receiver));
-	.abolish(movement(success, Product, Origin, Receiver)[source(Mover)]).
-+moved(failure, Product, Origin, Receiver)[source(Mover)] <-
++moved(success, Product, Origin, Destination)[source(Mover)] <-
+	.println("Movement success: ", Origin, "->", Destination);
+	if (Destination == owner) {
+		.date(YY,MM,DD); .time(HH,NN,SS);
+		+consumed(YY,MM,DD,HH,NN,SS, Product);
+		.send(database, achieve, add(consumed,YY,MM,DD,HH,NN,SS, Product));
+		-asked(Destination, Product);
+	}
+	if (Origin == delivery) {
+		.println("Delivery deposit success");
+		.abolish(requestedPickUp(Product, Origin));
+		-ordered(Product);
+	}
+	.abolish(moving(Mover, Product, Origin, Destination));
+	.abolish(moved(success, Product, Origin, Destination)[source(Mover)]).
++moved(failure, Product, Origin, Destination)[source(Mover)] <-
 	.println("Movement failure");
-	.send(Receiver, tell, msg("No me queda, voy a comprar más"));
-	.abolish(serving(Mover, Product, Origin, Receiver));
-	.abolish(movement(failure, Product, Origin, Receiver)[source(Mover)]).
+	if (Destination == owner) {
+		.send(Destination, tell, msg("No me queda, voy a comprar más"));
+	}
+	.abolish(moving(Mover, Product, Origin, Destination));
+	.abolish(moved(failure, Product, Origin, Destination)[source(Mover)]).
 
 // ## HELPER TRIGGER bring
 
@@ -334,9 +346,8 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // ## HELPER TRIGGER stock
 
 +stock(Object, LocationDescriptor, Qtty) <-
-  .abolish(stored(Object, LocationDescriptor, _));
-  +stored(Object, LocationDescriptor, Qtty);
-  .abolish(stock(Object, LocationDescriptor, Qtty)).
+	.abolish(stock(Object, LocationDescriptor, _));
+  -+stored(Object, LocationDescriptor, Qtty).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLANS goAtX
