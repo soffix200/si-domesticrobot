@@ -30,12 +30,14 @@ cheapest(Provider, Product, Price) :-
 
 limit(beer, owner, 5, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
 
+consumedSafe(YY,MM,DD, Product, Qtty) :-
+	consumed(YY,MM,DD, Product, Qtty) | Qtty = 0.
+
 healthConstraint(Product, Agent, Message) :-
 	limit(Product, Agent, Limit, Message) &
 	.date(YY,MM,DD) &
-	.count(consumed(YY,MM,DD,_,_,_,beer), Consumed) &
-	qtdConsumed(YY,MM,DD,beer,Qtd)&
-	Consumed+Qtd > Limit.
+	consumed(YY,MM,DD, Product, Qtty) &
+	Qtty > Limit.
 
 // -------------------------------------------------------------------------
 // SERVICE INIT AND HELPER METHODS // TODO: PLACEHOLDER
@@ -128,8 +130,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 		.create_agent("database", "./tmp/database.asl"); 
 	}
 	.send(database, askOne, has(money, X), MoneyResponse);
-	.date(YY,MM,DD);
-	.send(database, askOne, qtdConsumed(YY,MM,DD,beer,Qtd), ConsumedResponse);
+	.send(database, askOne, consumed(YY,MM,DD, beer, Qtd), ConsumedResponse);
 	+MoneyResponse;
 	+ConsumedResponse.
 
@@ -288,9 +289,11 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 +moved(success, Product, Origin, Destination)[source(Mover)] <-
 	.println("Movement success: ", Origin, "->", Destination);
 	if (Destination == owner) {
-		.date(YY,MM,DD); .time(HH,NN,SS);
-		+consumed(YY,MM,DD,HH,NN,SS, Product);
-		.send(database, achieve, add(consumed,YY,MM,DD,HH,NN,SS, Product));
+		.date(YY,MM,DD);
+		?consumedSafe(YY,MM,DD, Product, Qtty);
+		.abolish(consumed(YY,MM,DD, Product, _));
+		+consumed(YY,MM,DD, Product, Qtty+1);
+		.send(database, achieve, add(consumed(YY,MM,DD, Product, Qtty+1)));
 		-asked(Destination, Product);
 	}
 	if (Origin == delivery) {
