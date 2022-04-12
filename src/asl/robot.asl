@@ -1,6 +1,11 @@
 placement(obstacle, side).
 placement(position, top ).
 
+automaton(cleaner, inactive).
+automaton(dustman, inactive).
+automaton(mover,   inactive).
+automaton(shopper, inactive).
+
 stored(beer, fridge, 1).
 threshold(beer, 5).
 buyBatch(beer, 3).
@@ -187,23 +192,19 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR PLAN manageBeer
 // -------------------------------------------------------------------------
 
-+!manageBeer : asked(Ag, beer) & available(beer, fridge) & not healthConstraint(beer, Ag, _) <-
-	.println(Ag, " me ha pedido un ", "beer", ", se lo llevo");
-	!goAtPlace(robot, fridge);
-	open(fridge);
-	if (available(beer, fridge)) {
-		get(beer, fridge);
-		close(fridge);
-		!goAtPlace(robot, owner);
-		hand_in(beer);
-		.date(YY,MM,DD); .time(HH,NN,SS);
-		+consumed(YY,MM,DD,HH,NN,SS,beer);
-		.send(database, achieve, add(consumed,YY,MM,DD,HH,NN,SS,beer));
-		-asked(Ag, beer);
-	} else {
-		close(fridge);
-		.send(Ag, tell, msg("No me queda, voy a comprar más"));
-	}.
++!manageBeer : asked(Ag, beer) & available(beer, fridge) & not serving(_, beer, fridge, Ag) & not healthConstraint(beer, Ag, _) <-
+	.println(Ag, " me ha pedido un ", "beer", ", activo un autómata para que se lo lleve");
+	+serving(mover, beer, fridge, Ag);
+	if (automaton(mover, inactive)) {
+		?location(depot, _, DepX, DepY); ?bounds(BX, BY);
+		.send(mover, tell, activate(mover, depot(DepX, DepY), bounds(BX, BY)));
+		.abolish(automaton(mover, inactive));
+		+automaton(mover, active);
+	}
+	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
+	?location(Ag, DType, DX, DY); ?placement(DType, DPlacement);
+	?location(fridge, OType, OX, OY); ?placement(OType, OPlacement);
+	.send(mover, tell, move(beer, location(fridge, OX, OY, OPlacement), location(Ag, DX, DY, DPlacement), Obstacles)).
 +!manageBeer : requestedPickUp(beer, delivery) <-
 	.println("Voy a recoger las cervezas que me han entregado");
 	!goAtPlace(robot, delivery);
@@ -227,6 +228,22 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(Ag, tell, healthConstraint(beer,YY,MM,DD));
 	-asked(Ag, beer).
 +!manageBeer <- true.
+
+// ## HELPER TRIGGER movement
+
++movement(success, Product, Origin, Receiver)[source(Mover)] <-
+	.println("Movement success");
+	.date(YY,MM,DD); .time(HH,NN,SS);
+	+consumed(YY,MM,DD,HH,NN,SS, Product);
+	.send(database, achieve, add(consumed,YY,MM,DD,HH,NN,SS, Product));
+	.abolish(asked(Receiver, Product));
+	.abolish(serving(Mover, Product, Origin, Receiver));
+	.abolish(movement(success, Product, Origin, Receiver)[source(Mover)]).
++movement(failure, Product, Origin, Receiver)[source(Mover)] <-
+	.println("Movement failure");
+	.send(Receiver, tell, msg("No me queda, voy a comprar más"));
+	.abolish(serving(Mover, Product, Origin, Receiver));
+	.abolish(movement(failure, Product, Origin, Receiver)[source(Mover)]).
 
 // ## HELPER TRIGGER bring
 
@@ -267,9 +284,10 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 // ## HELPER TRIGGER stock
 
-+stock(beer, N) <-
-	-+stored(beer, fridge, N);
-	.abolish(stock(beer, N)).
++stock(Object, LocationDescriptor, Qtty) <-
+  .abolish(stored(Object, LocationDescriptor, _));
+  +stored(Object, LocationDescriptor, Qtty);
+  .abolish(stock(Object, LocationDescriptor, Qtty)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLANS goAtX
