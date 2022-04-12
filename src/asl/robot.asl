@@ -86,10 +86,12 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 !initBot.
-!createDatabase.
-
+!initRobot.
 !dialogWithOwner. // TODO
 
++!initRobot <-
+	!createDatabase;
+	!doHouseWork.
 +!doHouseWork <-
 	!manageBeer;
 	!cleanHouse;
@@ -131,8 +133,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(database, askOne, has(money, X), MoneyResponse);
 	.send(database, askOne, consumed(YY,MM,DD, beer, Qtd), ConsumedResponse);
 	+MoneyResponse;
-	+ConsumedResponse;
-	!doHouseWork.
+	+ConsumedResponse.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN dialogWithOwner // TODO: PLACEHOLDER
