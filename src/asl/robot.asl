@@ -280,7 +280,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 // ## HELPER TRIGGER movement
 
-+movement(success, Product, Origin, Receiver)[source(Mover)] <-
++moved(success, Product, Origin, Receiver)[source(Mover)] <-
 	.println("Movement success");
 	.date(YY,MM,DD); .time(HH,NN,SS);
 	+consumed(YY,MM,DD,HH,NN,SS, Product);
@@ -288,7 +288,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.abolish(asked(Receiver, Product));
 	.abolish(serving(Mover, Product, Origin, Receiver));
 	.abolish(movement(success, Product, Origin, Receiver)[source(Mover)]).
-+movement(failure, Product, Origin, Receiver)[source(Mover)] <-
++moved(failure, Product, Origin, Receiver)[source(Mover)] <-
 	.println("Movement failure");
 	.send(Receiver, tell, msg("No me queda, voy a comprar más"));
 	.abolish(serving(Mover, Product, Origin, Receiver));

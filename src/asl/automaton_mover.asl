@@ -50,7 +50,7 @@ available(Object, LocationDescriptor) :-
 	!goAtLocation(DX, DY, DPlacement);
 	.println("Dejando ", Object);
 	!drop(Object, DDescriptor);
-	.send(robot, tell, movement(success, Object, ODescriptor, DDescriptor));
+	.send(robot, tell, moved(success, Object, ODescriptor, DDescriptor));
 	!move.
 +!move : status(active) <- !move.
 +!move : status(inactive) <- true.
@@ -72,7 +72,7 @@ available(Object, LocationDescriptor) :-
 	} else {
 		close(LocationDescriptor);
 		.send(robot, tell, stock(Object, LocationDescriptor, 0));
-		.send(robot, tell, movement(failure, Object, LocationDescriptor, DDescriptor));
+		.send(robot, tell, moved(failure, Object, LocationDescriptor, DDescriptor));
 		.fail;
 	}.
 
