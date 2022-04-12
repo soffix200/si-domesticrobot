@@ -232,7 +232,7 @@ public class HouseModel extends GridWorldModel {
 
 	boolean exitMap(String agent) {
 		int agentCode = getAgentCode(agent);
-		if (getAgAtPos(lDepot) == agentCode) {
+		if (lDepot.equals(getAgPos(agentCode))) {
 			remove(AGENT, lDepot);
 			return true;
 		} else {

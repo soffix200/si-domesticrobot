@@ -320,6 +320,13 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.abolish(moving(Mover, Product, Origin, Destination));
 	.abolish(moved(failure, Product, Origin, Destination)[source(Mover)]).
 
+// ## HELPER TRIGGER [finished] takingout(dustman, trash)
+
+-moving(mover, beer, _, _) : not asked(_, beer) & not requestedPickUp(beer, _) & not moving(mover, beer, _, _) & automaton(mover, active) <-
+	.send(mover, tell, deactivate(mover));
+	.abolish(automaton(mover, active));
+	+automaton(mover, inactive).
+
 // ## HELPER TRIGGER bring
 
 +bring(Product)[source(Ag)] <- // TODO AIML
