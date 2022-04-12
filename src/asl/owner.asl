@@ -40,7 +40,6 @@ healthConstraint(Product) :-
 	.send(postit, achieve, del(money, DailyPayout));
 	.send(postit, achieve, add(paid, YY,MM,DD, DailyPayout));
 	.wait(1000);
-	.send(robot, achieve, receive(money)); //TODO en AIML
 	.abolish(pay(robot)).
 +pay(robot) : paidToday(robot) & dailyPayment(DailyPayout) & has(money, Balance) & Balance >= DailyPayout <- //El owner tiene dinero pero no puede pagarle hasta mañana
 	.println("No puedo gastar más en cervezas hoy o me desahuciarán, pídemelo mañana");
