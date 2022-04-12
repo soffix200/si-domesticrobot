@@ -28,14 +28,14 @@ cheapest(Provider, Product, Price) :-
 	price(Provider, Product, Price) &
 	not (price(Provider2, Product, Price2) & Provider2 \== Provider & Price2 < Price).
 
-limit(beer, owner, 5, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
+limit(beer, owner, 1, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
 
 consumedSafe(YY,MM,DD, Product, Qtty) :-
 	consumed(YY,MM,DD, Product, Qtty) | Qtty = 0.
 
 healthConstraint(Product, Agent, Message) :-
-	limit(Product, Agent, Limit, Message) &
 	.date(YY,MM,DD) &
+	limit(Product, Agent, Limit, Message) &
 	consumed(YY,MM,DD, Product, Qtty) &
 	Qtty > Limit.
 
@@ -86,11 +86,12 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 !initBot.
-!createDatabase.
-
+!initRobot.
 !dialogWithOwner. // TODO
-!doHouseWork.
 
++!initRobot <-
+	!createDatabase;
+	!doHouseWork.
 +!doHouseWork <-
 	!manageBeer;
 	!cleanHouse;
