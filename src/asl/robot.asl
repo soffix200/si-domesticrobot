@@ -7,7 +7,9 @@ automaton(mover,   inactive).
 automaton(shopper, inactive).
 
 stored(beer, fridge, 1).
+trashed(can, 0).
 threshold(beer, 5).
+threshold(trash, 3).
 buyBatch(beer, 3).
 
 available(Product, Location) :-
@@ -17,6 +19,10 @@ available(Product, Location) :-
 overThreshold(Product, Location) :-
 	threshold(Product, Threshold) &
 	stored(Product, Location, Qtty) & Qtty > Threshold.
+
+full(dumpster) :-
+	threshold(trash, Qtty) &
+	trashed(can, Count) & Count >= Qtty.
 
 cheapest(Provider, Product, Price) :-
 	price(Provider, Product, Price) &
@@ -187,6 +193,20 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
 	?location(owner, Type, LX, LY); ?placement(Type, Placement);
 	.send(cleaner, tell, clean(can, location(owner, LX, LY, Placement), Obstacles)).
++!cleanHouse : full(dumpster) & not takingout(_, trash) <-
+	.println("El dumpster está lleno, activo un autómata para sacar la basura");
+	+takingout(dustman, trash);
+	if (automaton(dustman, inactive)) {
+		?location(depot, DepType, DepX, DepY); ?placement(DepType, DepPlacement);
+		?location(dumpster, DumpType, DumpX, DumpY); ?placement(DumpType, DumpPlacement);
+		?location(exit, EType, EX, EY); ?placement(EType, EPlacement);
+		?bounds(BX, BY);
+		.send(dustman, tell, activate(dustman, depot(DepX, DepY, DepPlacement), dumpster(DumpX, DumpY, DumpPlacement), exit(EX, EY, EPlacement), bounds(BX, BY)));
+		.abolish(automaton(dustman, inactive));
+		+automaton(dustman, active);
+	}
+	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
+	.send(dustman, tell, takeout(trash, Obstacles)).
 +!cleanHouse <- true. // Execute randomly
 	// TODO; not yet implemented
 
@@ -194,9 +214,18 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 +cleaned(success, Object, Position)[source(Cleaner)] <-
 	.println("Cleaning success");
+	?trashed(can, Qtty); -+trashed(can, Qtty+1);
 	.abolish(requestedRetrieval(Object, Position));
 	.abolish(cleaning(Cleaner, Object, Position));
 	.abolish(cleaned(success, Object, Position)).
+
+// ## HELPER TRIGGER tookout(trash)
+
++tookout(success, trash)[source(Dustman)] <-
+	.println("Takeout success");
+	-+trashed(can, 0);
+	.abolish(takingout(Dustman, trash));
+	.abolish(tookout(success, trash)).
 
 // ## HELPER TRIGGER can
 

@@ -24,6 +24,10 @@ MAS domestic_robot {
 			automaton_cleaner.asl
 			agentArchClass MixedAgentArch
 			agentArchClass jaca.CAgentArch;
+		dustman
+			automaton_dustman.asl
+			agentArchClass MixedAgentArch
+			agentArchClass jaca.CAgentArch;
 
 	aslSourcePath: "src/asl";
 }

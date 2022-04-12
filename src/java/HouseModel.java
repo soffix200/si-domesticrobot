@@ -226,7 +226,6 @@ public class HouseModel extends GridWorldModel {
 
 	boolean enterMap(String agent) {
 		int agentCode = getAgentCode(agent);
-		System.out.println(agentCode);
 		setAgPos(agentCode, lDepot);
 		return true;
 	}
