@@ -19,8 +19,8 @@ obstacles([]).
 
 +deactivate(dustman) <-
 	.println("Dustman desactivado");
-	?depot(X, Y);
-	!goAtLocation(X, Y, top);
+	?depot(X, Y, Placement);
+	!goAtLocation(X, Y, Placement);
 	exit(map);
 	-at(dustman, _, _);
 	-+status(inactive);

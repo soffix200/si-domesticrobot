@@ -227,6 +227,13 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.abolish(takingout(Dustman, trash));
 	.abolish(tookout(success, trash)).
 
+// ## HELPER TRIGGER [finished] takingout(dustman, trash)
+
+-takingout(dustman, trash) : not full(dumpster) & not takingout(dustman, trash) & automaton(dustman, active) <-
+	.send(dustman, tell, deactivate(dustman));
+	.abolish(automaton(dustman, active));
+	+automaton(dustman, inactive).
+
 // ## HELPER TRIGGER can
 
 +can(PX, PY) <-
