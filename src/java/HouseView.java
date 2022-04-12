@@ -109,11 +109,24 @@ public class HouseView extends GridWorldView {
 					super.drawString(g, x, y, defaultFont, "Owner");
 				}
 				break;
+			case HouseModel.CLEANER:
+				c = Color.yellow;
+				super.drawAgent(g, x, y, c, -1);
+				g.setColor(Color.black);
+				super.drawString(g, x, y, defaultFont, "Cleaner");
+				break;
+			case HouseModel.DUSTMAN:
+				c = Color.yellow;
+				super.drawAgent(g, x, y, c, -1);
+				g.setColor(Color.black);
+				super.drawString(g, x, y, defaultFont, "Dustman");
+				break;
 			case HouseModel.MOVER:
 				c = Color.yellow;
 				super.drawAgent(g, x, y, c, -1);
 				g.setColor(Color.black);
 				super.drawString(g, x, y, defaultFont, "Mover");
+				break;
 		}
 		//repaint() //!!??
 	}

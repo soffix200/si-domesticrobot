@@ -160,9 +160,9 @@ public class HouseEnv extends Environment {
 			} catch (Exception e) {
 				logger.info("Failed to execute action deliver!"+e);
 			}
-		} else if (action.equals(gc) & ag.equals("robot")) {
-			succeed = model.getCan();
-		} else if (action.equals(rc) & (ag.equals("robot") || ag.equals("owner"))) {
+		} else if (action.equals(gc)) {
+			succeed = model.getCan(ag);
+		} else if (action.equals(rc)) {
 			succeed = model.recycleCan();
 		} else if (action.equals(ct)) { // TODO DUSTMAN
 			succeed = model.collectTrash();

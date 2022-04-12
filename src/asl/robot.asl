@@ -164,21 +164,41 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR PLAN cleanHouse // TODO
 // -------------------------------------------------------------------------
 
-+!cleanHouse : requestedRetrieval(can, floor(PX, PY)) <-
-	!goAtLocation(robot, location(PX, PY));
-	get(can);
-	!goAtPlace(robot, dumpster);
-	recycle(can);
-	-requestedRetrieval(can, floor(PX, PY)).
-+!cleanHouse : requestedRetrieval(can, owner) <-
-	!goAtPlace(robot, owner);
-	get(can);
-	send(owner, tell, retrieved(can)); // TODO not implemented
-	!goAtPlace(robot, dumpster);
-	recycle(can);
-	-requestedRetrieval(can, owner).
++!cleanHouse : requestedRetrieval(can, floor(X, Y)) & not cleaning(_, can, floor(X, Y)) <-
+	.println("Owner ha tirado una lata al suelo, activo un autómata para que limpie");
+	+cleaning(cleaner, can, floor(X, Y));
+	if (automaton(cleaner, inactive)) {
+		?location(depot, _, DepX, DepY); ?location(dumpster, _, DumpX, DumpY); ?bounds(BX, BY);
+		.send(cleaner, tell, activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)));
+		.abolish(automaton(cleaner, inactive));
+		+automaton(cleaner, active);
+	}
+	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
+	.send(cleaner, tell, clean(can, floor(X, Y), Obstacles)).
++!cleanHouse : requestedRetrieval(can, owner) & not cleaning(_, can, owner) <-
+	.println("Owner me ha pedido que vaya a recoger una lata, activo un autómata para que la recoja");
+	+cleaning(cleaner, can, owner);
+	if (automaton(cleaner, inactive)) {
+		?location(depot, _, DepX, DepY); ?location(dumpster, _, DumpX, DumpY); ?bounds(BX, BY);
+		.send(cleaner, tell, activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)));
+		.abolish(automaton(cleaner, inactive));
+		+automaton(cleaner, active);
+	}
+	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
+	?location(owner, Type, LX, LY); ?placement(Type, Placement);
+	.send(cleaner, tell, clean(can, location(owner, LX, LY, Placement), Obstacles)).
 +!cleanHouse <- true. // Execute randomly
 	// TODO; not yet implemented
+
+// ## HELPER TRIGGER cleaned
+
++cleaned(success, Object, Position)[source(Cleaner)] <-
+	.println("Cleaning success");
+	.abolish(requestedRetrieval(Object, Position));
+	.abolish(cleaning(Cleaner, Object, Position));
+	.abolish(cleaned(success, Object, Position)).
+
+// ## HELPER TRIGGER can
 
 +can(PX, PY) <-
 	+requestedRetrieval(can, floor(PX, PY));

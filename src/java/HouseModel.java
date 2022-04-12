@@ -62,6 +62,15 @@ public class HouseModel extends GridWorldModel {
 		add(DUMPSTER, lDumpster);
 		add(DEPOT,    lDepot);
 	}
+
+	int getAgentCode(String agent) {
+		if (agent.equals("robot"))   return ROBOT;
+		if (agent.equals("owner"))   return OWNER;
+		if (agent.equals("cleaner")) return CLEANER;
+		if (agent.equals("dustman")) return DUSTMAN;
+		if (agent.equals("mover"))   return MOVER;
+		return -1;
+	}
 	
 	boolean openFridge() {
 		if (!fridgeOpen) {
@@ -94,20 +103,9 @@ public class HouseModel extends GridWorldModel {
 	}
 
 	boolean moveTowards(String agent, String direction) {
-		int agentCode = -1;
-		if (agent.equals("robot")) {
-			agentCode = ROBOT;
-		} else if (agent.equals("owner")) {
-			agentCode = OWNER;
-		} else if (agent.equals("cleaner")) {
-			agentCode = CLEANER;
-		} else if (agent.equals("dustman")) {
-			agentCode = DUSTMAN;
-		} else if (agent.equals("mover")) {
-			agentCode = MOVER;
-		}
-		
+		int agentCode = getAgentCode(agent);
 		Location loc = getAgPos(agentCode);
+
 		if (direction.equals("left")) {
 			loc.x--;
 		}
@@ -159,10 +157,11 @@ public class HouseModel extends GridWorldModel {
 		}
 	}
 
-	boolean getCan() {
+	boolean getCan(String agent) {
+		int agentCode = getAgentCode(agent);
 		if (!carryingCan) {
-			if (hasObject(CAN, getAgPos(ROBOT))) {
-				remove(CAN, getAgPos(ROBOT));
+			if (hasObject(CAN, getAgPos(agentCode))) {
+				remove(CAN, getAgPos(agentCode));
 				if (view != null)
 					view.update(lCan.x,lCan.y);
 			}
@@ -226,30 +225,14 @@ public class HouseModel extends GridWorldModel {
 	}
 
 	boolean enterMap(String agent) {
-		System.out.println("Trying enter map");
-		int agentCode = -1;
-		if (agent.equals("cleaner")) {
-			agentCode = CLEANER;
-		} else if (agent.equals("dustman")) {
-			agentCode = DUSTMAN;
-		} else if (agent.equals("mover")) {
-			agentCode = MOVER;
-		}
+		int agentCode = getAgentCode(agent);
 		System.out.println(agentCode);
 		setAgPos(agentCode, lDepot);
-		System.out.println("Entered");
 		return true;
 	}
 
 	boolean exitMap(String agent) {
-		int agentCode = -1;
-		if (agent.equals("cleaner")) {
-			agentCode = CLEANER;
-		} else if (agent.equals("dustman")) {
-			agentCode = DUSTMAN;
-		} else if (agent.equals("mover")) {
-			agentCode = MOVER;
-		}
+		int agentCode = getAgentCode(agent);
 		if (getAgAtPos(lDepot) == agentCode) {
 			remove(AGENT, lDepot);
 			return true;
