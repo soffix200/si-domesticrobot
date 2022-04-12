@@ -219,6 +219,13 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.abolish(cleaning(Cleaner, Object, Position));
 	.abolish(cleaned(success, Object, Position)).
 
+// ## HELPER TRIGGER [finished] cleaning(cleaner, can, _)
+
+-cleaning(cleaner, can, _) : not requestedRetrieval(can, _) & not cleaning(cleaner, can, _) & automaton(cleaner, active) <-
+	.send(cleaner, tell, deactivate(cleaner));
+	.abolish(automaton(cleaner, active));
+	+automaton(cleaner, inactive).
+
 // ## HELPER TRIGGER tookout(trash)
 
 +tookout(success, trash)[source(Dustman)] <-

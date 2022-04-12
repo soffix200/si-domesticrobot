@@ -13,7 +13,7 @@ obstacles([]).
 	-+dumpster(DumpX, DumpY);
 	-+bounds(BX, BY);
 	-+status(active);
-	.abolish(activate(cleaner, depot(X, Y), bounds(BX, BY)));
+	.abolish(activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)));
 	!clean.
 
 +deactivate(cleaner) <-
