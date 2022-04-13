@@ -5,24 +5,20 @@ obstacles([]).
 // TRIGGERS
 // -------------------------------------------------------------------------
 
-+activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)) <-
-	.println("Cleaner activado");
-	enter(map);
-	-+at(cleaner, DepX, DepY);
-	-+depot(DepX, DepY);
-	-+dumpster(DumpX, DumpY);
-	-+bounds(BX, BY);
-	-+status(active);
++activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)) :
+	status(active) | status(idle) | status (activating)
+<-
+	.abolish(activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY))).
++activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)) :
+	status(inactive) | status(deactivatng)
+<-
 	.abolish(activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)));
-	!clean.
+	!activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)).
 
-+deactivate(cleaner) <-
-	.println("Cleaner desactivado");
-	?depot(X, Y);
-	!goAtLocation(X, Y, top);
-	exit(map);
-	-at(cleaner, _, _);
-	-+status(inactive);
++deactivate(cleaner) : status(inactive) | status(deactivating) <-
+	.abolish(deactivate(cleaner)).
++deactivate(cleaner) : status(idle) | status(active) | status(activating) <-
+	!deactivate(cleaner);
 	.abolish(deactivate(cleaner)).
 
 +clean(Object, floor(X, Y), Obstacles) <-
@@ -35,14 +31,49 @@ obstacles([]).
 	+requestedCleanup(Object, location(Agent, X, Y, Placement));
 	.abolish(clean(Object, location(Agent, X, Y, Placement), Obstacles)).
 
+// ## HELPER PLAN activate
+
++!activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)) :
+	status(inactive)
+<-
+	-+status(activating);
+	.println("Activando cleaner");
+	enter(map);
+	-+at(cleaner, DepX, DepY);
+	-+depot(DepX, DepY);
+	-+dumpster(DumpX, DumpY);
+	-+bounds(BX, BY);
+	-+status(idle);
+	!clean.
++!activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)) :
+	status(deactivating) 
+<-
+	.wait(100);
+	!activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)).
+
+// ## HELPER PLAN deactivate
+
++!deactivate(cleaner) : status(idle) <-
+	-+status(deactivating);
+	.println("Desactivando cleaner");
+	?depot(X, Y);
+	!goAtLocation(X, Y, top);
+	exit(map);
+	-at(cleaner, _, _);
+	-+status(inactive).
++!deactivate(cleaner) : status(active) | status(deactivating) <-
+	.wait(100);
+	!deactivate(cleaner).
+
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN clean
 // -------------------------------------------------------------------------
 
 +!clean :
-	status(active) &
+	status(idle) &
 	requestedCleanup(Object, floor(X, Y))
 <-
+	-+status(active);
 	.println("Intentando limpiar ", Object, " en (", X, ", ", Y, ")");
 	.abolish(requestedCleanup(Object, floor(X, Y)));
 	.println("Desplazándose a (", X, ", ", Y, ")");
@@ -55,11 +86,13 @@ obstacles([]).
 	.println("Tirando ", Object);
 	!trash(Object);
 	.send(robot, tell, cleaned(success, Object, floor(X, Y)));
+	-+status(idle);
 	!clean.
 +!clean :
-	status(active) &
+	status(idle) &
 	requestedCleanup(Object, location(Agent, X, Y, Placement))
 <-
+	-+status(active);
 	.println("Intentando recoger ", Object, " de ", Agent);
 	.abolish(requestedCleanup(Object, location(Agent, X, Y, Placement)));
 	.println("Desplazándose a ", Agent);
@@ -72,11 +105,14 @@ obstacles([]).
 	.println("Tirando ", Object);
 	!trash(Object);
 	.send(robot, tell, cleaned(success, Object, Agent));
+	-+status(idle);
 	!clean.
-+!clean : status(active) <- !clean.
-+!clean : status(inactive) <- true.
++!clean : status(idle) <- !clean.
++!clean : status(inactive) | status(activating) | status(deactivating) <- true.
 
--!clean <- !clean. // Reactivates clean plan after failure
+-!clean <- // Reactivates clean plan after failure
+	-+status(idle);
+	!clean.
 
 // ## HELPER PLAN pick
 

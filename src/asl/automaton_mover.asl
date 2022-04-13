@@ -8,23 +8,20 @@ available(Object, LocationDescriptor) :-
 // TRIGGERS
 // -------------------------------------------------------------------------
 
-+activate(mover, depot(X, Y), bounds(BX, BY)) <-
-	.println("Mover activado");
-	enter(map);
-	-+at(mover, X, Y);
-	-+depot(X, Y);
-	-+bounds(BX, BY);
-	-+status(active);
++activate(mover, depot(X, Y), bounds(BX, BY)) :
+	status(active) | status(idle) | status (activating)
+<-
+	.abolish(activate(mover, depot(X, Y), bounds(BX, BY))).
++activate(mover, depot(X, Y), bounds(BX, BY)) :
+	status(inactive) | status(deactivatng)
+<-
 	.abolish(activate(mover, depot(X, Y), bounds(BX, BY)));
-	!move.
+	!activate(mover, depot(X, Y), bounds(BX, BY)).
 
-+deactivate(mover) <-
-	.println("Mover desactivado");
-	?depot(X, Y);
-	!goAtLocation(X, Y, top);
-	exit(map);
-	-at(mover, _, _);
-	-+status(inactive);
++deactivate(mover) : status(inactive) | status(deactivating) <-
+	.abolish(deactivate(mover)).
++deactivate(mover) : status(idle) | status(active) | status(activating) <-
+	!deactivate(mover);
 	.abolish(deactivate(mover)).
 
 +move(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement), Obstacles) <-
@@ -32,14 +29,48 @@ available(Object, LocationDescriptor) :-
 	+requestedMovement(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement));
 	.abolish(move(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement), Obstacles)).
 
+// ## HELPER PLAN activate
+
++!activate(mover, depot(X, Y), bounds(BX, BY)) :
+	status(inactive)
+<-
+	-+status(activating);
+	.println("Activando mover");
+	enter(map);
+	-+at(mover, X, Y);
+	-+depot(X, Y);
+	-+bounds(BX, BY);
+	-+status(active);
+	!move.
++!activate(mover, depot(X, Y), bounds(BX, BY)) :
+	status(deactivating) 
+<-
+	.wait(100);
+	!activate(mover, depot(X, Y), bounds(BX, BY)).
+
+// ## HELPER PLAN deactivate
+
++!deactivate(mover) : status(idle) <-
+	-+status(deactivating);
+	.println("Desactivando mover");
+	?depot(X, Y);
+	!goAtLocation(X, Y, top);
+	exit(map);
+	-at(mover, _, _);
+	-+status(inactive).
++!deactivate(mover) : status(active) | status(deactivating) <-
+	.wait(100);
+	!deactivate(mover).
+
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN move
 // -------------------------------------------------------------------------
 
 +!move :
-	status(active) &
+	status(idle) &
 	requestedMovement(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement))
 <-
+	-+status(active);
 	.println("Intentando mover ", Object, " de ", ODescriptor, " a ", DDescriptor);
 	.abolish(requestedMovement(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement)));
 	.println("Desplazándose a ", ODescriptor);
@@ -51,11 +82,14 @@ available(Object, LocationDescriptor) :-
 	.println("Dejando ", Object);
 	!drop(Object, DDescriptor);
 	.send(robot, tell, moved(success, Object, ODescriptor, DDescriptor));
+	-+status(idle);
 	!move.
-+!move : status(active) <- !move.
-+!move : status(inactive) <- true.
++!move : status(idle) <- !move.
++!move : status(inactive) | status(activating) | status(deactivating) <- true.
 
--!move <- !move. // Reactivates move plan after failure
+-!move <- // Reactivates move plan after failure
+	-+status(idle);
+	!move.
 
 // ## HELPER PLAN pick
 
