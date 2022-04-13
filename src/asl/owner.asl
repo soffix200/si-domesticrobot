@@ -29,6 +29,30 @@ healthConstraint(Product) :-
 // !wakeUp // TODO
 
 // -------------------------------------------------------------------------
+// TRIGGERS
+// -------------------------------------------------------------------------
+
++pay(robot) : not paidToday(robot) & dailyPayment(DailyPayout) & has(money, Balance) & Balance >= DailyPayout <- //El owner tiene dinero y no ha pagado hoy
+	.date(YY,MM,DD);
+	+paid(YY,MM,DD, DailyPayout);
+	.send(robot, tell, msg("Ten tus ", DailyPayout, " diarios."));
+	.send(robot, tell, pay(DailyPayout)); //TODO en AIML
+	.send(postit, achieve, del(money, DailyPayout));
+	.send(postit, achieve, add(paid, YY,MM,DD, DailyPayout));
+	.wait(1000);
+	.abolish(pay(robot)).
++pay(robot) : paidToday(robot) & dailyPayment(DailyPayout) & has(money, Balance) & Balance >= DailyPayout <- //El owner tiene dinero pero no puede pagarle hasta maÃ±ana
+	.println("No puedo gastar mÃ¡s en cervezas hoy o me desahuciarÃ¡n, pÃ­demelo maÃ±ana");
+	.abolish(pay(robot)).
++pay(robot) : not waitingPension & dailyPayment(DailyPayout) & has(money, Balance) & Balance < DailyPayout <- //El owner no tiene dinero y debe esperar a recibir su pensiÃ³n
+	.println("No me queda dinero, a ver si la pensiÃ³n llega pronto...");
+	!requestPension;
+	.abolish(pay(robot)).
++pay(robot) : waitingPension & dailyPayment(DailyPayout) & has(money, Balance) & Balance < DailyPayout <- //El owner no tiene dinero y debe esperar a recibir su pensiÃ³n
+	.println("OjalÃ¡ me llegue pronto la pensiÃ³n...");
+	.abolish(pay(robot)).
+
+// -------------------------------------------------------------------------
 // DEFINITION FOR createPostIt
 // -------------------------------------------------------------------------
 
@@ -46,27 +70,6 @@ healthConstraint(Product) :-
 	+PaidResponse.
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR PLAN dailyPayout
-// -------------------------------------------------------------------------
-
-+!pay(robot) : not paidToday(robot) & dailyPayment(DailyPayout) & has(money, Balance) & Balance >= DailyPayout <- //El owner tiene dinero y no ha pagado hoy
-	.date(YY,MM,DD);
-	+paid(YY,MM,DD,DailyPayout);
-	.send(robot, tell, msg("Ten tus ", dailyPayout, " diarios."));
-	.send(robot, tell, pay(money,DailyPayout)); //TODO en AIML
-	.send(postit, achieve, del(money, DailyPayout));
-	.send(postit, achieve, add(paid,YY,MM,DD, DailyPayout));
-	.wait(1000);
-	.send(robot, achieve , receive(money)). //TODO en AIML	
-+!pay(robot) : paidToday(robot) & dailyPayment(DailyPayout) & has(money, Balance) & Balance >= DailyPayout <- //El owner tiene dinero pero no puede pagarle hasta mañana
-	.println("No puedo gastar mÃ¡s en cervezas hoy o me desahuciarÃ¡n, pÃ­demelo maÃ±ana").
-+!pay(robot) : not waitingPension & dailyPayment(DailyPayout) & has(money, Balance) & Balance < DailyPayout <- //El owner no tiene dinero y debe esperar a recibir su pensión
-	.println("No me queda dinero, a ver si la pensión llega pronto...");
-	!requestPension.
-+!pay(robot) : waitingPension & dailyPayment(DailyPayout) & has(money, Balance) & Balance < DailyPayout <- //El owner no tiene dinero y debe esperar a recibir su pensión
-	.println("Ojalá me llegue pronto la pensión...").
-
-// -------------------------------------------------------------------------
 // DEFINITION FOR PLAN requestPension
 // -------------------------------------------------------------------------
 
@@ -74,7 +77,7 @@ healthConstraint(Product) :-
 	+waitingPension;
 	.random(X);
 	.wait(X*3000+5000); //VERYFY IF "!pay" WORKS IF CHANGED
-	.println("Qué felicidad!!! Me ha llegado la pensión!!");
+	.println("Quï¿½ felicidad!!! Me ha llegado la pensiï¿½n!!");
 	?has(money,Qtd);
 	.abolish(has(money,Qtd));
 	?pensionPayout(Amount);
@@ -142,6 +145,8 @@ healthConstraint(Product) :-
 	+asked(robot, beer);
 	!drinkBeer.
 +!drinkBeer <- !drinkBeer.
+
+// ## HELPER TRIGGER has
 
 +has(owner, halfemptycan) : hasnot(owner, beer) <-
 	-has(owner, halfemptycan);

@@ -28,14 +28,16 @@ cheapest(Provider, Product, Price) :-
 	price(Provider, Product, Price) &
 	not (price(Provider2, Product, Price2) & Provider2 \== Provider & Price2 < Price).
 
-limit(beer, owner, 5, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
+limit(beer, owner, 1, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
+
+consumedSafe(YY,MM,DD, Product, Qtty) :-
+	consumed(YY,MM,DD, Product, Qtty) | Qtty = 0.
 
 healthConstraint(Product, Agent, Message) :-
-	limit(Product, Agent, Limit, Message) &
 	.date(YY,MM,DD) &
-	.count(consumed(YY,MM,DD,_,_,_,beer), Consumed) &
-	qtdConsumed(YY,MM,DD,beer,Qtd)&
-	Consumed+Qtd > Limit.
+	limit(Product, Agent, Limit, Message) &
+	consumed(YY,MM,DD, Product, Qtty) &
+	Qtty > Limit.
 
 // -------------------------------------------------------------------------
 // SERVICE INIT AND HELPER METHODS // TODO: PLACEHOLDER
@@ -84,15 +86,28 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 !initBot.
-!createDatabase.
-
+!initRobot.
 !dialogWithOwner. // TODO
-!doHouseWork.
 
++!initRobot <-
+	!createDatabase;
+	!doHouseWork.
 +!doHouseWork <-
 	!manageBeer;
 	!cleanHouse;
 	!doHouseWork.
+
+// -------------------------------------------------------------------------
+// TRIGGERS
+// -------------------------------------------------------------------------
+
++pay(Amount)[source(owner)] <-
+	.println("Gracias por la paga de ", Amount, " mi señor");
+	?has(money, Balance);
+	.abolish(has(money, _));
+	+has(money, Balance + Amount);
+	.send(database, achieve, add(money, Amount));
+	.abolish(pay(_)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN initBot // TODO: PLACEHOLDER
@@ -116,34 +131,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 		.create_agent("database", "./tmp/database.asl"); 
 	}
 	.send(database, askOne, has(money, X), MoneyResponse);
-	.date(YY,MM,DD);
-	.send(database, askOne, qtdConsumed(YY,MM,DD,beer,Qtd), ConsumedResponse);
+	.send(database, askOne, consumed(YY,MM,DD, beer, Qtd), ConsumedResponse);
 	+MoneyResponse;
 	+ConsumedResponse.
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN askForMoney(owner)
-// -------------------------------------------------------------------------
-
-+!askForMoney(owner) <-
-	.println("Necesito dinero mi señor");
-	.send(owner,achieve,pay(robot)). //TODO send in AIML
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN receive(money)
-// -------------------------------------------------------------------------
-
-+!receive(money) : pay(money, Qtd)[source(owner)] <-
-	.println("Gracias por la paga de ", Qtd, " mi señor");
-	?has(money, TotalMoney);
-	+has(money, TotalMoney + Qtd);
-	.abolish(has(money, TotalMoney));
-	.send(database, achieve, add(money, Qtd));
-	.abolish(pay(money, Qtd)).
-+!receive(money) : not pay(money, Qtd)[source(owner)] <-
-	.println("Estoy esperando a que Owner me pague");
-	.wait(1000);
-	!receive(money). //TODO consider delete this line if "extravío" is a possibility.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN dialogWithOwner // TODO: PLACEHOLDER
@@ -300,9 +290,11 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 +moved(success, Product, Origin, Destination)[source(Mover)] <-
 	.println("Movement success: ", Origin, "->", Destination);
 	if (Destination == owner) {
-		.date(YY,MM,DD); .time(HH,NN,SS);
-		+consumed(YY,MM,DD,HH,NN,SS, Product);
-		.send(database, achieve, add(consumed,YY,MM,DD,HH,NN,SS, Product));
+		.date(YY,MM,DD);
+		?consumedSafe(YY,MM,DD, Product, Qtty);
+		.abolish(consumed(YY,MM,DD, Product, _));
+		+consumed(YY,MM,DD, Product, Qtty+1);
+		.send(database, achieve, add(consumed(YY,MM,DD, Product, Qtty+1)));
 		-asked(Destination, Product);
 	}
 	if (Origin == delivery) {
@@ -363,6 +355,12 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(Provider, tell, reject(OrderId)); // TODO not implemented
 	-ordered(beer);
 	!askForMoney(owner).
+
+// ## HELPER PLAN askForMoney(owner)
+
++!askForMoney(owner) <-
+	.println("Necesito dinero mi señor");
+	.send(owner, tell, pay(robot)). //TODO send in AIML
 
 // ## HELPER TRIGGER stock
 
