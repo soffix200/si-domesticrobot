@@ -1,8 +1,15 @@
 placement(obstacle, side).
 placement(position, top ).
 
+automaton(cleaner, inactive).
+automaton(dustman, inactive).
+automaton(mover,   inactive).
+automaton(shopper, inactive).
+
 stored(beer, fridge, 1).
+trashed(can, 0).
 threshold(beer, 5).
+threshold(trash, 3).
 buyBatch(beer, 3).
 
 available(Product, Location) :-
@@ -12,6 +19,10 @@ available(Product, Location) :-
 overThreshold(Product, Location) :-
 	threshold(Product, Threshold) &
 	stored(Product, Location, Qtty) & Qtty > Threshold.
+
+full(dumpster) :-
+	threshold(trash, Qtty) &
+	trashed(can, Count) & Count >= Qtty.
 
 cheapest(Provider, Product, Price) :-
 	price(Provider, Product, Price) &
@@ -159,21 +170,78 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR PLAN cleanHouse // TODO
 // -------------------------------------------------------------------------
 
-+!cleanHouse : requestedRetrieval(can, floor(PX, PY)) <-
-	!goAtLocation(robot, location(PX, PY));
-	get(can);
-	!goAtPlace(robot, dumpster);
-	recycle(can);
-	-requestedRetrieval(can, floor(PX, PY)).
-+!cleanHouse : requestedRetrieval(can, owner) <-
-	!goAtPlace(robot, owner);
-	get(can);
-	send(owner, tell, retrieved(can)); // TODO not implemented
-	!goAtPlace(robot, dumpster);
-	recycle(can);
-	-requestedRetrieval(can, owner).
++!cleanHouse : requestedRetrieval(can, floor(X, Y)) & not cleaning(_, can, floor(X, Y)) <-
+	.println("Owner ha tirado una lata al suelo, activo un autómata para que limpie");
+	+cleaning(cleaner, can, floor(X, Y));
+	if (automaton(cleaner, inactive)) {
+		?location(depot, _, DepX, DepY); ?location(dumpster, _, DumpX, DumpY); ?bounds(BX, BY);
+		.send(cleaner, tell, activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)));
+		.abolish(automaton(cleaner, inactive));
+		+automaton(cleaner, active);
+	}
+	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
+	.send(cleaner, tell, clean(can, floor(X, Y), Obstacles)).
++!cleanHouse : requestedRetrieval(can, owner) & not cleaning(_, can, owner) <-
+	.println("Owner me ha pedido que vaya a recoger una lata, activo un autómata para que la recoja");
+	+cleaning(cleaner, can, owner);
+	if (automaton(cleaner, inactive)) {
+		?location(depot, _, DepX, DepY); ?location(dumpster, _, DumpX, DumpY); ?bounds(BX, BY);
+		.send(cleaner, tell, activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)));
+		.abolish(automaton(cleaner, inactive));
+		+automaton(cleaner, active);
+	}
+	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
+	?location(owner, Type, LX, LY); ?placement(Type, Placement);
+	.send(cleaner, tell, clean(can, location(owner, LX, LY, Placement), Obstacles)).
++!cleanHouse : full(dumpster) & not takingout(_, trash) <-
+	.println("El dumpster está lleno, activo un autómata para sacar la basura");
+	+takingout(dustman, trash);
+	if (automaton(dustman, inactive)) {
+		?location(depot, DepType, DepX, DepY); ?placement(DepType, DepPlacement);
+		?location(dumpster, DumpType, DumpX, DumpY); ?placement(DumpType, DumpPlacement);
+		?location(exit, EType, EX, EY); ?placement(EType, EPlacement);
+		?bounds(BX, BY);
+		.send(dustman, tell, activate(dustman, depot(DepX, DepY, DepPlacement), dumpster(DumpX, DumpY, DumpPlacement), exit(EX, EY, EPlacement), bounds(BX, BY)));
+		.abolish(automaton(dustman, inactive));
+		+automaton(dustman, active);
+	}
+	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
+	.send(dustman, tell, takeout(trash, Obstacles)).
 +!cleanHouse <- true. // Execute randomly
 	// TODO; not yet implemented
+
+// ## HELPER TRIGGER cleaned
+
++cleaned(success, Object, Position)[source(Cleaner)] <-
+	.println("Cleaning success");
+	?trashed(can, Qtty); -+trashed(can, Qtty+1);
+	.abolish(requestedRetrieval(Object, Position));
+	.abolish(cleaning(Cleaner, Object, Position));
+	.abolish(cleaned(success, Object, Position)).
+
+// ## HELPER TRIGGER [finished] cleaning(cleaner, can, _)
+
+-cleaning(cleaner, can, _) : not requestedRetrieval(can, _) & not cleaning(cleaner, can, _) & automaton(cleaner, active) <-
+	.send(cleaner, tell, deactivate(cleaner));
+	.abolish(automaton(cleaner, active));
+	+automaton(cleaner, inactive).
+
+// ## HELPER TRIGGER tookout(trash)
+
++tookout(success, trash)[source(Dustman)] <-
+	.println("Takeout success");
+	-+trashed(can, 0);
+	.abolish(takingout(Dustman, trash));
+	.abolish(tookout(success, trash)).
+
+// ## HELPER TRIGGER [finished] takingout(dustman, trash)
+
+-takingout(dustman, trash) : not full(dumpster) & not takingout(dustman, trash) & automaton(dustman, active) <-
+	.send(dustman, tell, deactivate(dustman));
+	.abolish(automaton(dustman, active));
+	+automaton(dustman, inactive).
+
+// ## HELPER TRIGGER can
 
 +can(PX, PY) <-
 	+requestedRetrieval(can, floor(PX, PY));
@@ -187,33 +255,32 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR PLAN manageBeer
 // -------------------------------------------------------------------------
 
-+!manageBeer : asked(Ag, beer) & available(beer, fridge) & not healthConstraint(beer, Ag, _) <-
-	.println(Ag, " me ha pedido un ", "beer", ", se lo llevo");
-	!goAtPlace(robot, fridge);
-	open(fridge);
-	if (available(beer, fridge)) {
-		get(beer, fridge);
-		close(fridge);
-		!goAtPlace(robot, owner);
-		hand_in(beer);
-		.date(YY,MM,DD); .time(HH,NN,SS);
-		+consumed(YY,MM,DD,HH,NN,SS,beer);
-		.send(database, achieve, add(consumed,YY,MM,DD,HH,NN,SS,beer));
-		-asked(Ag, beer);
-	} else {
-		close(fridge);
-		.send(Ag, tell, msg("No me queda, voy a comprar más"));
-	}.
-+!manageBeer : requestedPickUp(beer, delivery) <-
++!manageBeer : asked(Ag, beer) & available(beer, fridge) & not moving(_, beer, fridge, Ag) & not healthConstraint(beer, Ag, _) <-
+	.println(Ag, " me ha pedido un ", "beer", ", activo un autómata para que se lo lleve");
+	+moving(mover, beer, fridge, Ag);
+	if (automaton(mover, inactive)) {
+		?location(depot, _, DepX, DepY); ?bounds(BX, BY);
+		.send(mover, tell, activate(mover, depot(DepX, DepY), bounds(BX, BY)));
+		.abolish(automaton(mover, inactive));
+		+automaton(mover, active);
+	}
+	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
+	?location(Ag, DType, DX, DY); ?placement(DType, DPlacement);
+	?location(fridge, OType, OX, OY); ?placement(OType, OPlacement);
+	.send(mover, tell, move(beer, location(fridge, OX, OY, OPlacement), location(Ag, DX, DY, DPlacement), Obstacles)).
++!manageBeer : requestedPickUp(beer, delivery) & not moving(_, beer, delivery, fridge) <-
 	.println("Voy a recoger las cervezas que me han entregado");
-	!goAtPlace(robot, delivery);
-	// TODO robot should grab the beers in inventory
-	!goAtPlace(robot, fridge);
-	open(fridge);
-	// TODO robot should place the beers into fridge
-	close(fridge);
-	-requestedPickUp(beer, delivery);
-	-ordered(beer).
+	+moving(mover, beer, delivery, fridge);
+	if (automaton(mover, inactive)) {
+		?location(depot, _, DepX, DepY); ?bounds(BX, BY);
+		.send(mover, tell, activate(mover, depot(DepX, DepY), bounds(BX, BY)));
+		.abolish(automaton(mover, inactive));
+		+automaton(mover, active);
+	}
+	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
+	?location(delivery, OType, OX, OY); ?placement(OType, OPlacement);
+	?location(fridge, DType, DX, DY); ?placement(DType, DPlacement);
+	.send(mover, tell, move(beer, location(delivery, OX, OY, OPlacement), location(fridge, DX, DY, DPlacement), Obstacles)).
 +!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(Provider, beer, Price) <-
 	.println("Tengo menos cerveza de la que debería, voy a comprar más");
 	.println("Cheapest is ", Provider, " @", Price);
@@ -227,6 +294,38 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(Ag, tell, healthConstraint(beer,YY,MM,DD));
 	-asked(Ag, beer).
 +!manageBeer <- true.
+
+// ## HELPER TRIGGER moved
+
++moved(success, Product, Origin, Destination)[source(Mover)] <-
+	.println("Movement success: ", Origin, "->", Destination);
+	if (Destination == owner) {
+		.date(YY,MM,DD); .time(HH,NN,SS);
+		+consumed(YY,MM,DD,HH,NN,SS, Product);
+		.send(database, achieve, add(consumed,YY,MM,DD,HH,NN,SS, Product));
+		-asked(Destination, Product);
+	}
+	if (Origin == delivery) {
+		.println("Delivery deposit success");
+		.abolish(requestedPickUp(Product, Origin));
+		-ordered(Product);
+	}
+	.abolish(moving(Mover, Product, Origin, Destination));
+	.abolish(moved(success, Product, Origin, Destination)[source(Mover)]).
++moved(failure, Product, Origin, Destination)[source(Mover)] <-
+	.println("Movement failure");
+	if (Destination == owner) {
+		.send(Destination, tell, msg("No me queda, voy a comprar más"));
+	}
+	.abolish(moving(Mover, Product, Origin, Destination));
+	.abolish(moved(failure, Product, Origin, Destination)[source(Mover)]).
+
+// ## HELPER TRIGGER [finished] takingout(dustman, trash)
+
+-moving(mover, beer, _, _) : not asked(_, beer) & not requestedPickUp(beer, _) & not moving(mover, beer, _, _) & automaton(mover, active) <-
+	.send(mover, tell, deactivate(mover));
+	.abolish(automaton(mover, active));
+	+automaton(mover, inactive).
 
 // ## HELPER TRIGGER bring
 
@@ -267,9 +366,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 // ## HELPER TRIGGER stock
 
-+stock(beer, N) <-
-	-+stored(beer, fridge, N);
-	.abolish(stock(beer, N)).
++stock(Object, LocationDescriptor, Qtty) <-
+	.abolish(stock(Object, LocationDescriptor, _));
+  -+stored(Object, LocationDescriptor, Qtty).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLANS goAtX

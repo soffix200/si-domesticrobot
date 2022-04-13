@@ -21,8 +21,11 @@ public class HouseView extends GridWorldView {
 	/** draw application objects */
 	@Override
 	public void draw(Graphics g, int x, int y, int object) {
-		Location lRobot = hmodel.getAgPos(HouseModel.ROBOT);
-		Location lOwner = hmodel.getAgPos(HouseModel.OWNER);
+		Location lRobot   = hmodel.getAgPos(HouseModel.ROBOT);
+		Location lOwner   = hmodel.getAgPos(HouseModel.OWNER);
+		Location lCleaner = hmodel.getAgPos(HouseModel.CLEANER);
+		Location lDustman = hmodel.getAgPos(HouseModel.DUSTMAN);
+		Location lMover   = hmodel.getAgPos(HouseModel.MOVER);
 		super.drawObstacle(g,x,y);
 		//super.drawAgent(g, x, y, Color.lightGray, -1);
 		switch (object) {
@@ -105,6 +108,24 @@ public class HouseView extends GridWorldView {
 					g.setColor(Color.black);
 					super.drawString(g, x, y, defaultFont, "Owner");
 				}
+				break;
+			case HouseModel.CLEANER:
+				c = Color.yellow;
+				super.drawAgent(g, x, y, c, -1);
+				g.setColor(Color.black);
+				super.drawString(g, x, y, defaultFont, "Cleaner");
+				break;
+			case HouseModel.DUSTMAN:
+				c = Color.yellow;
+				super.drawAgent(g, x, y, c, -1);
+				g.setColor(Color.black);
+				super.drawString(g, x, y, defaultFont, "Dustman");
+				break;
+			case HouseModel.MOVER:
+				c = Color.yellow;
+				super.drawAgent(g, x, y, c, -1);
+				g.setColor(Color.black);
+				super.drawString(g, x, y, defaultFont, "Mover");
 				break;
 		}
 		//repaint() //!!??
