@@ -39,7 +39,7 @@ obstacles([]).
   -+dumpster(DumpX, DumpY, DumpPlacement);
   -+exit(EX, EY, EPlacement);
 	-+bounds(BX, BY);
-	-+status(active);
+	-+status(idle);
 	!takeout(trash).
 +!activate(dustman, depot(DepX, DepY, DepPlacement), dumpster(DumpX, DumpY, DumpPlacement), exit(EX, EY, EPlacement), bounds(BX, BY)) :
 	status(deactivating) 

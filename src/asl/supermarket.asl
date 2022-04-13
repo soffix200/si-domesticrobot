@@ -129,3 +129,7 @@ price(beer, 3).
 	.println("Pago de ", TotalPrice, " recibido de ", Ag);
 	.abolish(has(money, _)); +has(money, Qtd+TotalPrice);
 	.send(Store, achieve, add(money,TotalPrice)).
+
++reject(OrderId)[source(Ag)] : order(OrderId, Ag, Product, Qtty) <-
+	return(Product, Qtty);
+	.abolish(order(OrderId, Ag, Product, Qtty)).

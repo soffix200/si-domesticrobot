@@ -28,7 +28,7 @@ cheapest(Provider, Product, Price) :-
 	price(Provider, Product, Price) &
 	not (price(Provider2, Product, Price2) & Provider2 \== Provider & Price2 < Price).
 
-limit(beer, owner, 1, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
+limit(beer, owner, 10, "The Department of Health does not allow me to give you more than 10 beers a day! I am very sorry about that!").
 
 consumedSafe(YY,MM,DD, Product, Qtty) :-
 	consumed(YY,MM,DD, Product, Qtty) | Qtty = 0.
@@ -245,9 +245,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // DEFINITION FOR PLAN manageBeer
 // -------------------------------------------------------------------------
 
-+!manageBeer : asked(Ag, beer) & available(beer, fridge) & not moving(_, beer, fridge, Ag) & not healthConstraint(beer, Ag, _) <-
++!manageBeer : asked(Ag, beer) & available(beer, fridge) & not moving(_, beer, 1, fridge, Ag) & not healthConstraint(beer, Ag, _) <-
 	.println(Ag, " me ha pedido un ", "beer", ", activo un autómata para que se lo lleve");
-	+moving(mover, beer, fridge, Ag);
+	+moving(mover, beer, 1, fridge, Ag);
 	if (automaton(mover, inactive)) {
 		?location(depot, _, DepX, DepY); ?bounds(BX, BY);
 		.send(mover, tell, activate(mover, depot(DepX, DepY), bounds(BX, BY)));
@@ -257,10 +257,10 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
 	?location(Ag, DType, DX, DY); ?placement(DType, DPlacement);
 	?location(fridge, OType, OX, OY); ?placement(OType, OPlacement);
-	.send(mover, tell, move(beer, location(fridge, OX, OY, OPlacement), location(Ag, DX, DY, DPlacement), Obstacles)).
-+!manageBeer : requestedPickUp(beer, delivery) & not moving(_, beer, delivery, fridge) <-
+	.send(mover, tell, move(beer, 1, location(fridge, OX, OY, OPlacement), location(Ag, DX, DY, DPlacement), Obstacles)).
++!manageBeer : requestedPickUp(beer, Qtty, delivery) & not moving(_, beer, Qtty, delivery, fridge) <-
 	.println("Voy a recoger las cervezas que me han entregado");
-	+moving(mover, beer, delivery, fridge);
+	+moving(mover, beer, Qtty, delivery, fridge);
 	if (automaton(mover, inactive)) {
 		?location(depot, _, DepX, DepY); ?bounds(BX, BY);
 		.send(mover, tell, activate(mover, depot(DepX, DepY), bounds(BX, BY)));
@@ -270,7 +270,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
 	?location(delivery, OType, OX, OY); ?placement(OType, OPlacement);
 	?location(fridge, DType, DX, DY); ?placement(DType, DPlacement);
-	.send(mover, tell, move(beer, location(delivery, OX, OY, OPlacement), location(fridge, DX, DY, DPlacement), Obstacles)).
+	.send(mover, tell, move(beer, Qtty, location(delivery, OX, OY, OPlacement), location(fridge, DX, DY, DPlacement), Obstacles)).
 +!manageBeer : not overThreshold(beer, fridge) & not ordered(beer) & cheapest(Provider, beer, Price) <-
 	.println("Tengo menos cerveza de la que debería, voy a comprar más");
 	.println("Cheapest is ", Provider, " @", Price);
@@ -287,34 +287,34 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 // ## HELPER TRIGGER moved
 
-+moved(success, Product, Origin, Destination)[source(Mover)] <-
++moved(success, Product, Qtty, Origin, Destination)[source(Mover)] <-
 	.println("Movement success: ", Origin, "->", Destination);
 	if (Destination == owner) {
 		.date(YY,MM,DD);
-		?consumedSafe(YY,MM,DD, Product, Qtty);
+		?consumedSafe(YY,MM,DD, Product, ConsumedQtty);
 		.abolish(consumed(YY,MM,DD, Product, _));
-		+consumed(YY,MM,DD, Product, Qtty+1);
-		.send(database, achieve, add(consumed(YY,MM,DD, Product, Qtty+1)));
+		+consumed(YY,MM,DD, Product, ConsumedQtty+1);
+		.send(database, achieve, add(consumed(YY,MM,DD, Product, ConsumedQtty+1)));
 		-asked(Destination, Product);
 	}
 	if (Origin == delivery) {
 		.println("Delivery deposit success");
-		.abolish(requestedPickUp(Product, Origin));
+		.abolish(requestedPickUp(Product, Qtty, Origin));
 		-ordered(Product);
 	}
-	.abolish(moving(Mover, Product, Origin, Destination));
+	.abolish(moving(Mover, Product, Qtty, Origin, Destination));
 	.abolish(moved(success, Product, Origin, Destination)[source(Mover)]).
-+moved(failure, Product, Origin, Destination)[source(Mover)] <-
++moved(failure, Product, Qtty, Origin, Destination)[source(Mover)] <-
 	.println("Movement failure");
 	if (Destination == owner) {
 		.send(Destination, tell, msg("No me queda, voy a comprar más"));
 	}
-	.abolish(moving(Mover, Product, Origin, Destination));
-	.abolish(moved(failure, Product, Origin, Destination)[source(Mover)]).
+	.abolish(moving(Mover, Product, Qtty, Origin, Destination));
+	.abolish(moved(failure, Product, Qtty, Origin, Destination)[source(Mover)]).
 
 // ## HELPER TRIGGER [finished] takingout(dustman, trash)
 
--moving(mover, beer, _, _) : not asked(_, beer) & not requestedPickUp(beer, _) & not moving(mover, beer, _, _) & automaton(mover, active) <-
+-moving(mover, beer, _, _, _) : not asked(_, beer) & not requestedPickUp(beer, _, _) & not moving(mover, beer, _, _, _) & automaton(mover, active) <-
 	.send(mover, tell, deactivate(mover));
 	.abolish(automaton(mover, active));
 	+automaton(mover, inactive).
@@ -341,7 +341,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	has(money, Balance) & Balance >= TotalPrice 
 <-
 	.println("Recibido pedido de ", Qtty, " ", Product);
-	+requestedPickUp(Product, delivery);
+	+requestedPickUp(Product, Qtty, delivery);
 	.send(Provider, tell, received(OrderId));
 	.send(Provider, tell, pay(TotalPrice));
 	.send(database, achieve, del(money, TotalPrice));
