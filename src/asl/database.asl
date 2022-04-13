@@ -2,10 +2,6 @@
 // Beliefs and rules
 has(money, 0).
 
-qtdConsumed(YY,MM,DD,beer,Qtd) :-
-	.date(YY,MM,DD) &
-	.count(consumed(YY,MM,DD,_,_,_,beer), Qtd).
-
 !initStore.
 
 // -------------------------------------------------------------------------
@@ -34,7 +30,7 @@ qtdConsumed(YY,MM,DD,beer,Qtd) :-
 	?filename(Filename);
 	.abolish(has(money, _)); +has(money, (M+N));
 	.save_agent(Filename).
-+!add(consumed,YY,MM,DD,HH,NN,SS,beer) <-
++!add(consumed(YY,MM,DD, Product, Qtty)) <-
 	?filename(Filename);
-	+consumed(YY,MM,DD,HH,NN,SS,beer);
-	.save_agent(Filename). 
+	.abolish(consumed(YY,MM,DD, Product, _)); +consumed(YY,MM,DD, Product, Qtty);
+	.save_agent(Filename).
