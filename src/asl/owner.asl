@@ -39,19 +39,24 @@ healthConstraint(Product) :-
 			.send(robot, tell, pay(Amount)); // TODO AIML
 			.send(postit, achieve, add(paid, YY,MM,DD, AmountPaid+Amount));
 		} else {
-			.println("No me queda dinero, a ver si la pensión llega pronto");
+			.println("No puedo gastar más en cervezas hoy o me desahuciarán");
 			.send(robot, tell, cannotpay(Amount));
 		}
 	} else {
-		.println("Tengo dinero, ahora le pago a robot los ", Amount, " que me ha pedido");
-		-+paid(YY,MM,DD, Amount);
-		.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
-		.send(robot, tell, pay(Amount)); // TODO AIML
-		.send(postit, achieve, add(paid, YY,MM,DD, Amount));
+		if (Amount < Limit){
+			.println("Tengo dinero, ahora le pago a robot los ", Amount, " que me ha pedido");
+			-+paid(YY,MM,DD, Amount);
+			.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
+			.send(robot, tell, pay(Amount)); // TODO AIML
+			.send(postit, achieve, add(paid, YY,MM,DD, Amount));
+		} else {
+			.println("Esa cantidad est� por encima de mi presupuesto diario!");
+			.send(robot, tell, cannotpay(Amount));
+		}
 	}
 	.abolish(pay(robot, Amount)).
 +pay(robot, Amount) : has(money, Balance) & Balance < Amount<-
-	.println("No puedo gastar más en cervezas hoy o me desahuciarán");
+	.println("No me queda dinero, a ver si la pensi�n llega pronto");
 	.send(robot, tell, cannotpay(Amount));
 	.abolish(pay(robot, Amount)).
 
