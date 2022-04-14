@@ -58,7 +58,7 @@ available(Object, LocationDescriptor) :-
 	exit(map);
 	-at(mover, _, _);
 	-+status(inactive).
-+!deactivate(mover) : status(active) | status(deactivating) <-
++!deactivate(mover) : status(active) | status(activating) <-
 	.wait(100);
 	!deactivate(mover).
 

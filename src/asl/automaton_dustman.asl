@@ -57,7 +57,7 @@ obstacles([]).
 	exit(map);
 	-at(dustman, _, _);
 	-+status(inactive).
-+!deactivate(dustman) : status(active) | status(deactivating) <-
++!deactivate(dustman) : status(active) | status(activating) <-
 	.wait(100);
 	!deactivate(dustman).
 
