@@ -13,15 +13,20 @@ import java.util.LinkedList;
 public class HouseEnv extends Environment {
 
 	// common literals
-	public static final Literal of   = Literal.parseLiteral("open(fridge)");
-	public static final Literal clf  = Literal.parseLiteral("close(fridge)");
-	public static final Literal gb   = Literal.parseLiteral("get(beer, fridge)");
-	public static final Literal hb   = Literal.parseLiteral("hand_in(beer)");
-	public static final Literal sb   = Literal.parseLiteral("sip(beer)");
-	public static final Literal tc   = Literal.parseLiteral("throw(can)");
-	public static final Literal gc   = Literal.parseLiteral("get(can)");
-	public static final Literal rc   = Literal.parseLiteral("recycle(can)");
-	public static final Literal ct   = Literal.parseLiteral("collect(trash)");
+	public static final Literal moveTowards  = Literal.parseLiteral("move_towards");
+	public static final Literal openFridge   = Literal.parseLiteral("open(fridge)");
+	public static final Literal closeFridge  = Literal.parseLiteral("close(fridge)");
+	public static final Literal get          = Literal.parseLiteral("get");
+	public static final Literal handBeer     = Literal.parseLiteral("hand_in(beer)");
+	public static final Literal sipBeer      = Literal.parseLiteral("sip(beer)");
+	public static final Literal deliverBeer  = Literal.parseLiteral("deliver(beer)");
+	public static final Literal returnBeer   = Literal.parseLiteral("return(beer)");
+	public static final Literal storeBeer    = Literal.parseLiteral("store(beer)");
+	public static final Literal throwCan     = Literal.parseLiteral("throw(can)");
+	public static final Literal recycleCan   = Literal.parseLiteral("recycle(can)");
+	public static final Literal collectTrash = Literal.parseLiteral("collect(trash)");
+	public static final Literal enterMap     = Literal.parseLiteral("enter(map)");
+	public static final Literal exitMap      = Literal.parseLiteral("exit(map)");
 
 	// TODO RETHINK
 	public static final Literal hob  = Literal.parseLiteral("has(owner,beer)");
@@ -35,9 +40,6 @@ public class HouseEnv extends Environment {
 	public static final Literal adep = Literal.parseLiteral("at(robot,depot)");
 	public static final Literal ae   = Literal.parseLiteral("at(robot,exit)");
 	public static final Literal ac   = Literal.parseLiteral("at(robot,can)");
-
-	public static final Literal enm  = Literal.parseLiteral("enter(map)");
-	public static final Literal exm  = Literal.parseLiteral("exit(map)");
 
 	static Logger logger = Logger.getLogger(HouseEnv.class.getName());
 	
@@ -116,90 +118,87 @@ public class HouseEnv extends Environment {
 
 	@Override
 	public boolean executeAction(String ag, Structure action) {
-		System.out.println("["+ag+"] doing: " + action);
-
+		logger.info("["+ag+"] doing: " + action);
 		boolean succeed = false;
+		List updatedPercepts = new LinkedList<Literal>();
 
-		if (action.equals(of)) {
-			succeed = model.openFridge();
-			if (succeed) {
-				updatePercepts(ag, new LinkedList<Literal>());
-				addPercept(ag, Literal.parseLiteral("stock(beer,fridge,"+model.availableBeers+")"));
-			}
-		} else if (action.equals(clf)) {
-			succeed = model.closeFridge();
-		} else if (action.getFunctor().equals("move_towards")) {
-			String agent     = action.getTerm(0).toString();
-			String direction = action.getTerm(1).toString();
-			try {
-				succeed = model.moveTowards(agent, direction);
-				updatePercepts("robot", new LinkedList<Literal>());
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} else if (action.equals(gb)) {
-			succeed = model.getBeer();
-		} else if (action.equals(hb)) {
-			succeed = model.handInBeer();
-			updatePercepts("owner", new LinkedList<Literal>());
-		} else if (action.equals(sb) & ag.equals("owner")) {
-			try {
+		try {
+			if (action.equals(openFridge)) {
+				succeed = model.openFridge();
+				if (succeed) {
+					updatedPercepts.add(Literal.parseLiteral("stock(beer,fridge,"+model.beersInFridge+")"));
+					updatePercepts(ag, updatedPercepts);
+				}
+			} else if (action.equals(closeFridge)) {
+				succeed = model.closeFridge();
+			} else if (action.equals(handBeer)) {
+				succeed = model.handInBeer(ag);
+				updatePercepts("owner", updatedPercepts);
+			} else if (action.equals(sipBeer) && ag.equals("owner")) {
 				Thread.sleep(600);
 				succeed = model.sipBeer();
-				updatePercepts("owner", new LinkedList<Literal>());
-			} catch (Exception e) {
-				logger.info("Failed to execute action sip!"+e);
-			}
-		} else if (action.getFunctor().equals("throw") & ag.equals("owner")) {
-			try {
-				String object   = action.getTerm(0).toString();
-				Location location = new Location (
-					(int)((NumberTerm)((Structure)action.getTerm(1)).getTerm(0)).solve(),
-					(int)((NumberTerm)((Structure)action.getTerm(1)).getTerm(1)).solve()
-				);
-				succeed = model.throwCan(location);
-			} catch (Exception e) {
-				logger.info("Failed to execute action deliver!"+e);
-			}
-		} else if (action.equals(gc)) {
-			succeed = model.getCan(ag);
-		} else if (action.equals(rc)) {
-			succeed = model.recycleCan();
-		} else if (action.equals(ct)) { // TODO DUSTMAN
-			succeed = model.collectTrash();
-		} else if (action.getFunctor().equals("deliver")) { // TODO; robot should move the beer from delivery location
-			// wait 4 seconds to finish "deliver"
-			try {
-				Thread.sleep(4000);
-				succeed = model.addBeer((int)((NumberTerm)action.getTerm(1)).solve());
-			} catch (Exception e) {
-				logger.info("Failed to execute action deliver!"+e);
-			}
-		} else if (action.getFunctor().equals("reject")) {
-			try {
-				succeed = model.addBeer(((int)((NumberTerm)action.getTerm(1)).solve())*-1);
-			} catch (Exception e) {
-				logger.info("Failed to execute action reject!" + e);
-			}
-		} else if (action.equals(enm) & (ag.equals("cleaner") || ag.equals("dustman") || ag.equals("mover"))) {
-			try {
+				updatePercepts("owner", updatedPercepts);
+			} else if (action.equals(recycleCan)) {
+				succeed = model.addCanToDumpster(ag);
+			} else if (action.equals(collectTrash)) {
+				succeed = model.getTrashFromDumpster(ag);
+			} else if (action.equals(enterMap)) {
 				succeed = model.enterMap(ag);
-			} catch (Exception e) {
-				logger.info("Failed to execute action enterMap!" + e);
-			}
-		} else if (action.equals(exm) & (ag.equals("cleaner") || ag.equals("dustman") || ag.equals("mover"))) {
-			try {
+			} else if (action.equals(exitMap)) {
 				succeed = model.exitMap(ag);
-			} catch (Exception e) {
-				logger.info("Failed to execute action exitMap!" + e);
+			} else if (action.getFunctor().equals(moveTowards.getFunctor())) {
+				String agent     = action.getTerm(0).toString();
+				String direction = action.getTerm(1).toString();
+				succeed = model.moveTowards(agent, direction);
+				updatePercepts(ag, updatedPercepts);
+			} else if (action.getFunctor().equals(deliverBeer.getFunctor())) {
+				if (action.getTerm(0).equals(deliverBeer.getTerm(0))) {
+					int beerNumber = (int)((NumberTerm)((Structure)action).getTerm(1)).solve();
+					Thread.sleep(5000);
+					succeed = model.addBeersToDelivery(ag, beerNumber);
+				}
+			} else if (action.getFunctor().equals(returnBeer.getFunctor())) {
+				if (action.getTerm(0).equals(returnBeer.getTerm(0))) {
+					int beerNumber = (int)((NumberTerm)((Structure)action).getTerm(1)).solve();
+					succeed = model.removeBeersFromDelivery(beerNumber);
+				}
+			} else if (action.getFunctor().equals(storeBeer.getFunctor())) {
+				logger.info("1");
+				if (action.getTerm(0).equals(storeBeer.getTerm(0))) {
+					logger.info("2");
+					if (action.getTerm(1).toString().equals("fridge")) {
+						logger.info("3");
+						int beerNumber = (int)((NumberTerm)((Structure)action).getTerm(2)).solve();
+						succeed = model.addBeersToFridge(ag, beerNumber);
+					}
+				}
+			} else if (action.getFunctor().equals(throwCan.getFunctor())) {
+				if (action.getTerm(0).equals(throwCan.getTerm(0))) {
+					Location location = new Location (
+						(int)((NumberTerm)((Structure)action.getTerm(1)).getTerm(0)).solve(),
+						(int)((NumberTerm)((Structure)action.getTerm(1)).getTerm(1)).solve()
+					);
+					succeed = model.throwCan(location);
+				}
+			} else if (action.getFunctor().equals(get.getFunctor())) {
+				if (action.getTerm(0).toString().equals("beer")) {
+					if (action.getTerm(1).toString().equals("fridge")) {
+						succeed = model.getBeerFromFridge(ag);
+					} else if (action.getTerm(1).toString().equals("delivery")) {
+						int beerNumber = (int)((NumberTerm)((Structure)action).getTerm(2)).solve();
+						succeed = model.getBeersFromDelivery(ag, beerNumber);
+					}
+				} else if (action.getTerm(0).toString().equals("can")) {
+					succeed = model.getCan(ag);
+				}
 			}
-		} else {
-			logger.info("Failed to execute action "+action);
+		} catch (Exception e) {
+			logger.info("Error occurred while attempting to execute action " + action);
 		}
 
-		if (succeed) {
+		if (succeed)
 			try { Thread.sleep(100); } catch (Exception e) {}
-		}
+		else logger.info("Failed to execute action " + action);
 		return succeed;
 	}
 }

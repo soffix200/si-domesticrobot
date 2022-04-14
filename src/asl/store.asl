@@ -1,6 +1,5 @@
-// beliefs and rules
-has(beer, 0).
-has(money, 100).
+beer(0).
+money(100).
 
 !initStore.
 
@@ -17,28 +16,28 @@ has(money, 100).
 // DEFINITION FOR PLAN substract
 // -------------------------------------------------------------------------
 
-+!del(beer,N) : has(beer, M) & M >= N <-
++!del(beer,N) : beer(M) & M >= N <-
 	?filename(Filename);
-	.abolish(has(beer, _)); +has(beer, (M-N));
+	-+beer(M-N);
 	.save_agent(Filename).
-+!del(beer,N) : has(beer, M) & M < N <-
++!del(beer,N) : beer(M) & M < N <-
 	?filename(Filename);
 	// TODO response: not enough
 	.save_agent(Filename).
-+!del(money,N) : has(money, M) <-
++!del(money,N) : money(M) <-
 	?filename(Filename);
-	.abolish(has(money, _)); +has(money, (M-N));
+	-+money(M-N);
 	.save_agent(Filename).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN add
 // -------------------------------------------------------------------------
 
-+!add(beer,N) : has(beer, M) <-
++!add(beer,N) : beer(M) <-
 	?filename(Filename);
-	.abolish(has(beer, _)); +has(beer, (M+N));
+	-+beer(M+N);
 	.save_agent(Filename).
-+!add(money,N) : has(money, M) <-
++!add(money,N) : money(M) <-
 	?filename(Filename);
-	.abolish(has(money, _)); +has(money, (M+N));
+	-+beer(money, M+N);
 	.save_agent(Filename).

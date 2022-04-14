@@ -29,10 +29,10 @@ limit(max, cost,   beer,  5).
 		.concat("tmp/", FileName, FilePath);
 		.create_agent(Store, FilePath);
 	}
-	.send(Store, askOne, has(beer, X), BeerResponse);
-	+BeerResponse;
-	.send(Store, askOne, has(money, X), MoneyResponse);
-	+MoneyResponse.
+	.send(Store, askOne, beer(BeerQtty), beer(BeerQtty));
+	+has(beer, BeerQtty);
+	.send(Store, askOne, money(MoneyQtty), money(MoneyQtty));
+	+has(money, MoneyQtty).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN offerBeer
@@ -163,3 +163,7 @@ limit(max, cost,   beer,  5).
 	.println("Pago de ", TotalPrice, " recibido de ", Ag);
 	.abolish(has(money, _)); +has(money, Qtd+TotalPrice);
 	.send(Store, achieve, add(money,TotalPrice)).
+
++reject(OrderId)[source(Ag)] : order(OrderId, Ag, Product, Qtty) <-
+	return(Product, Qtty);
+	.abolish(order(OrderId, Ag, Product, Qtty)).
