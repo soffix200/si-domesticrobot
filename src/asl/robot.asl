@@ -303,7 +303,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 		-ordered(Product);
 	}
 	.abolish(moving(Mover, Product, Qtty, Origin, Destination));
-	.abolish(moved(success, Product, Origin, Destination)[source(Mover)]).
+	.abolish(moved(success, Product, Qtty, Origin, Destination)[source(Mover)]).
 +moved(failure, Product, Qtty, Origin, Destination)[source(Mover)] <-
 	.println("Movement failure");
 	if (Destination == owner) {
@@ -337,10 +337,38 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 // ## HELPER TRIGGER delivered
 
-+delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] : // THIS COLLIDES
-	has(money, Balance) & Balance >= TotalPrice 
-<-
++delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] <-
 	.println("Recibido pedido de ", Qtty, " ", Product);
+	if (has(money, Balance) & Balance < TotalPrice) {
+		.println("No tengo dinero, le pido a owner");
+		.send(owner, tell, pay(robot, TotalPrice));
+		.abolish(cannotpay(_));
+		!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice);
+	} else {
+		!receiveDelivery(OrderId, Provider, Product, Qtty, TotalPrice);
+	}.
+
+// ### HELPER PLAN waitMoneyForDelivery
+
++!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice) :
+	cannotpay(_)
+<-
+	.println("Pedido de ", Qtty, " ", Product, " rechazado (sin dinero)");
+	.send(Provider, tell, reject(OrderId));
+	-ordered(beer).
++!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice) :
+	has(money, Balance) & Balance >= TotalPrice
+<-
+	!receiveDelivery(OrderId, Provider, Product, Qtty, TotalPrice).
++!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice) :
+	has(money, Balance) & Balance < TotalPrice
+<-
+	.wait(500);
+	!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice).
+
+// ### HELPER PLAN receiveDelivery
+
++!receiveDelivery(OrderId, Provider, Product, Qtty, TotalPrice) <-
 	+requestedPickUp(Product, Qtty, delivery);
 	.send(Provider, tell, received(OrderId));
 	.send(Provider, tell, pay(TotalPrice));
@@ -348,19 +376,6 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	?has(money, Amount);
 	+has(money, Amount-TotalPrice);
 	.abolish(has(money, Amount)).
-+delivered(OrderId, Product, Qtty, TotalPrice)[source(Provider)] :
-	has(money, Balance) & Balance < TotalPrice 
-<-
-	.println("Recibido pedido de ", Qtty, " ", Product, " (sin dinero)");
-	.send(Provider, tell, reject(OrderId)); // TODO not implemented
-	-ordered(beer);
-	!askForMoney(owner).
-
-// ## HELPER PLAN askForMoney(owner)
-
-+!askForMoney(owner) <-
-	.println("Necesito dinero mi señor");
-	.send(owner, tell, pay(robot)). //TODO send in AIML
 
 // ## HELPER TRIGGER stock
 
