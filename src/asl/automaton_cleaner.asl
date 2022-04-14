@@ -108,7 +108,7 @@ obstacles([]).
 	-+status(idle);
 	!clean.
 +!clean : status(idle) <- !clean.
-+!clean : status(inactive) | status(activating) | status(deactivating) <- true.
++!clean : status(inactive) | status(activating) | status(activating) <- true.
 
 -!clean <- // Reactivates clean plan after failure
 	-+status(idle);

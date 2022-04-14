@@ -31,7 +31,7 @@ has(money, 50).
 	.abolish(has(money, _)); 
 	+has(money, (M+N));
 	.save_agent(Filename).
-+!add(paid,YY,MM,DD,DailyPayout) <-
++!add(paid, YY,MM,DD, Amount) <-
 	?filename(Filename);
-	+paid(YY,MM,DD, DailyPayout);
+	-+paid(YY,MM,DD, Amount);
 	.save_agent(Filename).
