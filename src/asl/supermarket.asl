@@ -29,10 +29,10 @@ price(beer, 3).
 		.concat("tmp/", FileName, FilePath);
 		.create_agent(Store, FilePath);
 	}
-	.send(Store, askOne, has(beer, X), BeerResponse);
-	+BeerResponse;
-	.send(Store, askOne, has(money, X), MoneyResponse);
-	+MoneyResponse.
+	.send(Store, askOne, beer(BeerQtty), beer(BeerQtty));
+	+has(beer, BeerQtty);
+	.send(Store, askOne, money(MoneyQtty), money(MoneyQtty));
+	+has(money, MoneyQtty).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN offerBeer
