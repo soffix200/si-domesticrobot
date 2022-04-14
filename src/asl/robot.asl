@@ -341,8 +341,8 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.println("Recibido pedido de ", Qtty, " ", Product);
 	if (has(money, Balance) & Balance < TotalPrice) {
 		.println("No tengo dinero, le pido a owner");
-		.send(owner, tell, pay(robot, TotalPrice));
 		.abolish(cannotpay(_));
+		.send(owner, tell, pay(robot, TotalPrice-Balance));
 		!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice);
 	} else {
 		!receiveDelivery(OrderId, Provider, Product, Qtty, TotalPrice);
