@@ -356,6 +356,12 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	-ordered(beer);
 	!askForMoney(owner).
 
++notEnough(OrderId, Product, Qtty)[source(Provider)] <-
+	.abolish(price(Product, Provider));
+	.wait(5000);
+	-ordered(beer);
+	.abolish(notEnough(OrderId, Product, Qtty)[source(Provider)]).
+
 // ## HELPER PLAN askForMoney(owner)
 
 +!askForMoney(owner) <-
