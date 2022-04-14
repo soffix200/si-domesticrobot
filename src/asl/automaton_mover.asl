@@ -24,10 +24,10 @@ available(Object, LocationDescriptor) :-
 	!deactivate(mover);
 	.abolish(deactivate(mover)).
 
-+move(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement), Obstacles) <-
++move(Object, Qtty, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement), Obstacles) <-
 	-+obstacles(Obstacles);
-	+requestedMovement(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement));
-	.abolish(move(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement), Obstacles)).
+	+requestedMovement(Object, Qtty, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement));
+	.abolish(move(Object, Qtty, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement), Obstacles)).
 
 // ## HELPER PLAN activate
 
@@ -40,7 +40,7 @@ available(Object, LocationDescriptor) :-
 	-+at(mover, X, Y);
 	-+depot(X, Y);
 	-+bounds(BX, BY);
-	-+status(active);
+	-+status(idle);
 	!move.
 +!activate(mover, depot(X, Y), bounds(BX, BY)) :
 	status(deactivating) 
@@ -68,20 +68,20 @@ available(Object, LocationDescriptor) :-
 
 +!move :
 	status(idle) &
-	requestedMovement(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement))
+	requestedMovement(Object, Qtty, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement))
 <-
 	-+status(active);
-	.println("Intentando mover ", Object, " de ", ODescriptor, " a ", DDescriptor);
-	.abolish(requestedMovement(Object, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement)));
+	.println("Intentando mover ", Qtty, " ", Object, " de ", ODescriptor, " a ", DDescriptor);
+	.abolish(requestedMovement(Object, Qtty, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement)));
 	.println("Desplazándose a ", ODescriptor);
 	!goAtLocation(OX, OY, OPlacement);
-	.println("Cogiendo ", Object);
-	!pick(Object, ODescriptor, DDescriptor);
+	.println("Cogiendo ", Qtty, " ", Object);
+	!pick(Object, Qtty, ODescriptor, DDescriptor);
 	.println("Desplazándose a ", DDescriptor);
 	!goAtLocation(DX, DY, DPlacement);
-	.println("Dejando ", Object);
-	!drop(Object, DDescriptor);
-	.send(robot, tell, moved(success, Object, ODescriptor, DDescriptor));
+	.println("Dejando ", Qtty, " ", Object);
+	!drop(Object, Qtty, DDescriptor);
+	.send(robot, tell, moved(success, Object, Qtty, ODescriptor, DDescriptor));
 	-+status(idle);
 	!move.
 +!move : status(idle) <- !move.
@@ -93,27 +93,26 @@ available(Object, LocationDescriptor) :-
 
 // ## HELPER PLAN pick
 
-+!pick(Object, LocationDescriptor, DDescriptor) :
-	Object == beer & LocationDescriptor == fridge
++!pick(Object, Qtty, LocationDescriptor, DDescriptor) :
+	Object == beer & Qtty == 1 & LocationDescriptor == fridge
 <-
 	open(LocationDescriptor);
-	.wait(100);
+	.wait(200);
+	?stored(Object, LocationDescriptor, StoredQtty);
 	if (available(Object, LocationDescriptor)) {
 		get(Object, LocationDescriptor);
 		close(LocationDescriptor);
-		?stored(Object, LocationDescriptor, Qtty);
-		.send(robot, tell, stock(Object, LocationDescriptor, Qtty));
+		.send(robot, tell, stock(Object, LocationDescriptor, StoredQtty-Qtty));
 	} else {
 		close(LocationDescriptor);
 		.send(robot, tell, stock(Object, LocationDescriptor, 0));
-		.send(robot, tell, moved(failure, Object, LocationDescriptor, DDescriptor));
+		.send(robot, tell, moved(failure, Object, Qtty, LocationDescriptor, DDescriptor));
 		.fail;
 	}.
-+!pick(Object, LocationDescriptor, DDescriptor) :
++!pick(Object, Qtty, LocationDescriptor, DDescriptor) :
 	Object == beer & LocationDescriptor == delivery
 <-
-	.wait(100).
-	// TODO grab them
+	get(Object, LocationDescriptor, Qtty).
 
 // ## HELPER TRIGGER stock
 
@@ -122,18 +121,19 @@ available(Object, LocationDescriptor) :-
 
 // ## HELPER PLAN drop
 
-+!drop(Object, LocationDescriptor) :
-	Object == beer & LocationDescriptor == owner
++!drop(Object, Qtty, LocationDescriptor) :
+	Object == beer & Qtty == 1 & LocationDescriptor == owner
 <-
 	hand_in(Object).
-+!drop(Object, LocationDescriptor) :
++!drop(Object, Qtty, LocationDescriptor) :
 	Object == beer & LocationDescriptor == fridge
 <-
 	open(LocationDescriptor);
-	// TODO deposit in fridge
+	.wait(200);
+	?stored(Object, LocationDescriptor, StoredQtty);
+	store(Object, LocationDescriptor, Qtty);
 	close(LocationDescriptor);
-	?stored(Object, LocationDescriptor, Qtty);
-	.send(robot, tell, stock(Object, LocationDescriptor, Qtty)).
+	.send(robot, tell, stock(Object, LocationDescriptor, StoredQtty+Qtty)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN goAtLocation

@@ -35,7 +35,7 @@ public class HouseView extends GridWorldView {
 					super.drawAgent(g, x, y, Color.yellow, -1);
 				}
 				g.setColor(Color.black);
-				drawString(g, x, y, defaultFont, "Fridge ("+hmodel.availableBeers+")");
+				drawString(g, x, y, defaultFont, "Fridge ("+hmodel.beersInFridge+")");
 				break;
 			case HouseModel.DELIVERY:
 				super.drawAgent(g, x, y, Color.green, -1);
@@ -89,7 +89,7 @@ public class HouseView extends GridWorldView {
 					super.drawString(g, x, y, defaultFont, "Robot");
 				} else if (!lRobot.equals(hmodel.lFridge) && !lRobot.equals(hmodel.lDelivery) && !lRobot.equals(hmodel.lDumpster) && !lRobot.equals(hmodel.lCan)) {
 					c = Color.yellow;
-					if (hmodel.carryingBeer) c = Color.orange;
+					if (hmodel.carryingBeer.contains(HouseModel.ROBOT)) c = Color.orange;
 					super.drawAgent(g, x, y, c, -1);
 					g.setColor(Color.black);
 					super.drawString(g, x, y, defaultFont, "Robot");

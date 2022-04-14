@@ -2,6 +2,8 @@ import jason.environment.grid.GridWorldModel;
 import jason.environment.grid.Location;
 
 import java.util.Random;
+import java.util.Set;
+import java.util.HashSet;
 
 /** class that implements the Model of Domestic Robot application */
 public class HouseModel extends GridWorldModel {
@@ -23,11 +25,14 @@ public class HouseModel extends GridWorldModel {
 	public static final int GSize = 11;
 
 	boolean fridgeOpen   = false; // whether the fridge is open
-	boolean carryingBeer = false; // whether the robot is carrying beer
-	boolean carryingCan  = false; // whether the robot is carrying an empty beer can
 	int sipCount         = 0; // how many sip the owner did
-	int availableBeers   = 3; // how many beers are available
 	int trashCount 		   = 0; // how many trash cans are in dumpster
+	int beersInFridge    = 3; // how many beers are available
+	int beersInDelivery  = 0; // how many beers have been delivered to the delivery location
+
+	Set<Integer> carryingBeer  = new HashSet<Integer>(); // agentCodes of agents carrying beer
+	Set<Integer> carryingCan   = new HashSet<Integer>(); // agentCodes of agents carrying cans
+	Set<Integer> carryingTrash = new HashSet<Integer>(); // agentCodes of agents carrying trash
 
 	Location lBase     = new Location(GSize/2, GSize/2);
 	Location lOwner    = new Location(GSize-1, GSize-1); 
@@ -63,31 +68,13 @@ public class HouseModel extends GridWorldModel {
 		add(DEPOT,    lDepot);
 	}
 
-	int getAgentCode(String agent) {
-		if (agent.equals("robot"))   return ROBOT;
-		if (agent.equals("owner"))   return OWNER;
-		if (agent.equals("cleaner")) return CLEANER;
-		if (agent.equals("dustman")) return DUSTMAN;
-		if (agent.equals("mover"))   return MOVER;
+	int getAgentCode(String ag) {
+		if (ag.equals("robot"))   return ROBOT;
+		if (ag.equals("owner"))   return OWNER;
+		if (ag.equals("cleaner")) return CLEANER;
+		if (ag.equals("dustman")) return DUSTMAN;
+		if (ag.equals("mover"))   return MOVER;
 		return -1;
-	}
-	
-	boolean openFridge() {
-		if (!fridgeOpen) {
-			fridgeOpen = true;
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	boolean closeFridge() {
-		if (fridgeOpen) {
-			fridgeOpen = false;
-			return true;
-		} else {
-			return false;
-		}
 	}
 
 	boolean nearPos(Location a, Location b) {
@@ -102,8 +89,8 @@ public class HouseModel extends GridWorldModel {
 		return a.equals(b);
 	}
 
-	boolean moveTowards(String agent, String direction) {
-		int agentCode = getAgentCode(agent);
+	boolean moveTowards(String ag, String direction) {
+		int agentCode = getAgentCode(ag);
 		Location loc = getAgPos(agentCode);
 
 		if (direction.equals("left")) {
@@ -145,55 +132,120 @@ public class HouseModel extends GridWorldModel {
 		return true;
 	}
 
-	boolean getBeer() {
-		if (fridgeOpen && availableBeers > 0 && !carryingBeer) {
-			availableBeers--;
-			carryingBeer = true;
-			if (view != null)
-				view.update(lFridge.x,lFridge.y);
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	boolean getCan(String agent) {
-		int agentCode = getAgentCode(agent);
-		if (!carryingCan) {
-			if (hasObject(CAN, getAgPos(agentCode))) {
-				remove(CAN, getAgPos(agentCode));
-				if (view != null)
-					view.update(lCan.x,lCan.y);
-			}
-			carryingCan = true;
+	boolean openFridge() {
+		if (!fridgeOpen) {
+			fridgeOpen = true;
 			return true;
 		}
 		return false;
 	}
 
-	boolean addBeer(int n) {
-		availableBeers += n;
+	boolean closeFridge() {
+		if (fridgeOpen) {
+			fridgeOpen = false;
+			return true;
+		}
+		return false;
+	}
+
+	boolean addBeersToFridge(String ag, int n) {
+		int agentCode = getAgentCode(ag);
+		if (fridgeOpen && carryingBeer.contains(agentCode)) {
+			beersInFridge += n;
+			carryingBeer.remove(agentCode);
+			if (view != null)
+				view.update(lFridge.x,lFridge.y);
+			return true;
+		}
+		return false;
+	}
+
+	boolean addBeersToDelivery(String ag, int n) {
+		beersInDelivery += n;
 		if (view != null)
-			view.update(lFridge.x,lFridge.y);
+			view.update(lDelivery.x,lDelivery.y);
 		return true;
 	}
 
-	boolean handInBeer() {
-		if (carryingBeer) {
+	boolean handInBeer(String ag) {
+		int agentCode = getAgentCode(ag);
+		if (carryingBeer.contains(agentCode)) {
 			sipCount = 10;
-			carryingBeer = false;
+			carryingBeer.remove(agentCode);
 			if (view != null)
 				view.update(lOwner.x,lOwner.y);
 			return true;
-		} else {
-			return false;
 		}
+		return false;
 	}
 
-	boolean recycleCan() {
-		if (carryingCan) {
-			carryingCan = false;
+	boolean addCanToDumpster(String ag) {
+		int agentCode = getAgentCode(ag);
+		if (carryingCan.contains(agentCode)) {
 			trashCount++;
+			carryingCan.remove(agentCode);
+			if (view != null)
+				view.update(lDumpster.x,lDumpster.y);
+			return true;
+		}
+		return false;
+	}
+
+	boolean getBeerFromFridge(String ag) {
+		int agentCode = getAgentCode(ag);
+		if (fridgeOpen && beersInFridge > 0 && !carryingBeer.contains(agentCode)) {
+			beersInFridge--;
+			carryingBeer.add(agentCode);
+			if (view != null)
+				view.update(lFridge.x,lFridge.y);
+			return true;
+		}
+		return false;
+	}
+
+	boolean getBeersFromDelivery(String ag, int n) {
+		int agentCode = getAgentCode(ag);
+		if (beersInDelivery >= n && !carryingBeer.contains(agentCode)) {
+			beersInDelivery -= n;
+			carryingBeer.add(agentCode);
+			if (view != null)
+				view.update(lDelivery.x,lDelivery.y);
+			return true;
+		}
+		return false;
+	}
+
+	boolean removeBeersFromDelivery(int n) {
+		if (beersInDelivery >= n) {
+			beersInDelivery -= n;
+			if (view != null)
+				view.update(lDelivery.x,lDelivery.y);
+			return true;
+		}
+		return false;
+	}
+
+	boolean getCan(String ag) {
+		int agentCode = getAgentCode(ag);
+		if (!carryingCan.contains(agentCode)) {
+			carryingCan.add(agentCode);
+			if (hasObject(CAN, getAgPos(agentCode))) {
+				remove(CAN, getAgPos(agentCode));
+				if (view != null)
+					view.update(lCan.x,lCan.y);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	boolean getTrashFromDumpster(String ag) {
+		int agentCode = getAgentCode(ag);
+		if (trashCount > 0 && !carryingTrash.contains(agentCode)) {
+			trashCount = 0;
+			carryingTrash.add(agentCode);
+			if (view != null)
+				view.update(lDumpster.x, lDumpster.y);
 			return true;
 		}
 		return false;
@@ -205,38 +257,35 @@ public class HouseModel extends GridWorldModel {
 			if (view != null)
 				view.update(lOwner.x,lOwner.y);
 			return true;
-		} else {
-			return false;
 		}
+		return false;
 	}
 
 	// TODO MAY NEED TO BE MORE THAN ONE CAN
 	boolean throwCan(Location loc) {
 		lCan = loc;
 		add(CAN, lCan);
+		if (view != null)
+			view.update(lCan.x, lCan.y);
 		return true;
 	}
 
-	boolean collectTrash() {
-		if (trashCount > 0) {
-			trashCount = 0;
-		}
-		return true;
-	}
-
-	boolean enterMap(String agent) {
-		int agentCode = getAgentCode(agent);
+	boolean enterMap(String ag) {
+		int agentCode = getAgentCode(ag);
 		setAgPos(agentCode, lDepot);
+		if (view != null)
+			view.update(lDepot.x, lDepot.y);
 		return true;
 	}
 
-	boolean exitMap(String agent) {
-		int agentCode = getAgentCode(agent);
+	boolean exitMap(String ag) {
+		int agentCode = getAgentCode(ag);
 		if (lDepot.equals(getAgPos(agentCode))) {
 			remove(AGENT, lDepot);
+			if (view != null)
+				view.update(lDepot.x, lDepot.y);
 			return true;
-		} else {
-			return false;
 		}
+		return false;
 	}
 }
