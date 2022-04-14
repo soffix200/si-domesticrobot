@@ -93,7 +93,7 @@ limit(max, cost,   beer,  5).
 	limit(max, cost, beer, Limit) & 1 <= Limit
 <-
 	.send(market, tell, placeBid(AuctionNum, 1));
-	.abolish(auction, start, AuctionNum, Product, Qtty).
+	.abolish(auction(start, AuctionNum, Product, Qtty)).
 
 +auction(finish, AuctionNum, Product, Qtty, Winner, TotalPrice) : .my_name(Self) & Self == Winner <-
 	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
