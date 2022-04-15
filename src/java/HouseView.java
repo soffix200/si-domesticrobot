@@ -21,7 +21,7 @@ public class HouseView extends GridWorldView {
 	/** draw application objects */
 	@Override
 	public void draw(Graphics g, int x, int y, int object) {
-		Location lRobot   = hmodel.getAgPos(HouseModel.ROBOT);
+		Location lButler   = hmodel.getAgPos(HouseModel.BUTLER);
 		Location lOwner   = hmodel.getAgPos(HouseModel.OWNER);
 		Location lCleaner = hmodel.getAgPos(HouseModel.CLEANER);
 		Location lDustman = hmodel.getAgPos(HouseModel.DUSTMAN);
@@ -31,7 +31,7 @@ public class HouseView extends GridWorldView {
 		switch (object) {
 			case HouseModel.FRIDGE:
 				super.drawAgent(g, x, y, Color.white, -1);
-				if (lRobot.equals(hmodel.lFridge) || lOwner.equals(hmodel.lFridge)) {
+				if (lButler.equals(hmodel.lFridge) || lOwner.equals(hmodel.lFridge)) {
 					super.drawAgent(g, x, y, Color.yellow, -1);
 				}
 				g.setColor(Color.black);
@@ -39,21 +39,21 @@ public class HouseView extends GridWorldView {
 				break;
 			case HouseModel.DELIVERY:
 				super.drawAgent(g, x, y, Color.green, -1);
-				if (lRobot.equals(hmodel.lDelivery) || lOwner.equals(hmodel.lDelivery)) {
+				if (lButler.equals(hmodel.lDelivery) || lOwner.equals(hmodel.lDelivery)) {
 					super.drawAgent(g, x, y, Color.yellow, -1);
 				}
 				g.setColor(Color.black);
 				drawString(g, x, y, defaultFont, "Delivery");
 				break;
 			case HouseModel.DUMPSTER:
-				if (lRobot.equals(hmodel.lDumpster) || lOwner.equals(hmodel.lDumpster)) {
+				if (lButler.equals(hmodel.lDumpster) || lOwner.equals(hmodel.lDumpster)) {
 					super.drawAgent(g, x, y, Color.yellow, -1);
 				}
 				g.setColor(Color.black);   
 				drawString(g, x, y, defaultFont, "Dumpster ("+hmodel.trashCount+")");
 				break;
 			case HouseModel.CAN:
-				if (lRobot.equals(hmodel.lCan) || lOwner.equals(hmodel.lCan)) {
+				if (lButler.equals(hmodel.lCan) || lOwner.equals(hmodel.lCan)) {
 					super.drawAgent(g, x, y, Color.yellow, -1);
 				}
 				g.setColor(Color.black);   
@@ -62,7 +62,7 @@ public class HouseView extends GridWorldView {
 
 			case HouseModel.OWNER:
 				super.drawAgent(g, x, y, Color.red, -1);
-				if (lRobot.equals(hmodel.lOwner)) {
+				if (lButler.equals(hmodel.lOwner)) {
 					super.drawAgent(g, x, y, Color.yellow, -1);
 				}
 				String o = "Own";
@@ -78,25 +78,25 @@ public class HouseView extends GridWorldView {
 
 	@Override
 	public void drawAgent(Graphics g, int x, int y, Color c, int id) {
-		Location lRobot = hmodel.getAgPos(HouseModel.ROBOT);
+		Location lButler = hmodel.getAgPos(HouseModel.BUTLER);
 		Location lOwner = hmodel.getAgPos(HouseModel.OWNER);
 		switch (id) {
-			case HouseModel.ROBOT:
-				if (lRobot.equals(lOwner)) {
+			case HouseModel.BUTLER:
+				if (lButler.equals(lOwner)) {
 					c = Color.red;
 					super.drawAgent(g, x, y, c, -1);
 					g.setColor(Color.black);
-					super.drawString(g, x, y, defaultFont, "Robot");
-				} else if (!lRobot.equals(hmodel.lFridge) && !lRobot.equals(hmodel.lDelivery) && !lRobot.equals(hmodel.lDumpster) && !lRobot.equals(hmodel.lCan)) {
+					super.drawString(g, x, y, defaultFont, "Butler");
+				} else if (!lButler.equals(hmodel.lFridge) && !lButler.equals(hmodel.lDelivery) && !lButler.equals(hmodel.lDumpster) && !lButler.equals(hmodel.lCan)) {
 					c = Color.yellow;
-					if (hmodel.carryingBeer.contains(HouseModel.ROBOT)) c = Color.orange;
+					if (hmodel.carryingBeer.contains(HouseModel.BUTLER)) c = Color.orange;
 					super.drawAgent(g, x, y, c, -1);
 					g.setColor(Color.black);
-					super.drawString(g, x, y, defaultFont, "Robot");
+					super.drawString(g, x, y, defaultFont, "Butler");
 				}
 				break;
 			case HouseModel.OWNER:
-				if (lOwner.equals(lRobot)) {
+				if (lOwner.equals(lButler)) {
 					c = Color.red;
 					super.drawAgent(g, x, y, c, -1);
 					g.setColor(Color.black);

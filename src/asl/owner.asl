@@ -3,7 +3,7 @@ limit(min, talk,  waitTime,       2000  ).
 limit(min, nap,   time,           120000).
 limit(max, nap,   time,           720000).
 limit(max, mood,  sipMoodCount,   6     ).
-limit(max, robot, dailyPayment,   50    ).
+limit(max, butler, dailyPayment,   50    ).
 limit(max, owner, monthlyPension, 2000  ).
 limit(max, owner, cleanChance,    10    ).
 
@@ -18,10 +18,10 @@ healthConstraint(Product) :-
 	.date(YY,MM,DD) &
 	healthConstraint(Product,YY,MM,DD).
 
-!setupTool("Owner", "Robot"). // THIS MAY CRASH
+!setupTool("Owner", "Butler"). // THIS MAY CRASH
 
 !initOwner.
-!talkRobot.
+!talkButler.
 !expectPension.
 
 +!initOwner <-
@@ -38,41 +38,41 @@ healthConstraint(Product) :-
 // TRIGGERS
 // -------------------------------------------------------------------------
 
-+pay(robot, Amount) : has(money, Balance) & Balance >= Amount <-
++pay(butler, Amount) : has(money, Balance) & Balance >= Amount <-
 	.date(YY,MM,DD);
-	?limit(max, robot, dailyPayment, Limit);
+	?limit(max, butler, dailyPayment, Limit);
 	if (paid(YY,MM,DD, AmountPaid)) {
 		if (AmountPaid + Amount <= Limit) {
-			.println("Tengo dinero, ahora le pago a robot los ", Amount, " que me ha pedido");
+			.println("Tengo dinero, ahora le pago a butler los ", Amount, " que me ha pedido");
 			-+paid(YY,MM,DD, AmountPaid+Amount);
 			.abolish(has(money, Balance)); +has(money, Balance-Amount);
-			.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
-			.send(robot, tell, pay(Amount)); // TODO AIML
+			.send(butler, tell, msg("Ten los ", Amount, " que me has pedido."));
+			.send(butler, tell, pay(Amount)); // TODO AIML
 			.send(assistant, achieve, remember(paid(YY,MM,DD, AmountPaid+Amount)));
 			.send(assistant, achieve, remember(has(money, Balance-Amount)));
 		} else {
 			.println("No puedo gastar más en cervezas hoy o me desahuciarán");
-			.send(robot, tell, cannotpay(Amount));
+			.send(butler, tell, cannotpay(Amount));
 		}
 	} else {
 		if (Amount < Limit){
-			.println("Tengo dinero, ahora le pago a robot los ", Amount, " que me ha pedido");
+			.println("Tengo dinero, ahora le pago a butler los ", Amount, " que me ha pedido");
 			-+paid(YY,MM,DD, Amount);
 			.abolish(has(money, Balance)); +has(money, Balance-Amount);
-			.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
-			.send(robot, tell, pay(Amount)); // TODO AIML
+			.send(butler, tell, msg("Ten los ", Amount, " que me has pedido."));
+			.send(butler, tell, pay(Amount)); // TODO AIML
 			.send(assistant, achieve, remember(paid(YY,MM,DD, Amount)));
 			.send(assistant, achieve, remember(has(money, Balance-Amount)));
 		} else {
 			.println("Esa cantidad est� por encima de mi presupuesto diario!");
-			.send(robot, tell, cannotpay(Amount));
+			.send(butler, tell, cannotpay(Amount));
 		}
 	}
-	.abolish(pay(robot, Amount)).
-+pay(robot, Amount) : has(money, Balance) & Balance < Amount<-
+	.abolish(pay(butler, Amount)).
++pay(butler, Amount) : has(money, Balance) & Balance < Amount<-
 	.println("No me queda dinero, a ver si la pensi�n llega pronto");
-	.send(robot, tell, cannotpay(Amount));
-	.abolish(pay(robot, Amount)).
+	.send(butler, tell, cannotpay(Amount));
+	.abolish(pay(butler, Amount)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR createAssistant
@@ -116,24 +116,24 @@ healthConstraint(Product) :-
 // DEFINITION FOR PLAN setupTool
 // -------------------------------------------------------------------------
 
-+!setupTool(Master, Robot) <-
++!setupTool(Master, Butler) <-
 	makeArtifact("GUI","gui.Console",[],GUI);
 	setBotMasterName(Master);
-	setBotName(Robot);
+	setBotName(Butler);
 	focus(GUI). 
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR PLAN talkRobot
+// DEFINITION FOR PLAN talkButler
 // -------------------------------------------------------------------------
 
-+!talkRobot : not mood(owner, dormido) <- // TODO different messages for each mood
-	.send(robot, tell, msg("Test message")); // TODO IMPLEMENT AIML
++!talkButler : not mood(owner, dormido) <- // TODO different messages for each mood
+	.send(butler, tell, msg("Test message")); // TODO IMPLEMENT AIML
 	.random(X);
 	?limit(min, talk, waitTime, MinWaitTime);
 	?limit(max, talk, waitTime, MaxWaitTime);
 	.wait(MinWaitTime + (MaxWaitTime - MinWaitTime)*X);
-	!talkRobot.
-+!talkRobot <- !talkRobot.
+	!talkButler.
++!talkButler <- !talkButler.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN cleanHouse
@@ -150,10 +150,10 @@ healthConstraint(Product) :-
 +!drinkBeer : not mood(owner, dormido) & healthConstraint(beer) <-
 	.println("Owner ha bebido demasiado por hoy.");
 	.wait(10000);
-	-asked(robot, beer).
-+!drinkBeer : not mood(owner, dormido) & has(owner, beer) & asked(robot, beer) <-
+	-asked(butler, beer).
++!drinkBeer : not mood(owner, dormido) & has(owner, beer) & asked(butler, beer) <-
 	.println("Voy a empezar a beber cerveza.");
-	-asked(robot, beer);
+	-asked(butler, beer);
 	sip(beer);
 	?sipMoodCount(owner, SipMoodCount); ?limit(max, mood, sipMoodCount, Limit);
 	if ((SipMoodCount+1) == Limit) {
@@ -165,7 +165,7 @@ healthConstraint(Product) :-
 		.send(assistant, achieve, remember(sipMoodCount(owner, SipMoodCount+1)));
 	}
 	+has(owner, halfemptycan).
-+!drinkBeer : not mood(owner, dormido) & has(owner, beer) & not asked(robot, beer) <-
++!drinkBeer : not mood(owner, dormido) & has(owner, beer) & not asked(butler, beer) <-
 	.println("Voy a beber un sorbo de cerveza.");
 	sip(beer);
 	?sipMoodCount(owner, SipMoodCount); ?limit(max, mood, sipMoodCount, Limit);
@@ -179,13 +179,13 @@ healthConstraint(Product) :-
 		.send(assistant, achieve, remember(sipMoodCount(owner, SipMoodCount+1)));
 	}
 	+has(owner, halfemptycan).
-+!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & asked(robot, beer) <-
++!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & asked(butler, beer) <-
 	.println("Sigo esperando mi cerveza");
 	.wait(1000).
-+!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & not asked(robot, beer) <-
-	.println("Pido una cerveza al robot");
-	.send(robot, tell, bring(beer));
-	+asked(robot, beer).
++!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & not asked(butler, beer) <-
+	.println("Pido una cerveza al butler");
+	.send(butler, tell, bring(beer));
+	+asked(butler, beer).
 +!drinkBeer <- true.
 
 // ## HELPER TRIGGER has
@@ -207,11 +207,11 @@ healthConstraint(Product) :-
 	}
 	throw(can, position(PX, PY));
 	-has(owner, can);
-	.send(robot, tell, msg("He tirado una lata"));
-	.send(robot, tell, can(PX, PY)). // TODO AIML
+	.send(butler, tell, msg("He tirado una lata"));
+	.send(butler, tell, can(PX, PY)). // TODO AIML
 +has(owner, can) : mood(owner, amodorrado) | mood(owner, dormido) | mood(owner, despierto) | mood(owner, animado) <-
-	.println("Voy a pedirle al robot que venga a por la lata");
-	.send(robot, tell, msg("Ven a por la lata")).
+	.println("Voy a pedirle al butler que venga a por la lata");
+	.send(butler, tell, msg("Ven a por la lata")).
 +has(owner, can) : mood(owner, despierto) | mood(owner, animado) <- // TODO and remove from previous intention
 	.println("Voy a llevar la lata al cubo de basura").
 

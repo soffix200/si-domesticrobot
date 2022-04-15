@@ -81,7 +81,7 @@ available(Object, LocationDescriptor) :-
 	!goAtLocation(DX, DY, DPlacement);
 	.println("Dejando ", Qtty, " ", Object);
 	!drop(Object, Qtty, DDescriptor);
-	.send(robot, tell, moved(success, Object, Qtty, ODescriptor, DDescriptor));
+	.send(butler, tell, moved(success, Object, Qtty, ODescriptor, DDescriptor));
 	-+status(idle);
 	!move.
 +!move : status(idle) <- !move.
@@ -102,11 +102,11 @@ available(Object, LocationDescriptor) :-
 	if (available(Object, LocationDescriptor)) {
 		get(Object, LocationDescriptor);
 		close(LocationDescriptor);
-		.send(robot, tell, stock(Object, LocationDescriptor, StoredQtty-Qtty));
+		.send(butler, tell, stock(Object, LocationDescriptor, StoredQtty-Qtty));
 	} else {
 		close(LocationDescriptor);
-		.send(robot, tell, stock(Object, LocationDescriptor, 0));
-		.send(robot, tell, moved(failure, Object, Qtty, LocationDescriptor, DDescriptor));
+		.send(butler, tell, stock(Object, LocationDescriptor, 0));
+		.send(butler, tell, moved(failure, Object, Qtty, LocationDescriptor, DDescriptor));
 		.fail;
 	}.
 +!pick(Object, Qtty, LocationDescriptor, DDescriptor) :
@@ -133,7 +133,7 @@ available(Object, LocationDescriptor) :-
 	?stored(Object, LocationDescriptor, StoredQtty);
 	store(Object, LocationDescriptor, Qtty);
 	close(LocationDescriptor);
-	.send(robot, tell, stock(Object, LocationDescriptor, StoredQtty+Qtty)).
+	.send(butler, tell, stock(Object, LocationDescriptor, StoredQtty+Qtty)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN goAtLocation

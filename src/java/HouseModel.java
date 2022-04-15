@@ -9,7 +9,7 @@ import java.util.HashSet;
 public class HouseModel extends GridWorldModel {
 
 	// constants for the grid objects
-	public static final int ROBOT    = 0;
+	public static final int BUTLER   = 0;
 	public static final int OWNER    = 1;
 	public static final int CLEANER  = 2;
 	public static final int DUSTMAN  = 3;
@@ -57,7 +57,7 @@ public class HouseModel extends GridWorldModel {
 		super(GSize, GSize, 5);
 
 		// Base location of agents
-		setAgPos(ROBOT, lBase);
+		setAgPos(BUTLER, lBase);
 		setAgPos(OWNER, lOwner);
 
 		// initial location of various furniture
@@ -69,7 +69,7 @@ public class HouseModel extends GridWorldModel {
 	}
 
 	int getAgentCode(String ag) {
-		if (ag.equals("robot"))   return ROBOT;
+		if (ag.equals("butler"))   return BUTLER;
 		if (ag.equals("owner"))   return OWNER;
 		if (ag.equals("cleaner")) return CLEANER;
 		if (ag.equals("dustman")) return DUSTMAN;
@@ -108,7 +108,7 @@ public class HouseModel extends GridWorldModel {
 		
 		setAgPos(agentCode, loc);
 
-		if (agentCode == ROBOT) {
+		if (agentCode == BUTLER) {
 			atBase     = atPos(loc, lBase);
 			atOwner    = nearPos(loc, lOwner);
 			atFridge   = nearPos(loc, lFridge);

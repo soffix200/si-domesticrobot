@@ -80,7 +80,7 @@ obstacles([]).
   .println("Desplazándose a exit");
   ?exit(EX, EY, EPlacement);
   !goAtLocation(EX, EY, EPlacement);
-  .send(robot, tell, tookout(success, trash));
+  .send(butler, tell, tookout(success, trash));
 	-+status(idle);
   !takeout(trash).
 +!takeout(trash) : status(idle) <- !takeout(trash).
