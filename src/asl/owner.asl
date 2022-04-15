@@ -40,9 +40,11 @@ healthConstraint(Product) :-
 		if (AmountPaid + Amount <= Limit) {
 			.println("Tengo dinero, ahora le pago a robot los ", Amount, " que me ha pedido");
 			-+paid(YY,MM,DD, AmountPaid+Amount);
+			.abolish(has(money, Balance)); +has(money, Balance-Amount);
 			.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
 			.send(robot, tell, pay(Amount)); // TODO AIML
 			.send(assistant, achieve, remember(paid(YY,MM,DD, AmountPaid+Amount)));
+			.send(assistant, achieve, remember(has(money, Balance-Amount)));
 		} else {
 			.println("No puedo gastar más en cervezas hoy o me desahuciarán");
 			.send(robot, tell, cannotpay(Amount));
@@ -51,9 +53,11 @@ healthConstraint(Product) :-
 		if (Amount < Limit){
 			.println("Tengo dinero, ahora le pago a robot los ", Amount, " que me ha pedido");
 			-+paid(YY,MM,DD, Amount);
+			.abolish(has(money, Balance)); +has(money, Balance-Amount);
 			.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
 			.send(robot, tell, pay(Amount)); // TODO AIML
 			.send(assistant, achieve, remember(paid(YY,MM,DD, Amount)));
+			.send(assistant, achieve, remember(has(money, Balance-Amount)));
 		} else {
 			.println("Esa cantidad est� por encima de mi presupuesto diario!");
 			.send(robot, tell, cannotpay(Amount));
