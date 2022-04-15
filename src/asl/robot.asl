@@ -80,14 +80,17 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // PRIORITIES AND PLAN INITIALIZATION
 // -------------------------------------------------------------------------
 
-!initBot.
 !initRobot.
-!dialogWithOwner. // TODO
 
 +!initRobot <-
+	!initBot;
 	!createDatabase;
+	!createAutomaton(cleaner);
+	!createAutomaton(dustman);
+	!createAutomaton(mover);
 	!doHouseWork.
 +!doHouseWork <-
+	!dialogWithOwner; // TODO
 	!manageBeer;
 	!cleanHouse;
 	!doHouseWork.
@@ -130,6 +133,10 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	+MoneyResponse;
 	+ConsumedResponse.
 
++!createAutomaton(Name) <-
+	.concat("automaton_", Name, ".asl", Filename);
+	.create_agent(Name, Filename, [agentArchClass("jaca.CAgentArch"), agentArchClass("MixedAgentArch")]).
+
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN dialogWithOwner // TODO: PLACEHOLDER
 // -------------------------------------------------------------------------
@@ -139,10 +146,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	//chat(Msg) // De manera asíncrona devuelve una signal => answer(Answer)
 	-msg(Msg)[source(Ag)];   
 	.println("El agente ",Ag," ha dicho ",Msg);
-	!doSomething(Answer,Ag);
+	!doSomething(Answer,Ag).
 	//.send(Ag,tell,answer(Answer)); //modificar adecuadamente
-	!dialogWithOwner.
-+!dialogWithOwner <- !dialogWithOwner.
++!dialogWithOwner <- true.
 
 +!doSomething(Answer,Ag) : service(Answer, Service) <-
 	.println("Aqui debe ir el código del servicio:", Service," para el agente ",Ag).
