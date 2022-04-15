@@ -32,15 +32,6 @@ public class HouseEnv extends Environment {
 	public static final Literal hob  = Literal.parseLiteral("has(owner,beer)");
 	public static final Literal hnob = Literal.parseLiteral("hasnot(owner,beer)");
 
-	public static final Literal ab   = Literal.parseLiteral("at(robot,base)");
-	public static final Literal ao   = Literal.parseLiteral("at(robot,owner)");
-	public static final Literal af   = Literal.parseLiteral("at(robot,fridge)");
-	public static final Literal adel = Literal.parseLiteral("at(robot,delivery)");
-	public static final Literal adu  = Literal.parseLiteral("at(robot,dumpster)");
-	public static final Literal adep = Literal.parseLiteral("at(robot,depot)");
-	public static final Literal ae   = Literal.parseLiteral("at(robot,exit)");
-	public static final Literal ac   = Literal.parseLiteral("at(robot,can)");
-
 	static Logger logger = Logger.getLogger(HouseEnv.class.getName());
 	
 	private CartagoEnvironment cartagoEnv;
@@ -56,8 +47,8 @@ public class HouseEnv extends Environment {
 		startCartago(args);
 
 		clearPercepts();
-		updatePercepts("robot", new LinkedList<Literal>());
-		updatePercepts("owner", new LinkedList<Literal>());
+		updatePercepts("butler", new LinkedList<Literal>());
+		updatePercepts("owner",  new LinkedList<Literal>());
 	}
 	
 	public void startCartago(String[] args) { 
@@ -77,7 +68,7 @@ public class HouseEnv extends Environment {
 	void updatePercepts(String agent, List<Literal> literals) {
 		clearPercepts(agent);
 
-		if (agent == "robot" || agent == "owner") {
+		if (agent == "butler" || agent == "owner") {
 			addPercept(agent, Literal.parseLiteral("bounds("+(model.GSize-1)+","+(model.GSize-1)+")"));
 
 			addPercept(agent, Literal.parseLiteral("location(base,"+    "position,"+model.lBase.x+    ","+model.lBase.y+    ")"));
@@ -87,20 +78,6 @@ public class HouseEnv extends Environment {
 			addPercept(agent, Literal.parseLiteral("location(dumpster,"+"obstacle,"+model.lDumpster.x+","+model.lDumpster.y+")"));
 			addPercept(agent, Literal.parseLiteral("location(depot   ,"+"position,"+model.lDepot.x+   ","+model.lDepot.y+   ")"));
 			addPercept(agent, Literal.parseLiteral("location(exit,"+    "position,"+model.lExit.x+    ","+model.lExit.y+    ")"));
-		}
-
-		if (agent == "robot") {
-			Location lRobot = model.getAgPos(model.ROBOT);
-			addPercept(agent, Literal.parseLiteral("at(robot,"+lRobot.x+","+lRobot.y+")"));
-
-			if (model.atBase)     addPercept(agent, ab);
-			if (model.atOwner)    addPercept(agent, ao);
-			if (model.atFridge)   addPercept(agent, af);
-			if (model.atDelivery) addPercept(agent, adel);
-			if (model.atDumpster) addPercept(agent, adu);
-			if (model.atDepot)    addPercept(agent, adep);
-			if (model.atExit)     addPercept(agent, ae);
-			if (model.atCan)      addPercept(agent, ac);
 		}
 
 		if (agent == "owner") {
@@ -143,6 +120,8 @@ public class HouseEnv extends Environment {
 			} else if (action.equals(collectTrash)) {
 				succeed = model.getTrashFromDumpster(ag);
 			} else if (action.equals(enterMap)) {
+				logger.info("P1");
+				logger.info(ag);
 				succeed = model.enterMap(ag);
 			} else if (action.equals(exitMap)) {
 				succeed = model.exitMap(ag);

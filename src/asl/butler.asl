@@ -80,9 +80,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // PRIORITIES AND PLAN INITIALIZATION
 // -------------------------------------------------------------------------
 
-!initRobot.
+!initButler.
 
-+!initRobot <-
++!initButler <-
 	!initBot;
 	!createDatabase;
 	!createAutomaton(cleaner);
@@ -134,7 +134,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	+ConsumedResponse.
 
 +!createAutomaton(Name) <-
-	.concat("automaton_", Name, ".asl", Filename);
+	.concat("./src/asl/automaton/", Name, ".asl", Filename);
 	.create_agent(Name, Filename, [agentArchClass("jaca.CAgentArch"), agentArchClass("MixedAgentArch")]).
 
 // -------------------------------------------------------------------------
@@ -341,7 +341,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	if (has(money, Balance) & Balance < TotalPrice) {
 		.println("No tengo dinero, le pido a owner");
 		.abolish(cannotpay(_));
-		.send(owner, tell, pay(robot, TotalPrice-Balance));
+		.send(owner, tell, pay(butler, TotalPrice-Balance));
 		!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice);
 	} else {
 		!receiveDelivery(OrderId, Provider, Product, Qtty, TotalPrice);
@@ -391,34 +391,3 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.abolish(stock(Object, LocationDescriptor, _));
 	.abolish(stored(Object, LocationDescriptor, _)); +stored(Object, LocationDescriptor, Qtty).
 
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLANS goAtX
-// -------------------------------------------------------------------------
-
-+!goAtPlace(robot, Place) : at(robot, Place) <- true.
-+!goAtPlace(robot, Place) :
-	not at(robot, Place) &
-	at(robot, OX, OY) & location(Place, Type, DX, DY) & placement(Type, Placement) & bounds(BX, BY)
-<-
-	.println("Going towards ", Place);
-	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
-	movement.getDirection(origin(OX, OY), destination(DX, DY, Placement), bounds(BX, BY), Obstacles, Direction);
-	move_towards(robot, Direction);
-	!goAtPlace(robot, Place).
-+!goAtPlace(robot, Place) <-
-	.wait(100);
-	!goAtPlace(robot, Place).
-
-+!goAtLocation(robot, location(DX, DY)) : at(robot, DX, DY) <- true.
-+!goAtLocation(robot, location(DX, DY)) : 
-	not at(robot, DX, DY) &
-	at(robot, OX, OY) & bounds(BX, BY)
-<-
-	.println("Going towards can");
-	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
-	movement.getDirection(origin(OX, OY), destination(DX, DY, top), bounds(BX, BY), Obstacles, Direction);
-	move_towards(robot, Direction);
-	!goAtLocation(robot, location(DX, DY)).
-+!goAtLocation(robot, location(DX, DY)) <-
-	.wait(100);
-	!goAtLocation(robot, location(DX, DY)).

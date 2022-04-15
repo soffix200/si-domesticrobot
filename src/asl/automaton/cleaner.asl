@@ -85,7 +85,7 @@ obstacles([]).
 	!goAtLocation(DumpX, DumpY, side);
 	.println("Tirando ", Object);
 	!trash(Object);
-	.send(robot, tell, cleaned(success, Object, floor(X, Y)));
+	.send(butler, tell, cleaned(success, Object, floor(X, Y)));
 	-+status(idle);
 	!clean.
 +!clean :
@@ -104,7 +104,7 @@ obstacles([]).
 	!goAtLocation(DumpX, DumpY, side);
 	.println("Tirando ", Object);
 	!trash(Object);
-	.send(robot, tell, cleaned(success, Object, Agent));
+	.send(butler, tell, cleaned(success, Object, Agent));
 	-+status(idle);
 	!clean.
 +!clean : status(idle) <- !clean.

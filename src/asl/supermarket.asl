@@ -41,7 +41,7 @@ limit(max, cost,   beer,  5).
 +!offerBeer : has(beer, Qtty) & Qtty > 0 <-
 	?price(beer, Price);
 	.println("Ahora vendo beer a ", Price);
-	.send(robot, tell, price(beer, Price));
+	.send(butler, tell, price(beer, Price));
 	!evaluatePrice(beer).
 +!offerBeer <- !offerBeer.
 
