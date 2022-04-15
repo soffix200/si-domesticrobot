@@ -112,8 +112,8 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 +!initBot <-
-	makeArtifact("BOT","bot.ChatBOT",["bot"],BOT);
-	focus(BOT);
+	makeArtifact("butlerBot","bot.ChatBOT",["butlerBot"],BotId);
+	focus(BotId);
 	+bot("bot").
 
 // -------------------------------------------------------------------------
@@ -143,11 +143,9 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 +!dialogWithOwner : msg(Msg)[source(Ag)] & bot(Bot) <-
 	chatSincrono(Msg,Answer);
-	//chat(Msg) // De manera asÃ­ncrona devuelve una signal => answer(Answer)
-	-msg(Msg)[source(Ag)];   
+	-msg(Msg)[source(Ag)];
 	.println("El agente ",Ag," ha dicho ",Msg);
-	!doSomething(Answer,Ag).
-	//.send(Ag,tell,answer(Answer)); //modificar adecuadamente
+	!doSomething(Answer,Ag);
 +!dialogWithOwner <- true.
 
 +!doSomething(Answer,Ag) : service(Answer, Service) <-
