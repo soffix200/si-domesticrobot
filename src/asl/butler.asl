@@ -391,34 +391,3 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.abolish(stock(Object, LocationDescriptor, _));
 	.abolish(stored(Object, LocationDescriptor, _)); +stored(Object, LocationDescriptor, Qtty).
 
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLANS goAtX
-// -------------------------------------------------------------------------
-
-+!goAtPlace(butler, Place) : at(butler, Place) <- true.
-+!goAtPlace(butler, Place) :
-	not at(butler, Place) &
-	at(butler, OX, OY) & location(Place, Type, DX, DY) & placement(Type, Placement) & bounds(BX, BY)
-<-
-	.println("Going towards ", Place);
-	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
-	movement.getDirection(origin(OX, OY), destination(DX, DY, Placement), bounds(BX, BY), Obstacles, Direction);
-	move_towards(butler, Direction);
-	!goAtPlace(butler, Place).
-+!goAtPlace(butler, Place) <-
-	.wait(100);
-	!goAtPlace(butler, Place).
-
-+!goAtLocation(butler, location(DX, DY)) : at(butler, DX, DY) <- true.
-+!goAtLocation(butler, location(DX, DY)) : 
-	not at(butler, DX, DY) &
-	at(butler, OX, OY) & bounds(BX, BY)
-<-
-	.println("Going towards can");
-	.findall(obstacle(X, Y), location(_, obstacle, X, Y), Obstacles);
-	movement.getDirection(origin(OX, OY), destination(DX, DY, top), bounds(BX, BY), Obstacles, Direction);
-	move_towards(butler, Direction);
-	!goAtLocation(butler, location(DX, DY)).
-+!goAtLocation(butler, location(DX, DY)) <-
-	.wait(100);
-	!goAtLocation(butler, location(DX, DY)).

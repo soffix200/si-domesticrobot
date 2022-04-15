@@ -9,11 +9,10 @@ import java.util.HashSet;
 public class HouseModel extends GridWorldModel {
 
 	// constants for the grid objects
-	public static final int BUTLER   = 0;
-	public static final int OWNER    = 1;
-	public static final int CLEANER  = 2;
-	public static final int DUSTMAN  = 3;
-	public static final int MOVER    = 4;
+	public static final int OWNER    = 0;
+	public static final int CLEANER  = 1;
+	public static final int DUSTMAN  = 2;
+	public static final int MOVER    = 3;
 
 	public static final int FRIDGE   = 16;
 	public static final int DELIVERY = 32;
@@ -54,22 +53,19 @@ public class HouseModel extends GridWorldModel {
 
 	public HouseModel() {
 		// create a 11x11 grid with two mobile agents
-		super(GSize, GSize, 5);
+		super(GSize, GSize, 4);
 
 		// Base location of agents
-		setAgPos(BUTLER, lBase);
 		setAgPos(OWNER, lOwner);
 
 		// initial location of various furniture
 		add(FRIDGE,   lFridge);
-		add(OWNER,    lOwner);
 		add(DELIVERY, lDelivery);
 		add(DUMPSTER, lDumpster);
 		add(DEPOT,    lDepot);
 	}
 
 	int getAgentCode(String ag) {
-		if (ag.equals("butler"))   return BUTLER;
 		if (ag.equals("owner"))   return OWNER;
 		if (ag.equals("cleaner")) return CLEANER;
 		if (ag.equals("dustman")) return DUSTMAN;
@@ -91,43 +87,19 @@ public class HouseModel extends GridWorldModel {
 
 	boolean moveTowards(String ag, String direction) {
 		int agentCode = getAgentCode(ag);
-		Location loc = getAgPos(agentCode);
+		Location previousLoc = getAgPos(agentCode);
+		Location nextLoc     = getAgPos(agentCode);
 
-		if (direction.equals("left")) {
-			loc.x--;
-		}
-		else if (direction.equals("right")) {
-			loc.x++;
-		}
-		else if (direction.equals("down")) {
-			loc.y++;
-		}
-		else if (direction.equals("up")) {
-			loc.y--;
-		}
+		if (direction.equals("left"))       nextLoc.x--;
+		else if (direction.equals("right"))	nextLoc.x++;
+		else if (direction.equals("down"))  nextLoc.y++;
+		else if (direction.equals("up"))    nextLoc.y--;
 		
-		setAgPos(agentCode, loc);
-
-		if (agentCode == BUTLER) {
-			atBase     = atPos(loc, lBase);
-			atOwner    = nearPos(loc, lOwner);
-			atFridge   = nearPos(loc, lFridge);
-			atDelivery = atPos(loc, lDelivery);
-			atDumpster = nearPos(loc, lDumpster);
-			atDepot    = atPos(loc, lDepot);
-			atExit     = atPos(loc, lExit);
-			atCan      = lCan != null && atPos(loc, lCan);
-		}
+		setAgPos(agentCode, nextLoc);
 
 		if (view != null) {
-			view.update(lBase.x,     lBase.y);
-			view.update(lOwner.x,    lOwner.y);
-			view.update(lFridge.x,   lFridge.y);
-			view.update(lDelivery.x, lDelivery.y);
-			view.update(lDumpster.x, lDumpster.y);
-			view.update(lDepot.x,    lDepot.y);
-			view.update(lExit.x,     lExit.y);
-			if (lCan != null) view.update(lCan.x, lCan.y);
+			view.update(previousLoc.x, previousLoc.y);
+			view.update(nextLoc.x,     nextLoc.y);
 		}
 		return true;
 	}

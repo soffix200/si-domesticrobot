@@ -32,15 +32,6 @@ public class HouseEnv extends Environment {
 	public static final Literal hob  = Literal.parseLiteral("has(owner,beer)");
 	public static final Literal hnob = Literal.parseLiteral("hasnot(owner,beer)");
 
-	public static final Literal ab   = Literal.parseLiteral("at(butler,base)");
-	public static final Literal ao   = Literal.parseLiteral("at(butler,owner)");
-	public static final Literal af   = Literal.parseLiteral("at(butler,fridge)");
-	public static final Literal adel = Literal.parseLiteral("at(butler,delivery)");
-	public static final Literal adu  = Literal.parseLiteral("at(butler,dumpster)");
-	public static final Literal adep = Literal.parseLiteral("at(butler,depot)");
-	public static final Literal ae   = Literal.parseLiteral("at(butler,exit)");
-	public static final Literal ac   = Literal.parseLiteral("at(butler,can)");
-
 	static Logger logger = Logger.getLogger(HouseEnv.class.getName());
 	
 	private CartagoEnvironment cartagoEnv;
@@ -89,20 +80,6 @@ public class HouseEnv extends Environment {
 			addPercept(agent, Literal.parseLiteral("location(exit,"+    "position,"+model.lExit.x+    ","+model.lExit.y+    ")"));
 		}
 
-		if (agent == "butler") {
-			Location lButler = model.getAgPos(model.BUTLER);
-			addPercept(agent, Literal.parseLiteral("at(butler,"+lButler.x+","+lButler.y+")"));
-
-			if (model.atBase)     addPercept(agent, ab);
-			if (model.atOwner)    addPercept(agent, ao);
-			if (model.atFridge)   addPercept(agent, af);
-			if (model.atDelivery) addPercept(agent, adel);
-			if (model.atDumpster) addPercept(agent, adu);
-			if (model.atDepot)    addPercept(agent, adep);
-			if (model.atExit)     addPercept(agent, ae);
-			if (model.atCan)      addPercept(agent, ac);
-		}
-
 		if (agent == "owner") {
 			if (model.sipCount > 0) {
 				addPercept(agent, hob);
@@ -143,6 +120,8 @@ public class HouseEnv extends Environment {
 			} else if (action.equals(collectTrash)) {
 				succeed = model.getTrashFromDumpster(ag);
 			} else if (action.equals(enterMap)) {
+				logger.info("P1");
+				logger.info(ag);
 				succeed = model.enterMap(ag);
 			} else if (action.equals(exitMap)) {
 				succeed = model.exitMap(ag);
