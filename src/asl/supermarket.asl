@@ -1,11 +1,11 @@
 currentOrderId(1).
-priceReevalTimeout(20000). // Take care: if too low, there may be not enough time to receive an order, if too high, supermarket can receive too many orders.
-
-buyBatch(beer, 10).
-minBatch(beer, 10).
 
 cost(beer, 1). // TODO REMOVE; dependent on market
 price(beer, 3).
+
+limit(min, reeval, price, 20000).
+limit(min, stock,  beer,  10).
+limit(max, cost,   beer,  5).
 
 !createStore.
 !offerBeer.
@@ -47,7 +47,7 @@ price(beer, 3).
 // ## HELPER PLAN evaluatePrice(beer)
 
 +!evaluatePrice(beer) <-
-	?currentOrderId(N); ?priceReevalTimeout(Timeout);
+	?currentOrderId(N); ?limit(min, reeval, price, Timeout);
 	-+lastEvaluatedOrderId(N);
 	.wait(Timeout);
 	!calculatePrice(beer).
@@ -64,6 +64,7 @@ price(beer, 3).
 			-+price(beer, Price-1);
 			!offerBeer;
 		} else {
+			-+price(beer, Cost);
 			!evaluatePrice(beer);
 		}
 	}.
@@ -76,15 +77,48 @@ price(beer, 3).
 // DEFINITION FOR PLAN buyBeer
 // -------------------------------------------------------------------------
 
-+!buyBeer :
-	has(beer, StoredQtty) & minBatch(beer, Min) & StoredQtty < Min &
-	has(money, Balance) & cost(beer, Cost) & minBatch(beer, BatchQtty) & Amount >= Cost*BatchQtty
++!buyBeer : 
+	has(beer, StoredQtty) & limit(min, stock, beer, Min) & StoredQtty < Min &
+	not requestedPurchase(beer)
 <-
-	?store(Store);
-	.abolish(has(beer, _)); +has(beer, StoredQtty+BatchQtty); .send(Store, achieve, add(beer,BatchQtty));
-	.abolish(has(money, _)); +has(money, Balance-Cost*BatchQtty); .send(Store, achieve, del(money,Cost*BatchQtty));
+	+requestedPurchase(beer);
 	!buyBeer.
 +!buyBeer <- !buyBeer.
+
+// ## HELPER TRIGGERS auction
+
++auction(start, AuctionNum, Product, Qtty) :
+	requestedPurchase(Product) &
+	has(money, Balance) & Balance >= 1 &
+	limit(max, cost, beer, Limit) & 1 <= Limit
+<-
+	.send(market, tell, placeBid(AuctionNum, 1));
+	.abolish(auction(start, AuctionNum, Product, Qtty)).
+
++auction(finish, AuctionNum, Product, Qtty, Winner, TotalPrice) : .my_name(Self) & Self == Winner <-
+	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
+	.abolish(has(beer, _)); +has(beer, StoredBeer+Qtty); .send(Store, achieve, add(beer, Qtty));
+	.abolish(has(money, _)); +has(money, StoredMoney-TotalPrice); .send(Store, achieve, del(money, TotalPrice));
+	-+cost(beer, TotalPrice/Qtty);
+	.abolish(winningAuction(AuctionNum));
+	.abolish(requestedPurchase(Product));
+	.abolish(bid(_, AuctionNum, _, _));
+	.abolish(auction(finish, AuctionNum, _, _, _, _)).
++auction(finish, AuctionNum, Product, Qtty, Winner, TotalPrice) : .my_name(Self) & Self \== Winner <-
+	.abolish(winningAuction(AuctionNum));
+	.abolish(bid(_, AuctionNum, _, _));
+	.abolish(auction(finish, AuctionNum, _, _, _, _)).
+
++bid(max, AuctionNum, Bidder, Bid) : .my_name(Self) & Self == Bidder & requestedPurchase(Product)  <-
+	-+winningAuction(AuctionNum).
++bid(max, AuctionNum, Bidder, Bid) :
+	.my_name(Self) & Self \== Bidder &
+	requestedPurchase(Product) &
+	has(money, Balance) & Balance >= Bid &
+	limit(max, cost, beer, Limit) & Bid+1 <= Limit
+<-
+	-winningAuction(Auction);
+	.send(market, tell, placeBid(AuctionNum, Bid+1)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN sellBeer
