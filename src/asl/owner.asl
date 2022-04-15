@@ -7,8 +7,12 @@ limit(max, robot, dailyPayment,   50    ).
 limit(max, owner, monthlyPension, 2000  ).
 limit(max, owner, cleanChance,    10    ).
 
-sipMoodCount(owner, 0).
-mood(owner, despierto).
+nextMood(Current, Next) :- Current == despierto  & Next = animado.
+nextMood(Current, Next) :- Current == animado    & Next = euforico.
+nextMood(Current, Next) :- Current == euforico   & Next = crispado.
+nextMood(Current, Next) :- Current == crispado   & Next = amodorrado.
+nextMood(Current, Next) :- Current == amodorrado & Next = dormido.
+nextMood(Current, Next) :- Current == dormido    & Next = despierto.
 
 healthConstraint(Product) :-
 	.date(YY,MM,DD) &
@@ -82,7 +86,9 @@ healthConstraint(Product) :-
 	}
 	.date(YY,MM,DD);
 	.send(assistant, askOne, has(money, X), MoneyResponse); -+MoneyResponse;
-	.send(assistant, askOne, paid(YY,MM,DD, Money), PaidResponse); -+PaidResponse.
+	.send(assistant, askOne, paid(YY,MM,DD, Money), PaidResponse); -+PaidResponse;
+	.send(assistant, askOne, mood(owner, Mood), MoodResponse); -+MoodResponse;
+	.send(assistant, askOne, sipMoodCount(owner, Count), SipMoodCountResponse); -+SipMoodCountResponse.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN expectPension
@@ -149,8 +155,10 @@ healthConstraint(Product) :-
 	if ((SipMoodCount+1) == Limit) {
 		!transitionMood;
 		-+sipMoodCount(owner, 0);
+		.send(assistant, achieve, remember(sipMoodCount(owner, 0)));
 	} else {
 		-+sipMoodCount(owner, SipMoodCount+1);
+		.send(assistant, achieve, remember(sipMoodCount(owner, SipMoodCount+1)));
 	}
 	+has(owner, halfemptycan).
 +!drinkBeer : not mood(owner, dormido) & has(owner, beer) & not asked(robot, beer) <-
@@ -161,8 +169,10 @@ healthConstraint(Product) :-
 	if ((SipMoodCount+1) == Limit) {
 		!transitionMood;
 		-+sipMoodCount(owner, 0);
+		.send(assistant, achieve, remember(sipMoodCount(owner, 0)));
 	} else {
 		-+sipMoodCount(owner, SipMoodCount+1);
+		.send(assistant, achieve, remember(sipMoodCount(owner, SipMoodCount+1)));
 	}
 	+has(owner, halfemptycan).
 +!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & asked(robot, beer) <-
@@ -216,9 +226,7 @@ healthConstraint(Product) :-
 
 // ## HELPER PLAN transitionMood
 
-+!transitionMood : mood(owner, despierto ) <- -+mood(owner, animado   ); .println("Voy a estar animado"   ).
-+!transitionMood : mood(owner, animado   ) <- -+mood(owner, euforico  ); .println("Voy a estar euforico"  ).
-+!transitionMood : mood(owner, euforico  ) <- -+mood(owner, crispado  ); .println("Voy a estar crispado"  ).
-+!transitionMood : mood(owner, crispado  ) <- -+mood(owner, amodorrado); .println("Voy a estar amodorrado").
-+!transitionMood : mood(owner, amodorrado) <- -+mood(owner, dormido   ); .println("Voy a estar dormido"   ).
-+!transitionMood : mood(owner, dormido   ) <- -+mood(owner, despierto ); .println("Voy a estar despierto" ).
++!transitionMood : mood(owner, CurrentMood) & nextMood(CurrentMood, NextMood) <-
+	.println("Voy a estar ", NextMood);
+	-+mood(owner, NextMood);
+	.send(assistant, achieve, remember(mood(owner, NextMood))).

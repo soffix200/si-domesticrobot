@@ -2,6 +2,9 @@
 
 has(money, 50).
 
+mood(owner, despierto).
+sipMoodCount(owner, 0).
+
 !initStore.
 
 // -------------------------------------------------------------------------
