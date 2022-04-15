@@ -16,18 +16,6 @@ MAS domestic_robot {
 			agentArchClass jaca.CAgentArch;
 		supermarket #3;
 		market;
-		mover
-			automaton_mover.asl
-			agentArchClass MixedAgentArch
-			agentArchClass jaca.CAgentArch;
-		cleaner
-			automaton_cleaner.asl
-			agentArchClass MixedAgentArch
-			agentArchClass jaca.CAgentArch;
-		dustman
-			automaton_dustman.asl
-			agentArchClass MixedAgentArch
-			agentArchClass jaca.CAgentArch;
 
 	aslSourcePath: "src/asl";
 }
