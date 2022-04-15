@@ -1,7 +1,7 @@
 currentOrderId(1).
 
-cost(beer, 1). // TODO REMOVE; dependent on market
 price(beer, 3).
+cost(beer, 2).
 
 limit(min, reeval, price, 20000).
 limit(min, stock,  beer,  10).
@@ -56,21 +56,15 @@ limit(max, cost,   beer,  5).
 
 +!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N == M <- // No beers sold; price must be reduced.
 	?price(beer, Price); ?cost(beer, Cost);
-	if(Price/2+1 > Cost) { // TODO this should be expressed mathematically. Take notice that may be float.
-		-+price(beer, Price/2+1);
-		!offerBeer;
+	if (Price > Cost+0.1 & Price-((Price-Cost)*0.5) > Cost) {
+		-+price(beer, Price-((Price-Cost)*0.5));
 	} else {
-		if(Price-1 > Cost){
-			-+price(beer, Price-1);
-			!offerBeer;
-		} else {
-			-+price(beer, Cost);
-			!evaluatePrice(beer);
-		}
-	}.
+		-+price(beer, Cost);
+	}
+	!offerBeer.
 +!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N > M <- // Beers sold; price must be increased.
-	?price(beer, Price);
-	-+price(beer, Price+1);
+	?price(beer, Price); ?cost(beer, Cost);
+	-+price(beer, Price*1.2);
 	!offerBeer.
 
 // -------------------------------------------------------------------------
