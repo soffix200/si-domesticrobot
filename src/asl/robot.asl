@@ -6,10 +6,10 @@ automaton(dustman, inactive).
 automaton(mover,   inactive).
 automaton(shopper, inactive).
 
-limit(min, fridge,   beer,  3 ). //M�nimo de cervezas que deber�a haber en el frigo, si hay menos se ordenan m�s
-limit(max, dumpster, trash, 3 ).
-limit(max, owner,    beer,  2).
-limit(min, buy,      beer,  3 ). //Cantidad de cervezas a pedirle al s�per (en cada orden)
+limit(min, fridge,   beer,  3 ). //Mínimo de cervezas que debería haber en el frigo, si hay menos se ordenan más
+limit(max, dumpster, trash, 5 ).
+limit(max, owner,    beer,  10).
+limit(min, buy,      beer,  3 ). //Cantidad de cervezas a pedirle al súper (en cada orden)
 
 stored(beer,  fridge,   1).
 stored(trash, dumpster, 0).
@@ -100,7 +100,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 +pay(Amount)[source(owner)] <-
-	.println("Gracias por la paga de ", Amount, " mi señor");
+	.println("Gracias por la paga de ", Amount, " mi seÃ±or");
 	?has(money, Balance);
 	.abolish(has(money, _));
 	+has(money, Balance + Amount);
@@ -143,7 +143,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 +!dialogWithOwner : msg(Msg)[source(Ag)] & bot(Bot) <-
 	chatSincrono(Msg,Answer);
-	//chat(Msg) // De manera asíncrona devuelve una signal => answer(Answer)
+	//chat(Msg) // De manera asÃ­ncrona devuelve una signal => answer(Answer)
 	-msg(Msg)[source(Ag)];   
 	.println("El agente ",Ag," ha dicho ",Msg);
 	!doSomething(Answer,Ag).
@@ -151,7 +151,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 +!dialogWithOwner <- true.
 
 +!doSomething(Answer,Ag) : service(Answer, Service) <-
-	.println("Aqui debe ir el código del servicio:", Service," para el agente ",Ag).
+	.println("Aqui debe ir el cÃ³digo del servicio:", Service," para el agente ",Ag).
 	
 +!doSomething(Answer,Ag) : not service(Answer, Service) <-
 	.println("Le contesto al ",Ag," ",Answer);
@@ -162,7 +162,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 +!cleanHouse : requestedRetrieval(can, floor(X, Y)) & not cleaning(_, can, floor(X, Y)) <-
-	.println("Owner ha tirado una lata al suelo, activo un autómata para que limpie");
+	.println("Owner ha tirado una lata al suelo, activo un autÃ³mata para que limpie");
 	+cleaning(cleaner, can, floor(X, Y));
 	if (automaton(cleaner, inactive)) {
 		?location(depot, _, DepX, DepY); ?location(dumpster, _, DumpX, DumpY); ?bounds(BX, BY);
@@ -173,7 +173,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
 	.send(cleaner, tell, clean(can, floor(X, Y), Obstacles)).
 +!cleanHouse : requestedRetrieval(can, owner) & not cleaning(_, can, owner) <-
-	.println("Owner me ha pedido que vaya a recoger una lata, activo un autómata para que la recoja");
+	.println("Owner me ha pedido que vaya a recoger una lata, activo un autÃ³mata para que la recoja");
 	+cleaning(cleaner, can, owner);
 	if (automaton(cleaner, inactive)) {
 		?location(depot, _, DepX, DepY); ?location(dumpster, _, DumpX, DumpY); ?bounds(BX, BY);
@@ -185,7 +185,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	?location(owner, Type, LX, LY); ?placement(Type, Placement);
 	.send(cleaner, tell, clean(can, location(owner, LX, LY, Placement), Obstacles)).
 +!cleanHouse : overLimit(max, trash, dumpster) & not takingout(_, trash) <-
-	.println("El dumpster está lleno, activo un autómata para sacar la basura");
+	.println("El dumpster estÃ¡ lleno, activo un autÃ³mata para sacar la basura");
 	+takingout(dustman, trash);
 	if (automaton(dustman, inactive)) {
 		?location(depot, DepType, DepX, DepY); ?placement(DepType, DepPlacement);
@@ -247,7 +247,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 +!manageBeer : asked(Ag, beer) & available(beer, fridge) & not moving(_, beer, 1, fridge, Ag) & not healthConstraint(beer, Ag, _) <-
-	.println(Ag, " me ha pedido un ", "beer", ", activo un autómata para que se lo lleve");
+	.println(Ag, " me ha pedido un ", "beer", ", activo un autÃ³mata para que se lo lleve");
 	+moving(mover, beer, 1, fridge, Ag);
 	if (automaton(mover, inactive)) {
 		?location(depot, _, DepX, DepY); ?bounds(BX, BY);
@@ -273,13 +273,13 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	?location(fridge, DType, DX, DY); ?placement(DType, DPlacement);
 	.send(mover, tell, move(beer, Qtty, location(delivery, OX, OY, OPlacement), location(fridge, DX, DY, DPlacement), Obstacles)).
 +!manageBeer : not overLimit(min, beer, fridge) & not ordered(beer) & cheapest(Provider, beer, Price) <-
-	.println("Tengo menos cerveza de la que debería, voy a comprar más");
+	.println("Tengo menos cerveza de la que deberÃ­a, voy a comprar mÃ¡s");
 	.println("Cheapest is ", Provider, " @", Price);
 	?limit(min, buy, beer, BatchSize);
 	.send(Provider, tell, order(beer, BatchSize));
 	+ordered(beer).
 +!manageBeer : asked(Ag, beer) & healthConstraint(beer, Ag, Msg) <-
-	.println(Ag, " no puede beber más ", "beer");
+	.println(Ag, " no puede beber mÃ¡s ", "beer");
 	.send(Ag, tell, msg(Msg));
 	.date(YY,MM,DD);
 	.send(Ag, tell, healthConstraint(beer,YY,MM,DD));
@@ -308,7 +308,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 +moved(failure, Product, Qtty, Origin, Destination)[source(Mover)] <-
 	.println("Movement failure");
 	if (Destination == owner) {
-		.send(Destination, tell, msg("No me queda, voy a comprar más"));
+		.send(Destination, tell, msg("No me queda, voy a comprar mÃ¡s"));
 	}
 	.abolish(moving(Mover, Product, Qtty, Origin, Destination));
 	.abolish(moved(failure, Product, Qtty, Origin, Destination)[source(Mover)]).
