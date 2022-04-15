@@ -145,7 +145,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	chatSincrono(Msg,Answer);
 	-msg(Msg)[source(Ag)];
 	.println("El agente ",Ag," ha dicho ",Msg);
-	!doSomething(Answer,Ag);
+	!doSomething(Answer,Ag).
 +!dialogWithOwner <- true.
 
 +!doSomething(Answer,Ag) : service(Answer, Service) <-
@@ -380,7 +380,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // ### HELPER TRIGGER notEnough
 
 +notEnough(OrderId, Product, Qtty)[source(Provider)] <-
-	.abolish(price(Product, Provider));
+	.abolish(price(Provider, Product, _));
 	.wait(5000);
 	-ordered(beer);
 	.abolish(notEnough(OrderId, Product, Qtty)[source(Provider)]).
