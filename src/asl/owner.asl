@@ -89,7 +89,7 @@ healthConstraint(Product) :-
 	.send(assistant, askOne, has(money, X), MoneyResponse); -+MoneyResponse;
 	.send(assistant, askOne, lastPension(YY,MM), PensionResponse); -+PensionResponse;
 	.send(assistant, askOne, paid(YY,MM,DD, Money), PaidResponse); -+PaidResponse;
-	.send(assistant, askOne, mood(owner, Mood), MoodResponse); -+MoodResponse;
+	.send(assistant, askOne, mood(owner, Mood), mood(owner, Mood)); -+mood(owner, Mood);
 	.send(assistant, askOne, sipMoodCount(owner, Count), SipMoodCountResponse); -+SipMoodCountResponse;
 	+assistantCreated.
 
