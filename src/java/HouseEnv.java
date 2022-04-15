@@ -163,11 +163,8 @@ public class HouseEnv extends Environment {
 					succeed = model.removeBeersFromDelivery(beerNumber);
 				}
 			} else if (action.getFunctor().equals(storeBeer.getFunctor())) {
-				logger.info("1");
 				if (action.getTerm(0).equals(storeBeer.getTerm(0))) {
-					logger.info("2");
 					if (action.getTerm(1).toString().equals("fridge")) {
-						logger.info("3");
 						int beerNumber = (int)((NumberTerm)((Structure)action).getTerm(2)).solve();
 						succeed = model.addBeersToFridge(ag, beerNumber);
 					}
