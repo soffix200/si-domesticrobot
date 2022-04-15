@@ -134,7 +134,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	+ConsumedResponse.
 
 +!createAutomaton(Name) <-
-	.concat("automaton_", Name, ".asl", Filename);
+	.concat("./src/asl/automaton/", Name, ".asl", Filename);
 	.create_agent(Name, Filename, [agentArchClass("jaca.CAgentArch"), agentArchClass("MixedAgentArch")]).
 
 // -------------------------------------------------------------------------
