@@ -21,7 +21,7 @@ healthConstraint(Product) :-
 !expectPension.
 
 +!initOwner <-
-	!createPostIt;
+	!createAssistant;
 	!cheerUp.
 +!cheerUp <-
 	!cleanHouse; // TODO
@@ -42,7 +42,7 @@ healthConstraint(Product) :-
 			-+paid(YY,MM,DD, AmountPaid+Amount);
 			.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
 			.send(robot, tell, pay(Amount)); // TODO AIML
-			.send(postit, achieve, remember(paid(YY,MM,DD, AmountPaid+Amount)));
+			.send(assistant, achieve, remember(paid(YY,MM,DD, AmountPaid+Amount)));
 		} else {
 			.println("No puedo gastar más en cervezas hoy o me desahuciarán");
 			.send(robot, tell, cannotpay(Amount));
@@ -53,7 +53,7 @@ healthConstraint(Product) :-
 			-+paid(YY,MM,DD, Amount);
 			.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
 			.send(robot, tell, pay(Amount)); // TODO AIML
-			.send(postit, achieve, remember(paid(YY,MM,DD, Amount)));
+			.send(assistant, achieve, remember(paid(YY,MM,DD, Amount)));
 		} else {
 			.println("Esa cantidad est� por encima de mi presupuesto diario!");
 			.send(robot, tell, cannotpay(Amount));
@@ -66,19 +66,19 @@ healthConstraint(Product) :-
 	.abolish(pay(robot, Amount)).
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR createPostIt
+// DEFINITION FOR createAssistant
 // -------------------------------------------------------------------------
 
-+!createPostIt <-
-	.list_files("./tmp/","postit.asl", L);
++!createAssistant <-
+	.list_files("./tmp/","assistant.asl", L);
 	if (.length(L, 0)) {
-		.create_agent("postit", "postit.asl");
+		.create_agent("assistant", "assistant.asl");
 	} else {
-		.create_agent("postit", "./tmp/postit.asl"); 
+		.create_agent("assistant", "./tmp/assistant.asl"); 
 	}
 	.date(YY,MM,DD);
-	.send(postit, askOne, has(money, X), MoneyResponse); -+MoneyResponse;
-	.send(postit, askOne, paid(YY,MM,DD, Money), PaidResponse); -+PaidResponse.
+	.send(assistant, askOne, has(money, X), MoneyResponse); -+MoneyResponse;
+	.send(assistant, askOne, paid(YY,MM,DD, Money), PaidResponse); -+PaidResponse.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN expectPension
@@ -91,7 +91,7 @@ healthConstraint(Product) :-
 	-+lastPension(YY,MM);
 	.abolish(has(money, Balance));
 	+has(money, Balance+Amount);
-	.send(postit, achieve, remember(has(money, Balance+Amount)));
+	.send(assistant, achieve, remember(has(money, Balance+Amount)));
 	.wait(3600000);
 	!expectPension.
 +!expectPension <-
