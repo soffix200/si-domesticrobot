@@ -1,4 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <aiml version="2.0">
+<!--
+-------------------------------------------------------------------------
+Supermarket received messages
+-------------------------------------------------------------------------
+
+---------------------------
+From Butler
+---------------------------
+-->
+
+<!--.send(Provider, tell, order(beer, BatchSize)); //277  -->
+<category>
+  <pattern>Me gustaria comprarte * cervezas</pattern>
+  <template>
+    <buy>
+      <amount><star/></amount>
+    </buy>
+  </template>
+</category>
+
+
+<!--.send(Provider, tell, reject(OrderId)); //356 -->
+<category>
+  <pattern>Lo siento pero debo rechaza la orden *</pattern>
+  <template>
+    <order>
+      <id><star/></id>
+    </order>
+  </template>
+</category>
+
+
+<!--.send(Provider, tell, received(OrderId)); //373 -->
+<category>
+  <pattern>He recibido la orden *</pattern>
+  <template>
+    <order>
+      <id><star/></id>
+    </order>
+  </template>
+</category>
+
+<!--.send(Provider, tell, pay(TotalPrice)); //374 -->
+<category>
+  <pattern>Toma tu pago de *</pattern>
+  <template>
+    <pay>
+      <id><star/></id>
+    </pay>
+  </template>
+</category>
+
 
 </aiml>
