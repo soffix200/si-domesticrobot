@@ -6,12 +6,13 @@ automaton(dustman, inactive).
 automaton(mover,   inactive).
 automaton(shopper, inactive).
 
-limit(min, fridge,   beer,  3 ). //Mínimo de cervezas que debería haber en el frigo, si hay menos se ordenan más
+limit(min, fridge,   beer,  3 ). // Mínimo de cervezas que debería haber en el frigo, si hay menos se ordenan más
 limit(max, dumpster, trash, 5 ).
 limit(max, owner,    beer,  10).
-limit(min, buy,      beer,  3 ). //Cantidad de cervezas a pedirle al súper (en cada orden)
+limit(min, buy,      beer,  3 ). // Cantidad de cervezas a pedirle al súper (en cada orden)
 
-stored(beer,  fridge,   1).
+stored(beer,  fridge,   1).      // Si se comienza sin la creencia de tener cerveza, no se va a la nevera y
+                                 // por ende hay que esperar a que el pedido llegue para comprobar el stock
 stored(trash, dumpster, 0).
 
 available(Product, Location) :-
@@ -274,7 +275,11 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.println("Tengo menos cerveza de la que deberÃ­a, voy a comprar mÃ¡s");
 	.println("Cheapest is ", Provider, " @", Price);
 	?limit(min, buy, beer, BatchSize);
-	.send(Provider, tell, order(beer, BatchSize));
+	if (BatchSize > 0) {
+		.send(Provider, tell, order(beer, BatchSize));
+	} else {
+		.println("No puedo comprar cervezas en lotes de ", BatchSize);
+	}
 	+ordered(beer).
 +!manageBeer : asked(Ag, beer) & healthConstraint(beer, Ag, Msg) <-
 	.println(Ag, " no puede beber mÃ¡s ", "beer");
@@ -390,4 +395,3 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 +stock(Object, LocationDescriptor, Qtty) <-
 	.abolish(stock(Object, LocationDescriptor, _));
 	.abolish(stored(Object, LocationDescriptor, _)); +stored(Object, LocationDescriptor, Qtty).
-
