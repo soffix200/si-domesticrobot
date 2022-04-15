@@ -353,12 +353,13 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 +!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice) :
 	cannotpay(_)
 <-
-	.println("Pedido de ", Qtty, " ", Product, " rechazado (sin dinero)");
+	.println("Recibido pedido de ", Qtty, " ", Product, " (sin dinero)");
 	.send(Provider, tell, reject(OrderId));
 	-ordered(beer).
 +!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice) :
 	has(money, Balance) & Balance >= TotalPrice
 <-
+  .println("Recibido pedido de ", Qtty, " ", Product);
 	!receiveDelivery(OrderId, Provider, Product, Qtty, TotalPrice).
 +!waitMoneyForDelivery(OrderId, Provider, Product, Qtty, TotalPrice) :
 	has(money, Balance) & Balance < TotalPrice
@@ -376,6 +377,14 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	?has(money, Amount);
 	+has(money, Amount-TotalPrice);
 	.abolish(has(money, Amount)).
+
+// ### HELPER TRIGGER notEnough
+
++notEnough(OrderId, Product, Qtty)[source(Provider)] <-
+	.abolish(price(Product, Provider));
+	.wait(5000);
+	-ordered(beer);
+	.abolish(notEnough(OrderId, Product, Qtty)[source(Provider)]).
 
 // ## HELPER TRIGGER stock
 
