@@ -10,7 +10,7 @@ obstacles([]).
 <-
 	.abolish(activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY))).
 +activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)) :
-	status(inactive) | status(deactivatng)
+	status(inactive) | status(deactivating)
 <-
 	.abolish(activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)));
 	!activate(cleaner, depot(DepX, DepY), dumpster(DumpX, DumpY), bounds(BX, BY)).
