@@ -27,11 +27,12 @@ healthConstraint(Product) :-
 +!initOwner <-
 	!createAssistant;
 	!cheerUp.
-+!cheerUp <-
++!cheerUp : assistantCreated <-
 	!cleanHouse; // TODO
 	!drinkBeer;
 	!wakeUp;
 	!cheerUp.
++!cheerUp <- !cheerUp.
 
 // -------------------------------------------------------------------------
 // TRIGGERS
@@ -86,27 +87,30 @@ healthConstraint(Product) :-
 	}
 	.date(YY,MM,DD);
 	.send(assistant, askOne, has(money, X), MoneyResponse); -+MoneyResponse;
+	.send(assistant, askOne, lastPension(YY,MM), PensionResponse); -+PensionResponse;
 	.send(assistant, askOne, paid(YY,MM,DD, Money), PaidResponse); -+PaidResponse;
 	.send(assistant, askOne, mood(owner, Mood), MoodResponse); -+MoodResponse;
-	.send(assistant, askOne, sipMoodCount(owner, Count), SipMoodCountResponse); -+SipMoodCountResponse.
+	.send(assistant, askOne, sipMoodCount(owner, Count), SipMoodCountResponse); -+SipMoodCountResponse;
+	+assistantCreated.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN expectPension
 // -------------------------------------------------------------------------
 
-+!expectPension : .date(YY,MM,1) & not lastPension(YY,MM) <-
++!expectPension : assistantCreated & .date(YY,MM,1) & not lastPension(YY,MM) <-
 	?has(money, Balance);
 	?limit(max, owner, monthlyPension, Amount);
 	.println("Qué felicidad! Me ha llegado una pensión de ", Amount);
 	-+lastPension(YY,MM);
-	.abolish(has(money, Balance));
-	+has(money, Balance+Amount);
+	.abolish(has(money, Balance)); +has(money, Balance+Amount);
+	.send(assistant, achieve, remember(lastPension(YY,MM)));
 	.send(assistant, achieve, remember(has(money, Balance+Amount)));
 	.wait(3600000);
 	!expectPension.
-+!expectPension <-
++!expectPension : assistantCreated <-
 	.wait(3600000);
 	!expectPension.
++!expectPension <- !expectPension.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN setupTool
