@@ -6,10 +6,10 @@ automaton(dustman, inactive).
 automaton(mover,   inactive).
 automaton(shopper, inactive).
 
-limit(min, fridge,   beer,  5 ).
+limit(min, fridge,   beer,  3 ). //Mínimo de cervezas que debería haber en el frigo, si hay menos se ordenan más
 limit(max, dumpster, trash, 3 ).
-limit(max, owner,    beer,  10).
-limit(min, buy,      beer,  3 ).
+limit(max, owner,    beer,  2).
+limit(min, buy,      beer,  3 ). //Cantidad de cervezas a pedirle al súper (en cada orden)
 
 stored(beer,  fridge,   1).
 stored(trash, dumpster, 0).
@@ -20,7 +20,7 @@ available(Product, Location) :-
 
 overLimit(Type, Product, Location) :-
 	limit(Type, Location, Product, Limit) &
-	stored(Product, Location, Qtty) & Qtty > Limit.
+	stored(Product, Location, Qtty) & Qtty >= Limit.
 
 cheapest(Provider, Product, Price) :-
 	price(Provider, Product, Price) &
@@ -31,7 +31,7 @@ consumedSafe(YY,MM,DD, Product, Qtty) :-
 
 healthConstraint(Product, Agent, Message) :-
 	.date(YY,MM,DD) &
-	limit(max, Agent, Product, Limit) & consumed(YY,MM,DD, Product, Consumed) & Consumed > Limit &
+	limit(max, Agent, Product, Limit) & consumed(YY,MM,DD, Product, Consumed) & Consumed >= Limit &
 	.concat("The Department of Health does not allow me to give you more than ", Qtty, " beers a day! I am very sorry about that!", Message).
 
 // -------------------------------------------------------------------------
