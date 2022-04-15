@@ -14,10 +14,9 @@ auction(0, beer, 10).
 	+auctionInProgress;
   +numBids(AuctionNum, 0);
   +bids(AuctionNum, []);
-  .wait(Delay);
 	.println("Comenzará la subasta ", AuctionNum, " (", Product, "x", Qtty, ")");
   .broadcast(tell, auction(start, AuctionNum, Product, Qtty));
-  .wait(Delay);
+  .wait(Delay*2);
   !auction.
 +!auction :
   auctionInProgress & auction(AuctionNum, Product, Qtty) & numBids(AuctionNum, LastNumBids) &
