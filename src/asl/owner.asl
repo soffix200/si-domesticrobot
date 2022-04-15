@@ -42,7 +42,7 @@ healthConstraint(Product) :-
 			-+paid(YY,MM,DD, AmountPaid+Amount);
 			.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
 			.send(robot, tell, pay(Amount)); // TODO AIML
-			.send(postit, achieve, add(paid, YY,MM,DD, AmountPaid+Amount));
+			.send(postit, achieve, remember(paid(YY,MM,DD, AmountPaid+Amount)));
 		} else {
 			.println("No puedo gastar más en cervezas hoy o me desahuciarán");
 			.send(robot, tell, cannotpay(Amount));
@@ -53,7 +53,7 @@ healthConstraint(Product) :-
 			-+paid(YY,MM,DD, Amount);
 			.send(robot, tell, msg("Ten los ", Amount, " que me has pedido."));
 			.send(robot, tell, pay(Amount)); // TODO AIML
-			.send(postit, achieve, add(paid, YY,MM,DD, Amount));
+			.send(postit, achieve, remember(paid(YY,MM,DD, Amount)));
 		} else {
 			.println("Esa cantidad est� por encima de mi presupuesto diario!");
 			.send(robot, tell, cannotpay(Amount));
@@ -76,11 +76,9 @@ healthConstraint(Product) :-
 	} else {
 		.create_agent("postit", "./tmp/postit.asl"); 
 	}
-	.send(postit, askOne, has(money, X), MoneyResponse);
 	.date(YY,MM,DD);
-	.send(postit, askOne, paid(YY,MM,DD, Money), PaidResponse);
-	-+MoneyResponse;
-	-+PaidResponse.
+	.send(postit, askOne, has(money, X), MoneyResponse); -+MoneyResponse;
+	.send(postit, askOne, paid(YY,MM,DD, Money), PaidResponse); -+PaidResponse.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN expectPension
@@ -93,7 +91,7 @@ healthConstraint(Product) :-
 	-+lastPension(YY,MM);
 	.abolish(has(money, Balance));
 	+has(money, Balance+Amount);
-	.send(postit, achieve, add(money, Amount));
+	.send(postit, achieve, remember(has(money, Balance+Amount)));
 	.wait(3600000);
 	!expectPension.
 +!expectPension <-
