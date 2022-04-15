@@ -13,7 +13,7 @@ available(Object, LocationDescriptor) :-
 <-
 	.abolish(activate(mover, depot(X, Y), bounds(BX, BY))).
 +activate(mover, depot(X, Y), bounds(BX, BY)) :
-	status(inactive) | status(deactivatng)
+	status(inactive) | status(deactivating)
 <-
 	.abolish(activate(mover, depot(X, Y), bounds(BX, BY)));
 	!activate(mover, depot(X, Y), bounds(BX, BY)).
