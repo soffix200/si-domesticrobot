@@ -120,8 +120,6 @@ public class HouseEnv extends Environment {
 			} else if (action.equals(collectTrash)) {
 				succeed = model.getTrashFromDumpster(ag);
 			} else if (action.equals(enterMap)) {
-				logger.info("P1");
-				logger.info(ag);
 				succeed = model.enterMap(ag);
 			} else if (action.equals(exitMap)) {
 				succeed = model.exitMap(ag);
@@ -132,8 +130,9 @@ public class HouseEnv extends Environment {
 				updatePercepts(ag, updatedPercepts);
 			} else if (action.getFunctor().equals(deliverBeer.getFunctor())) {
 				if (action.getTerm(0).equals(deliverBeer.getTerm(0))) {
-					int beerNumber = (int)((NumberTerm)((Structure)action).getTerm(1)).solve();
-					Thread.sleep(5000);
+					int beerNumber  = (int)((NumberTerm)((Structure)action).getTerm(1)).solve();
+					int deliverTime = (int)(((NumberTerm)((Structure)action).getTerm(2)).solve()*1000);
+					Thread.sleep(deliverTime);
 					succeed = model.addBeersToDelivery(ag, beerNumber);
 				}
 			} else if (action.getFunctor().equals(returnBeer.getFunctor())) {

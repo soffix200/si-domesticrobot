@@ -7,10 +7,15 @@ limit(min, reeval, price, 20000).
 limit(min, stock,  beer,  10).
 limit(max, cost,   beer,  5).
 
-!createStore.
+!initSupermarket.
 !offerBeer.
 !buyBeer.
 !sellBeer.
+
++!initSupermarket <-
+	!createStore;
+	!setDeliveryTime(butler);
+	+supermarketInit.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN createStore
@@ -29,19 +34,39 @@ limit(max, cost,   beer,  5).
 		.concat("tmp/", FileName, FilePath);
 		.create_agent(Store, FilePath);
 	}
-	.send(Store, askOne, beer(BeerQtty), beer(BeerQtty));
-	+has(beer, BeerQtty);
-	.send(Store, askOne, money(MoneyQtty), money(MoneyQtty));
-	+has(money, MoneyQtty).
+	.send(Store, askOne, beer(BeerQtty), beer(BeerQtty)); +has(beer, BeerQtty);
+	.send(Store, askOne, money(MoneyQtty), money(MoneyQtty));	+has(money, MoneyQtty);
+	.send(Store, askOne, deliveryTime(butler, Time), deliveryTime(butler, Time));
+	.send(Store, askOne, deliveryCost(butler, Cost), deliveryCost(butler, Cost));
+	if (Time \== -1 & Cost \== -1) {
+		+deliveryTime(butler, Time);
+		+deliveryCost(butler, Cost);
+	}.
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN setDeliveryTime
+// -------------------------------------------------------------------------
+
++!setDeliveryTime(butler) : not deliveryTime(butler, Time) & not deliveryCost(butler, Cost) <-
+	?store(Store);
+	.random(X);
+	basemath.truncate(X*20, Time);
+	basemath.truncate(X*5,  Cost);
+	+deliveryTime(butler, Time);
+	+deliveryCost(butler, Cost);
+	.send(Store, achieve, addDeliveryTime(butler, Time));
+	.send(Store, achieve, addDeliveryCost(butler, Cost)).
++!setDeliveryTime(_) <- true.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN offerBeer
 // -------------------------------------------------------------------------
 
-+!offerBeer : has(beer, Qtty) & Qtty > 0 <-
-	?price(beer, Price);
-	.println("Ahora vendo beer a ", Price);
-	.send(butler, tell, price(beer, Price));
++!offerBeer : supermarketInit & has(beer, Qtty) & Qtty > 0 <-
+	?price(beer, Price); ?deliveryTime(butler, Time); ?deliveryCost(butler, Cost);
+	basemath.truncate(Price, PriceToDisplay);
+	.println("Vendo beer a ", PriceToDisplay, " [+", Cost, " envio]");
+	.send(butler, tell, price(beer, Price, Cost, Time));
 	!evaluatePrice(beer).
 +!offerBeer <- !offerBeer.
 
@@ -73,6 +98,7 @@ limit(max, cost,   beer,  5).
 // -------------------------------------------------------------------------
 
 +!buyBeer : 
+	supermarketInit &
 	has(beer, StoredQtty) & limit(min, stock, beer, Min) & StoredQtty < Min &
 	not requestedPurchase(beer)
 <-
@@ -120,15 +146,19 @@ limit(max, cost,   beer,  5).
 // -------------------------------------------------------------------------
 
 +!sellBeer :
+	supermarketInit &
 	currentOrderId(OrderId) & order(OrderId, Ag, beer, OrderedQtty) &
-	has(beer, StoredQtty) & StoredQtty >= OrderedQtty
+	has(beer, StoredQtty) & StoredQtty >= OrderedQtty &
+	deliveryCost(Ag, Cost) & has(money, Balance) & Balance >= Cost
 <-
-	?store(Store); ?price(beer, Price);
+	?store(Store); ?price(beer, Price); ?deliveryTime(Ag, Time); ?deliveryCost(Ag, Cost);
 	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (en stock)");
 	-+currentOrderId(OrderId+1);
-	deliver(beer, OrderedQtty);
+	.abolish(has(money, _)); +has(money, Balance-Cost);
+	.send(Store, achieve, del(money, Cost));
+	deliver(beer, OrderedQtty, Time);
 	.abolish(has(beer, _)); +has(beer, StoredQtty-OrderedQtty);
-	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price));
+	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price+Cost));
 	.send(Store, achieve, del(beer, OrderedQtty));
 	.abolish(order(OrderId, _, _, _));
 	!sellBeer.
@@ -155,7 +185,8 @@ limit(max, cost,   beer,  5).
 
 +pay(TotalPrice)[source(Ag)] : has(money,Qtd) <-
 	?store(Store);
-	.println("Pago de ", TotalPrice, " recibido de ", Ag);
+	basemath.truncate(TotalPrice, TotalPriceToDisplay);
+	.println("Pago de ", TotalPriceToDisplay, " recibido de ", Ag);
 	.abolish(has(money, _)); +has(money, Qtd+TotalPrice);
 	.send(Store, achieve, add(money,TotalPrice)).
 
