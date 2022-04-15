@@ -215,6 +215,9 @@ healthConstraint(Product) :-
 +has(owner, can) : mood(owner, despierto) | mood(owner, animado) <- // TODO and remove from previous intention
 	.println("Voy a llevar la lata al cubo de basura").
 
++retrieved(can) : has(owner, can) <-
+	.abolish(has(owner, can));
+
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN wakeUp
 // -------------------------------------------------------------------------
