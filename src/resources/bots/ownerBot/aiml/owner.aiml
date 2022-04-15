@@ -1,4 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <aiml version="2.0">
+<!--
+-------------------------------------------------------------------------
+Owner received messages
+-------------------------------------------------------------------------
+
+---------------------------
+From Butler
+---------------------------
+-->
+
+<!--.send(Destination, tell, msg("No me queda, voy a comprar mÃƒÂ¡s")); //309 -->
+<category>
+  <pattern>No quedan cervezas en el frigo, compraré más</pattern>
+  <template>
+    <buy-beers>
+    </buy-beers>
+  </template>
+</category>
+
+
+<!--.send(owner, tell, pay(butler, TotalPrice-Balance)); /344 -->
+<category>
+  <pattern>Necesito * para comprar cervezas</pattern>
+  <template>
+    <money-required>
+	<amount><star/></amount>
+    </money-required>
+  </template>
+</category>
+
 
 </aiml>
