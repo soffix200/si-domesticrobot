@@ -1,10 +1,14 @@
-limit(max, owner, waitTime,       10000).
-limit(min, owner, waitTime,       2000).
-limit(max, robot, dailyPayment,   50).
-limit(max, owner, monthlyPension, 2000).
+limit(max, talk,  waitTime,       10000 ).
+limit(min, talk,  waitTime,       2000  ).
+limit(min, nap,   time,           120000).
+limit(max, nap,   time,           720000).
+limit(max, mood,  sipMoodCount,   6     ).
+limit(max, robot, dailyPayment,   50    ).
+limit(max, owner, monthlyPension, 2000  ).
+limit(max, owner, cleanChance,    10    ).
 
-politeness(owner, 0).
-status(owner, animado).
+sipMoodCount(owner, 0).
+mood(owner, despierto).
 
 healthConstraint(Product) :-
 	.date(YY,MM,DD) &
@@ -13,16 +17,17 @@ healthConstraint(Product) :-
 !setupTool("Owner", "Robot"). // THIS MAY CRASH
 
 !initOwner.
-// !cheerUp. TODO
-
 !talkRobot.
-// !cleanHouse // TODO
-!drinkBeer.
-// !wakeUp // TODO
+!expectPension.
 
 +!initOwner <-
 	!createPostIt;
-	!expectPension.
+	!cheerUp.
++!cheerUp <-
+	!cleanHouse; // TODO
+	!drinkBeer;
+	!wakeUp;
+	!cheerUp.
 
 // -------------------------------------------------------------------------
 // TRIGGERS
@@ -109,52 +114,63 @@ healthConstraint(Product) :-
 // DEFINITION FOR PLAN talkRobot
 // -------------------------------------------------------------------------
 
-+!talkRobot <-
++!talkRobot : not mood(owner, dormido) <- // TODO different messages for each mood
 	.send(robot, tell, msg("Test message")); // TODO IMPLEMENT AIML
 	.random(X);
-	?limit(min, owner, waitTime, MinWaitTime);
-	?limit(max, owner, waitTime, MaxWaitTime);
+	?limit(min, talk, waitTime, MinWaitTime);
+	?limit(max, talk, waitTime, MaxWaitTime);
 	.wait(MinWaitTime + (MaxWaitTime - MinWaitTime)*X);
 	!talkRobot.
-	
++!talkRobot <- !talkRobot.
+
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN cleanHouse
 // -------------------------------------------------------------------------
 
-+!cleanHouse <- // Execute randomly
-	// TODO; not yet implemented
-	!cleanHouse.
++!cleanHouse : mood(owner, despierto) <- true. // TODO; not yet implemented
++!cleanHouse : limit(max, owner, cleanChance, Chance) & .random(X) & X*100 <= Chance <- true. // TODO; not yet implemented
++!cleanHouse <- true.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN drinkBeer
 // -------------------------------------------------------------------------
 
-+!drinkBeer : healthConstraint(beer) <-
++!drinkBeer : not mood(owner, dormido) & healthConstraint(beer) <-
 	.println("Owner ha bebido demasiado por hoy.");
 	.wait(10000);
-	-asked(robot, beer);
-	!drinkBeer.
-+!drinkBeer : has(owner, beer) & asked(robot, beer) <-
+	-asked(robot, beer).
++!drinkBeer : not mood(owner, dormido) & has(owner, beer) & asked(robot, beer) <-
 	.println("Voy a empezar a beber cerveza.");
 	-asked(robot, beer);
 	sip(beer);
-	+has(owner, halfemptycan);
-	!drinkBeer.
-+!drinkBeer : has(owner, beer) & not asked(robot, beer) <-
+	?sipMoodCount(owner, SipMoodCount); ?limit(max, mood, sipMoodCount, Limit);
+	if ((SipMoodCount+1) == Limit) {
+		!transitionMood;
+		-+sipMoodCount(owner, 0);
+	} else {
+		-+sipMoodCount(owner, SipMoodCount+1);
+	}
+	+has(owner, halfemptycan).
++!drinkBeer : not mood(owner, dormido) & has(owner, beer) & not asked(robot, beer) <-
 	.println("Voy a beber un sorbo de cerveza.");
 	sip(beer);
-	+has(owner, halfemptycan);
-	!drinkBeer.
-+!drinkBeer : hasnot(owner, beer) & asked(robot, beer) <-
+	?sipMoodCount(owner, SipMoodCount); ?limit(max, mood, sipMoodCount, Limit);
+	-+sipMoodCount(owner, SipMoodCount+1);
+	if ((SipMoodCount+1) == Limit) {
+		!transitionMood;
+		-+sipMoodCount(owner, 0);
+	} else {
+		-+sipMoodCount(owner, SipMoodCount+1);
+	}
+	+has(owner, halfemptycan).
++!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & asked(robot, beer) <-
 	.println("Sigo esperando mi cerveza");
-	.wait(1000);
-	!drinkBeer.
-+!drinkBeer : hasnot(owner, beer) & not asked(robot, beer) <-
+	.wait(1000).
++!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & not asked(robot, beer) <-
 	.println("Pido una cerveza al robot");
 	.send(robot, tell, bring(beer));
-	+asked(robot, beer);
-	!drinkBeer.
-+!drinkBeer <- !drinkBeer.
+	+asked(robot, beer).
++!drinkBeer <- true.
 
 // ## HELPER TRIGGER has
 
@@ -164,7 +180,7 @@ healthConstraint(Product) :-
 +has(owner, halfemptycan) <-
 	-has(owner, halfemptycan).
 
-+has(owner, can) : politeness(owner, 0) <-
++has(owner, can) : mood(owner, euforico) | mood(owner, crispado) <-
 	.println("Voy a tirar una lata");
 	?bounds(BX, BY);
 	.random(X); .random(Y);
@@ -177,17 +193,30 @@ healthConstraint(Product) :-
 	-has(owner, can);
 	.send(robot, tell, msg("He tirado una lata"));
 	.send(robot, tell, can(PX, PY)). // TODO AIML
-+has(owner, can) : politeness(owner, 1) <-
++has(owner, can) : mood(owner, amodorrado) | mood(owner, dormido) | mood(owner, despierto) | mood(owner, animado) <-
 	.println("Voy a pedirle al robot que venga a por la lata");
 	.send(robot, tell, msg("Ven a por la lata")).
-+has(owner, can) : politeness(owner, 2) <-
++has(owner, can) : mood(owner, despierto) | mood(owner, animado) <- // TODO and remove from previous intention
 	.println("Voy a llevar la lata al cubo de basura").
-	// TODO
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN wakeUp
 // -------------------------------------------------------------------------
 
-+!wakeup <-
-	// TODO
-	!wakeup.
++!wakeUp : mood(owner, dormido) <-
+	.println("Estoy cansado, voy a dormir una siesta");
+	.random(X);
+	?limit(min, nap, time, MinNapTime);
+	?limit(max, nap, time, MaxNapTime);
+	.wait(MinNapTime + (MaxNapTime - MinNapTime)*X);
+	!transitionMood.
++!wakeUp <- true.
+
+// ## HELPER PLAN transitionMood
+
++!transitionMood : mood(owner, despierto ) <- -+mood(owner, animado   ); .println("Voy a estar animado"   ).
++!transitionMood : mood(owner, animado   ) <- -+mood(owner, euforico  ); .println("Voy a estar euforico"  ).
++!transitionMood : mood(owner, euforico  ) <- -+mood(owner, crispado  ); .println("Voy a estar crispado"  ).
++!transitionMood : mood(owner, crispado  ) <- -+mood(owner, amodorrado); .println("Voy a estar amodorrado").
++!transitionMood : mood(owner, amodorrado) <- -+mood(owner, dormido   ); .println("Voy a estar dormido"   ).
++!transitionMood : mood(owner, dormido   ) <- -+mood(owner, despierto ); .println("Voy a estar despierto" ).
