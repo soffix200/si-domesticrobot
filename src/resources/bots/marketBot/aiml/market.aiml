@@ -1,36 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <aiml version="2.0">
 
-<!--
--------------------------------------------------------------------------
-Market received messages
--------------------------------------------------------------------------
-
----------------------------
-From Supermarket
----------------------------
--->
+<!-- RULES FOR SUPERMARKET MESSAGES -->
 
 <!-- .send(market, tell, placeBid(AuctionNum, 1)); //90 -->
-<category>
-  <pattern>Me gustaria ofertar * en la subasta *</pattern>
-  <template>
-    <auction-bid>
-      <bid><star/></bid>
-	  <auction-num><star/> <star index="2"/></auction-num>
-    </auction-bid>
-  </template>
-</category>
-
 <!-- .send(market, tell, placeBid(AuctionNum, Bid+1)). //116 -->
 <category>
-  <pattern>Me gustaria ofertar * en la subasta *</pattern>
-  <template>
-    <auction-bid-up>
-      <bid><star/>+1</bid>
-	  <auction-num><star/> <star index="2"/></auction-num>
-    </auction-bid-up>
-  </template>
+	<pattern>Me gustaria ofertar * en la subasta *</pattern>
+	<template>
+		<bid>
+			<amount><star/></amount>
+			<auction-num><star index="2"/></auction-num>
+		</bid>
+	</template>
 </category>
 
 </aiml>

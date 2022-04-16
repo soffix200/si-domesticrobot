@@ -1,43 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <aiml version="2.0">
-<!--
--------------------------------------------------------------------------
-Supermarket received messages
--------------------------------------------------------------------------
 
----------------------------
-From Butler
----------------------------
--->
+<!-- RULES FOR BUTLER MESSAGES -->
 
 <!--.send(Provider, tell, order(beer, BatchSize)); //277  -->
 <category>
   <pattern>Me gustaria comprarte * cervezas</pattern>
   <template>
     <buy>
+      <product>beer</product>
       <amount><star/></amount>
     </buy>
   </template>
 </category>
-
 
 <!--.send(Provider, tell, reject(OrderId)); //356 -->
 <category>
   <pattern>Lo siento pero debo rechazar la orden *</pattern>
   <template>
     <order>
-      <id><star/></id>
+      <status>rejected</status>
+      <order-id><star/></order-id>
     </order>
   </template>
 </category>
-
 
 <!--.send(Provider, tell, received(OrderId)); //373 -->
 <category>
   <pattern>He recibido la orden *</pattern>
   <template>
     <order>
-      <id><star/></id>
+      <status>received</status>
+      <order-id><star/></order-id>
     </order>
   </template>
 </category>
@@ -47,56 +41,52 @@ From Butler
   <pattern>Toma tu pago de *</pattern>
   <template>
     <pay>
-      <id><star/></id>
+      <amount><star/></amount>
     </pay>
   </template>
 </category>
 
-
-<!--
----------------------------
-From Market
----------------------------
--->
-
+<!-- RULES FOR MARKET MESSAGES -->
 
 <!-- .broadcast(tell, auction(start, AuctionNum, Product, Qtty)); //18 -->
 <category>
   <pattern>La subasta * acaba de empezar, se subastan * cervezas</pattern>
   <template>
-    <start-auction>
-      <num-auction><star/></num-auction>
-	  <amount><star index="2"/></amount>
-    </start-auction>
+    <auction>
+      <status>started></status>
+			<auction-num><star/></auction-num>
+      <product>beer</product>
+      <quantity><star index="2"/></quantity>
+    </auction>
   </template>
 </category>
- 
 
 <!-- .broadcast(tell, bid(max, AuctionNum, Winner, Max)); //31 -->
 <category>
   <pattern>La subasta * ahora tiene la puja mas alta por parte de * que ha ofrecido *</pattern>
   <template>
-    <finish-auction>
-      <num-auction><star/></num-auction>
-	  <winner><star index="2"/></winner>
-	  <value><star index="3"/></value>
-    </finish-auction>
+    <auction>
+      <status>update</status>
+      <auction-num><star/></auction-num>
+      <winner><star index="2"/></winner>
+      <amount><star index="3"/></amount>
+    </auction>
   </template>
 </category>
-
 
 <!-- .broadcast(tell, auction(finish, AuctionNum, Product, Qtty, Winner, Value)); //45 -->
 <category>
   <pattern>La subasta * ha terminado, * ha comprado * cervezas por un valor total de *</pattern>
   <template>
-    <finish-auction>
-      <num-auction><star/></num-auction>
-	  <winner><star index="2"/></winner>
-	  <amount><star index="3"/></amount>
-	  <value><star index="4"/></value>
-    </finish-auction>
+    <auction>
+      <status>finished</status>
+      <auction-num><star/></auction-num>
+      <winner><star index="2"/></winner>
+      <quantity><star index="3"/></quantity>
+      <product>beer</product>
+      <amount><star index="4"/></amount>
+    </auction>
   </template>
 </category>
-
 
 </aiml>

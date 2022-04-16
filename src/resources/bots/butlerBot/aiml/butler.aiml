@@ -1,64 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <aiml version="2.0">
-<!--
--------------------------------------------------------------------------
-Butler received messages
--------------------------------------------------------------------------
 
----------------------------
-From Owner
----------------------------
--->
+<!-- RULES FOR OWNER MESSAGES -->
+
 <!--
 .send(butler, tell, msg("Ten los ", Amount, " que me has pedido.")); //49
 .send(butler, tell, pay(Amount)); //50
 .send(butler, tell, msg("Ten los ", Amount, " que me has pedido.")); //62
 .send(butler, tell, pay(Amount)); //63
- -->
+-->
 <category>
   <pattern>Ten los * que me pediste</pattern>
   <template>
-    <pay-requested-money>
+    <pay>
+      <status>approved</status>
       <amount><star/></amount>
-    </pay-requested-money>
+    </pay>
   </template>
 </category>
-
 
 <!-- .send(butler, tell, cannotpay(Amount)); //55 -->
 <!-- .send(butler, tell, cannotpay(Amount)); //74 -->
-
+<!-- .send(butler, tell, cannotpay(Amount)); //68 -->
 <category>
   <pattern>No puedo pagarte *</pattern>
   <template>
-    <cant-pay-requested-money>
+    <pay>
+      <status>rejected</status>
       <amount><star/></amount>
-    </cant-pay-requested-money>
+    </pay>
   </template>
 </category>
-
-
-<!-- .send(butler, tell, cannotpay(Amount)); //68 -->
-<category>
-  <pattern>No puedo pagarte * hoy</pattern>
-  <template>
-    <cant-pay-today-requested-money>
-      <amount><star/></amount>
-    </cant-pay-today-requested-money>
-  </template>
-</category>
-
 
 <!--.send(butler, tell, bring(beer)); //187 -->
 <category>
-  <pattern>Traeme una *</pattern>
+  <pattern>Traeme una cerveza</pattern>
   <template>
-    <request-beer>
-      <beer><star/></beer>
-    </request-beer>
+    <bring>
+      <product>beer</product>
+    </bring>
   </template>
 </category>
-
 
 <!--
 	.send(butler, tell, msg("He tirado una lata")); //210
@@ -67,10 +49,15 @@ From Owner
 <category>
   <pattern>He tirado una lata a * *</pattern>
   <template>
-    <throw-can>
-      <pos-x><star/></pos-x>
-	  <pos-y><star/> <star index="2"/></pos-y>
-    </throw-can>
+    <clean>
+      <object>can</object>
+      <position>
+        <floor>
+          <x><star/></x>
+          <y><star index="2"/></y>
+        </floor>
+      </position>
+    </clean>
   </template>
 </category>
 
@@ -79,52 +66,53 @@ From Owner
 .send(butler, tell, msg("Ven a por la lata")). //214
 -->
 <category>
-  <pattern>Vean a por la lata</pattern>
+  <pattern>Ven a por la lata</pattern>
   <template>
-    <pick-can>
-    </pick-can>
+    <clean>
+      <object>can</object>
+      <position>owner</position>
+    </clean>
   </template>
 </category>
 
-
-<!--
----------------------------
-From Supermarket
----------------------------
--->
-
+<!-- RULES FOR SUPERMARKET MESSAGES -->
 
 <!--.send(butler, tell, price(beer, Price)); //44 -->
 <category>
   <pattern>Ahora vendo beer a *</pattern>
   <template>
     <offer>
+      <product>beer</product>
       <price><star/></price>
     </offer>
   </template>
 </category>
 
-
 <!--.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price)); //131-->
 <category>
-  <pattern>He enviado su pedido, el importe asciende a *</pattern>
+  <pattern>He entregado el pedido * que contiene * cervezas, el importe asciende a *</pattern>
   <template>
-    <delivered>
-      <final-price><star/></final-price>
-    </delivered>
+    <deliver>
+      <status>delivered</status>
+      <order-id><star/></order-id>
+      <product>beer</product>
+      <quantity><star index="2"/></quantity>
+      <price><star index="3"/></price>
+    </deliver>
   </template>
 </category>
-
 
 <!--.send(Ag, tell, notEnough(OrderId, beer, OrderedQtty)); //141-->
 <category>
-  <pattern>Lo siento pero no podre enviar el pedido * dado que no me quedan cervezas</pattern>
+  <pattern>Lo siento pero no podre enviar el pedido * que contiene * cervezas, dado que no me quedan</pattern>
   <template>
-    <not-delivered>
-      <id><star/></id>
-    </not-delivered>
+    <deliver>
+      <status>rejected</status>
+      <order-id><star/></order-id>
+      <product>beer</product>
+      <quantity><star index="2"/></quantity>
+    </deliver>
   </template>
 </category>
-
 
 </aiml>
