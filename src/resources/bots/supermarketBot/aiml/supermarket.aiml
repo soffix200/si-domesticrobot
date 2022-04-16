@@ -23,7 +23,7 @@ From Butler
 
 <!--.send(Provider, tell, reject(OrderId)); //356 -->
 <category>
-  <pattern>Lo siento pero debo rechaza la orden *</pattern>
+  <pattern>Lo siento pero debo rechazar la orden *</pattern>
   <template>
     <order>
       <id><star/></id>
@@ -74,7 +74,7 @@ From Market
 
 <!-- .broadcast(tell, bid(max, AuctionNum, Winner, Max)); //31 -->
 <category>
-  <pattern>La subasta * ahora tiene la puja más alta por parte de * que ha ofrecido *</pattern>
+  <pattern>La subasta * ahora tiene la puja mas alta por parte de * que ha ofrecido *</pattern>
   <template>
     <finish-auction>
       <num-auction><star/></num-auction>

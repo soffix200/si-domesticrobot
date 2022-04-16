@@ -13,7 +13,7 @@ From Supermarket
 
 <!-- .send(market, tell, placeBid(AuctionNum, 1)); //90 -->
 <category>
-  <pattern>Me gustaría ofertar * en la subasta *</pattern>
+  <pattern>Me gustaria ofertar * en la subasta *</pattern>
   <template>
     <auction-bid>
       <bid><star/></bid>
@@ -24,7 +24,7 @@ From Supermarket
 
 <!-- .send(market, tell, placeBid(AuctionNum, Bid+1)). //116 -->
 <category>
-  <pattern>Me gustaría ofertar * en la subasta *</pattern>
+  <pattern>Me gustaria ofertar * en la subasta *</pattern>
   <template>
     <auction-bid-up>
       <bid><star/>+1</bid>

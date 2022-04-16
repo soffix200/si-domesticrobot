@@ -12,7 +12,7 @@ From Butler
 
 <!--.send(Destination, tell, msg("No me queda, voy a comprar mÃƒÂ¡s")); //309 -->
 <category>
-  <pattern>No quedan cervezas en el frigo, compraré más</pattern>
+  <pattern>No quedan cervezas en el frigo, comprare más</pattern>
   <template>
     <buy-beers>
     </buy-beers>
@@ -22,7 +22,7 @@ From Butler
 
 <!--.send(owner, tell, pay(butler, TotalPrice-Balance)); /344 -->
 <category>
-  <pattern>Necesito * para comprar cervezas</pattern>
+  <pattern>Necesito * euros para comprar cervezas</pattern>
   <template>
     <money-required>
 	<amount><star/></amount>
