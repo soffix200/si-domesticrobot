@@ -114,7 +114,8 @@ limit(max, cost,   beer,  5).
 	has(money, Balance) & Balance >= 1 &
 	limit(max, cost, beer, Limit) & 1 <= Limit
 <-
-	.send(market, tell, placeBid(AuctionNum, 1));
+	.concat("Me gustaria ofertar ", 1, " en la subasta ", AuctionNum, Msg);
+	.send(market, tell, msg(Msg));
 	.abolish(auction(start, AuctionNum, Product, Qtty)).
 
 +auction(finish, AuctionNum, Product, Qtty, Winner, TotalPrice) : .my_name(Self) & Self == Winner <-
@@ -140,7 +141,8 @@ limit(max, cost,   beer,  5).
 	limit(max, cost, beer, Limit) & Bid+1 <= Limit
 <-
 	-winningAuction(Auction);
-	.send(market, tell, placeBid(AuctionNum, Bid+1)).
+	.concat("Me gustaria ofertar ", Bid+1, " en la subasta ", AuctionNum, Msg);
+	.send(market, tell, msg(Msg)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN sellBeer
