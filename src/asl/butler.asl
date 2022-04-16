@@ -70,9 +70,9 @@ filter(Query, bring, [Product]) :-
 filter(Query, clean, [Object, Position]) :-
 	tagValue("<object>", Query, Object) &
 	tagValue("<position>", Query, Position). // TODO not parsed
-filter(Postion, floor, [FX, FY]) :-
-	tagValue("<x>", Position, FX) &
-	tagValue("<y>", Position, FY).
+filter(Query, floor, [FX, FY]) :-
+	tagValue("<x>", Query, FX) &
+	tagValue("<y>", Query, FY).
 filter(Query, offer, [Product, Price, Cost, Time]) :-
 	tagValue("<product>", Query, Product) &
 	tagValue("<price>", Query, Price) &
@@ -176,8 +176,8 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	.println(Ag, " me ha pedido que vaya a recoger un ", Object);
 	+requestedRetrieval(Object, owner).
 +!doService(Query, Ag) : service(Query, clean) & filter(Query, clean, [Object, Position]) & filter(Query, floor, [FX, FY]) <-
-	.println(Ag, " me ha pedido que vaya a limpiar un ", Object, " del suelo");
-	+requestedRetrieval(Object, floor(PX, PY)).
+	.println(Ag, " me ha pedido que vaya a limpiar un ", Object, " del suelo (", FX, ",", FY, ")");
+	+requestedRetrieval(Object, floor(FX, FY)).
 
 // # OFFER SERVICE
 +!doService(Query, Ag) : service(Query, offer) & filter(Query, offer, [Product, Price, Cost, Time]) <-
@@ -346,7 +346,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 // ## HELPER TRIGGER moved
 
 +moved(success, Product, Qtty, Origin, Destination)[source(Mover)] <-
-	.println("< Exito moviendo ", Product, "x", Qtty, ": ", Origin, "->", Destination);
+	.println("< Exito moviendo ", Product, "(x", Qtty, "): ", Origin, "->", Destination);
 	if (Destination == owner) {
 		.date(YY,MM,DD);
 		?consumedSafe(YY,MM,DD, Product, ConsumedQtty);
@@ -362,7 +362,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	.abolish(moving(Mover, Product, Qtty, Origin, Destination));
 	.abolish(moved(success, Product, Qtty, Origin, Destination)[source(Mover)]).
 +moved(failure, Product, Qtty, Origin, Destination)[source(Mover)] <-
-	.println("! Fallo moviendo ", Product, "x", Qtty, ": ", Origin, "->", Destination);
+	.println("! Fallo moviendo ", Product, "(x", Qtty, "): ", Origin, "->", Destination);
 	if (Destination == owner) {
 		.send(Destination, tell, msg("No quedan cervezas en el frigo, comprare mas"));
 	}
