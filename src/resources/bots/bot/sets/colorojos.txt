@@ -1,6 +1,0 @@
-azules
-grises
-negros
-marrones
-rojos
-verdes
