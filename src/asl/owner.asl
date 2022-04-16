@@ -46,32 +46,35 @@ healthConstraint(Product) :-
 			.println("Tengo dinero, ahora le pago a butler los ", Amount, " que me ha pedido");
 			-+paid(YY,MM,DD, AmountPaid+Amount);
 			.abolish(has(money, Balance)); +has(money, Balance-Amount);
-			.send(butler, tell, msg("Ten los ", Amount, " que me has pedido."));
-			.send(butler, tell, pay(Amount)); // TODO AIML
+			.concat("Ten los ", Amount, " que me pediste", Msg);
+			.send(butler, tell, msg(Msg));
 			.send(assistant, achieve, remember(paid(YY,MM,DD, AmountPaid+Amount)));
 			.send(assistant, achieve, remember(has(money, Balance-Amount)));
 		} else {
 			.println("No puedo gastar más en cervezas hoy o me desahuciarán");
-			.send(butler, tell, cannotpay(Amount));
+			.concat("No puedo pagarte ", Amount, Msg);
+			.send(butler, tell, msg(Msg));
 		}
 	} else {
 		if (Amount < Limit){
 			.println("Tengo dinero, ahora le pago a butler los ", Amount, " que me ha pedido");
 			-+paid(YY,MM,DD, Amount);
 			.abolish(has(money, Balance)); +has(money, Balance-Amount);
-			.send(butler, tell, msg("Ten los ", Amount, " que me has pedido."));
-			.send(butler, tell, pay(Amount)); // TODO AIML
+			.concat("Ten los ", Amount, " que me pediste", Msg);
+			.send(butler, tell, msg(Msg));
 			.send(assistant, achieve, remember(paid(YY,MM,DD, Amount)));
 			.send(assistant, achieve, remember(has(money, Balance-Amount)));
 		} else {
 			.println("Esa cantidad est� por encima de mi presupuesto diario!");
-			.send(butler, tell, cannotpay(Amount));
+			.concat("No puedo pagarte ", Amount, Msg);
+			.send(butler, tell, msg(Msg));
 		}
 	}
 	.abolish(pay(butler, Amount)).
 +pay(butler, Amount) : has(money, Balance) & Balance < Amount<-
 	.println("No me queda dinero, a ver si la pensi�n llega pronto");
-	.send(butler, tell, cannotpay(Amount));
+	.concat("No puedo pagarte ", Amount, Msg);
+	.send(butler, tell, msg(Msg));
 	.abolish(pay(butler, Amount)).
 
 // -------------------------------------------------------------------------
@@ -184,7 +187,7 @@ healthConstraint(Product) :-
 	.wait(1000).
 +!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & not asked(butler, beer) <-
 	.println("Pido una cerveza al butler");
-	.send(butler, tell, bring(beer));
+	.send(butler, tell, msg("Traeme una cerveza"));
 	+asked(butler, beer).
 +!drinkBeer <- true.
 
@@ -207,8 +210,8 @@ healthConstraint(Product) :-
 	}
 	throw(can, position(PX, PY));
 	-has(owner, can);
-	.send(butler, tell, msg("He tirado una lata"));
-	.send(butler, tell, can(PX, PY)). // TODO AIML
+	.concat("He tirado una lata a ", PX, " ", PY, Msg);
+	.send(butler, tell, msg(Msg)).
 +has(owner, can) : mood(owner, amodorrado) | mood(owner, dormido) | mood(owner, despierto) | mood(owner, animado) <-
 	.println("Voy a pedirle al butler que venga a por la lata");
 	.send(butler, tell, msg("Ven a por la lata")).

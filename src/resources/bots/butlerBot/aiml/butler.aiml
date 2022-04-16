@@ -3,12 +3,6 @@
 
 <!-- RULES FOR OWNER MESSAGES -->
 
-<!--
-.send(butler, tell, msg("Ten los ", Amount, " que me has pedido.")); //49
-.send(butler, tell, pay(Amount)); //50
-.send(butler, tell, msg("Ten los ", Amount, " que me has pedido.")); //62
-.send(butler, tell, pay(Amount)); //63
--->
 <category>
   <pattern>Ten los * que me pediste</pattern>
   <template>
@@ -19,9 +13,6 @@
   </template>
 </category>
 
-<!-- .send(butler, tell, cannotpay(Amount)); //55 -->
-<!-- .send(butler, tell, cannotpay(Amount)); //74 -->
-<!-- .send(butler, tell, cannotpay(Amount)); //68 -->
 <category>
   <pattern>No puedo pagarte *</pattern>
   <template>
@@ -32,7 +23,6 @@
   </template>
 </category>
 
-<!--.send(butler, tell, bring(beer)); //187 -->
 <category>
   <pattern>Traeme una cerveza</pattern>
   <template>
@@ -42,10 +32,6 @@
   </template>
 </category>
 
-<!--
-	.send(butler, tell, msg("He tirado una lata")); //210
-	.send(butler, tell, can(PX, PY)). //211
--->
 <category>
   <pattern>He tirado una lata a * *</pattern>
   <template>
@@ -61,10 +47,6 @@
   </template>
 </category>
 
-<!-- 
-.println("Voy a pedirle al butler que venga a por la lata"); //213
-.send(butler, tell, msg("Ven a por la lata")). //214
--->
 <category>
   <pattern>Ven a por la lata</pattern>
   <template>
@@ -77,18 +59,18 @@
 
 <!-- RULES FOR SUPERMARKET MESSAGES -->
 
-<!--.send(butler, tell, price(beer, Price)); //44 -->
 <category>
-  <pattern>Ahora vendo beer a *</pattern>
+  <pattern>Vendo beer a * * envio el pedido te llega en *</pattern>
   <template>
     <offer>
       <product>beer</product>
       <price><star/></price>
+      <cost><star index="2"/></cost>
+      <time><star index="3"/></time>
     </offer>
   </template>
 </category>
 
-<!--.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price)); //131-->
 <category>
   <pattern>He entregado el pedido * que contiene * cervezas, el importe asciende a *</pattern>
   <template>
@@ -102,9 +84,8 @@
   </template>
 </category>
 
-<!--.send(Ag, tell, notEnough(OrderId, beer, OrderedQtty)); //141-->
 <category>
-  <pattern>Lo siento pero no podre enviar el pedido * que contiene * cervezas, dado que no me quedan</pattern>
+  <pattern>Lo siento no puedo enviar el pedido * que contiene * cervezas</pattern>
   <template>
     <deliver>
       <status>rejected</status>

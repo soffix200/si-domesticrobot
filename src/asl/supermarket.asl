@@ -65,8 +65,9 @@ limit(max, cost,   beer,  5).
 +!offerBeer : supermarketInit & has(beer, Qtty) & Qtty > 0 <-
 	?price(beer, Price); ?deliveryTime(butler, Time); ?deliveryCost(butler, Cost);
 	basemath.truncate(Price, PriceToDisplay);
-	.println("Vendo beer a ", PriceToDisplay, " [+", Cost, " envio]");
-	.send(butler, tell, price(beer, Price, Cost, Time));
+	.concat("Vendo beer a ", Price, " ", Cost, " envio el pedido te llega en ", Time, Msg);
+	.println(Msg);
+	.send(butler, tell, msg(Msg));
 	!evaluatePrice(beer).
 +!offerBeer <- !offerBeer.
 
@@ -158,7 +159,8 @@ limit(max, cost,   beer,  5).
 	.send(Store, achieve, del(money, Cost));
 	deliver(beer, OrderedQtty, Time);
 	.abolish(has(beer, _)); +has(beer, StoredQtty-OrderedQtty);
-	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price+Cost));
+	.concat("He entregado el pedido ", OrderId, " que contiene ", OrderedQtty, " cervezas, el importe asciende a ", OrderedQtty*Price+Cost, Msg);
+	.send(Ag, tell, msg(Msg));
 	.send(Store, achieve, del(beer, OrderedQtty));
 	.abolish(order(OrderId, _, _, _));
 	!sellBeer.
@@ -168,7 +170,8 @@ limit(max, cost,   beer,  5).
 <-
 	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (rechazado)");
 	-+currentOrderId(OrderId+1);
-	.send(Ag, tell, notEnough(OrderId, beer, OrderedQtty));
+	.concat("Lo siento no puedo enviar el pedido ", OrderId, " que contiene ", OrderedQtty, " cervezas", Msg);
+	.send(Ag, tell, msg(Msg));
 	.abolish(order(OrderId, _, _, _));
 	!sellBeer.
 +!sellBeer <- !sellBeer.
