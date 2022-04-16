@@ -39,43 +39,48 @@ healthConstraint(Product, Agent, Message) :-
 // SERVICE INIT AND HELPER METHODS // TODO: PLACEHOLDER
 // -------------------------------------------------------------------------
 
-// Check if bot answer requires a service
-service(Answer, translating) :- // Translating service
-	checkTag("<translate>",Answer).
-service(Answer, addingBot) :-   // Adding a bot property service
-	checkTag("<botprop>",Answer).
+service(Query, pay) :-
+	checkTag("<pay>", Query).
+service(Query, bring) :-
+	checkTag("<bring>", Query).
+service(Query, clean) :-
+	checkTag("<clean>", Query).
+service(Query, offer) :-
+	checkTag("<offer>", Query).
+service(Query, deliver) :-
+	checkTag("<deliver>", Query).
 
-// Checking a concrete service required by the bot ia as simple as find the required tag
-// as a substring on the string given by the second parameter
-checkTag(Service,String) :-
-	.substring(Service,String).
+checkTag(Tag, String) :-
+	.substring(Tag, String).
 
-// Gets into Val the first substring contained by a tag Tag into String
-getValTag(Tag,String,Val) :- 
-	.substring(Tag,String,Fst) &       // First: find the Fst Posicition of the tag string              
-	.length(Tag,N) &                   // Second: calculate the length of the tag string
-	.delete(0,Tag,RestTag) &     
-	.concat("</",RestTag,EndTag) &     // Third: build the terminal of the tag string
-	.substring(EndTag,String,End) &    // Four: find the Fst Position of the terminal tag string
-	.substring(String,Val,Fst+N,End).  // Five: get the Val tagged
-	
-	/*
-		Another way to get the value will consist to delete from String the prefix, sufix and tags
-		in order to let only the required Val
-	*/  
+tagValue(Tag, Query, Value) :-          // Gets into Val the first substring contained by a tag Tag into String
+	.substring(Tag, Query, Fst) &         // First: find the Fst Posicition of the tag string              
+	.length(Tag, N) &                     // Second: calculate the length of the tag string
+	.delete(0, Tag, RestTag) &     
+	.concat("</", RestTag, EndTag) &      // Third: build the terminal of the tag string
+	.substring(EndTag, Query, End) &      // Four: find the Fst Position of the terminal tag string
+	.substring(Query, Value, Fst+N, End). // Five: get the Val tagged
 
-// Filter the answer to be showed when the service indicated as second arg is done
-filter(Answer, translating, [To,Msg]):-
-	getValTag("<to>",Answer,To) &
-	getValTag("<msg>",Answer,Msg).
-
-filter(Answer, addingBot, [ToWrite,Route]):-
-	getValTag("<name>",Answer,Name) &
-	getValTag("<val>",Answer,Val) &
-	.concat(Name,":",Val,ToWrite) &
-	bot(Bot) &
-	.concat("/bots/",Bot,BotName) &
-	.concat(BotName,"/config/properties.txt",Route).
+filter(Query, pay, [Status, Amount]) :-
+	tagValue("<status>", Query, Status) &
+	tagValue("<amount>", Query, Amount).
+filter(Query, bring, [Product]) :-
+	tagValue("<product>", Query, Product).
+filter(Query, clean, [Object, Position]) :-
+	tagValue("<object>", Query, Object) &
+	tagValue("<position>", Query, Position). // TODO not parsed
+filter(Postion, floor, [FX, FY]) :-
+	tagValue("<x>", Position, FX) &
+	tagValue("<y>", Position, FY).
+filter(Query, offer, [Product, Price]) :-
+	tagValue("<product>", Query, Product) &
+	tagValue("<price>", Query, Price).
+filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
+	tagValue("<status>", Query, Status) &
+	tagValue("<order-id>", Query, OrderId) &
+	tagValue("<product>", Query, Product) &
+	tagValue("<quantity>", Query, Qtty) &
+	tagValue("<price>", Query, Price).
 
 // -------------------------------------------------------------------------
 // PRIORITIES AND PLAN INITIALIZATION
@@ -95,18 +100,6 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	!manageBeer;
 	!cleanHouse;
 	!doHouseWork.
-
-// -------------------------------------------------------------------------
-// TRIGGERS
-// -------------------------------------------------------------------------
-
-+pay(Amount)[source(owner)] <-
-	.println("Gracias por la paga de ", Amount, " mi seÃ±or");
-	?has(money, Balance);
-	.abolish(has(money, _));
-	+has(money, Balance + Amount);
-	.send(database, achieve, add(money, Amount));
-	.abolish(pay(_)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN initBot // TODO: PLACEHOLDER
@@ -143,19 +136,62 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // -------------------------------------------------------------------------
 
 +!dialogWithOwner : msg(Msg)[source(Ag)] & bot(Bot) <-
-	chatSincrono(Msg,Answer);
+	.println("El agente ", Ag, " ha dicho '", Msg, "'"); 
 	-msg(Msg)[source(Ag)];
-	.println("El agente ",Ag," ha dicho ",Msg);
-	!doSomething(Answer,Ag).
+	chatSincrono(Msg, Answer);
+	!doService(Answer, Ag).
 +!dialogWithOwner <- true.
 
-+!doSomething(Answer,Ag) : service(Answer, Service) <-
-	.println("Aqui debe ir el cÃ³digo del servicio:", Service," para el agente ",Ag).
-	
-+!doSomething(Answer,Ag) : not service(Answer, Service) <-
-	.println("Le contesto al ",Ag," ",Answer);
-	.send(Ag,tell,answer(Answer)). //modificar adecuadamente
+// # PAYMENT SERVICE
+!doService(Query, Ag) : service(Query, pay) &
+	filter(Query, pay, [approved, Amount])
+<-
+	.println("Gracias por la paga de ", Amount, " mi seÃ±or");
+	?has(money, Balance);
+	.abolish(has(money, _));
+	+has(money, Balance + Amount);
+	.send(database, achieve, add(money, Amount)).
+!doService(Query, Ag) : service(Query, pay) & // TODO more programmatically
+	filter(Query, pay, [rejected, Amount])
+<-
+	+cannotPay(Amount).
 
+// # BRING SERVICE
+!doService(Query, Ag) : service(Query, bring) &
+	filter(Query, bring, [Product])
+<-
+	+asked(Ag, Product).
+
+// # CLEAN SERVICE
+!doService(Query, Ag) : service(Query, clean) &
+	filter(Query, clean, [Object, owner]) &
+<-
+	+requestedRetrieval(can, owner).
+!doService(Query, Ag) : service(Query, clean) &
+	filter(Query, clean, [Object, Position]) &
+	filter(Position, floor, [FX, FY])
+<-
+	+requestedRetrieval(can, floor(PX, PY)).
+
+// # OFFER SERVICE
+!doService(Query, Ag) : service(Query, offer) &
+	filter(Query, offer, [Product, Price])
+<-
+	+price(Product, Price)[source(Ag)]. // TODO PENDING MERGE
+
+// # DELIVER SERVICE
+!doService(Query, Ag) : service(Query, deliver) &
+	filter(Query, deliver, [delivered, OrderId, Product, Qtty, Price]) &
+<-
+
+!doService(Query, Ag) : service(Query, deliver) &
+	filter(Query, deliver, [rejected, OrderId, Product, Qtty, Price]) &
+<-
+
+!doService(Query, Ag) : not service(Query, _) <-
+	.println("Le contesto a ", Ag, " '", Answer, "'");
+	.send(Ag, tell, answer(Answer)).
+	
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN cleanHouse // TODO
 // -------------------------------------------------------------------------
@@ -230,16 +266,6 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(dustman, tell, deactivate(dustman));
 	.abolish(automaton(dustman, active));
 	+automaton(dustman, inactive).
-
-// ## HELPER TRIGGER can
-
-+can(PX, PY) <-
-	+requestedRetrieval(can, floor(PX, PY));
-	.abolish(can(PX, PY)).
-
-+msg("Ven a por la lata") <-
-	+requestedRetrieval(can, owner);
-	.abolish(msg("Ven a por la lata")).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN manageBeer
@@ -322,12 +348,6 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	.send(mover, tell, deactivate(mover));
 	.abolish(automaton(mover, active));
 	+automaton(mover, inactive).
-
-// ## HELPER TRIGGER bring
-
-+bring(Product)[source(Ag)] <- // TODO AIML
-	+asked(Ag, Product);
-	.abolish(bring(Product)[source(Ag)]).
 
 // ## HELPER THIGGER price
 

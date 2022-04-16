@@ -111,6 +111,7 @@
       <order-id><star/></order-id>
       <product>beer</product>
       <quantity><star index="2"/></quantity>
+      <price>nil</price>
     </deliver>
   </template>
 </category>
