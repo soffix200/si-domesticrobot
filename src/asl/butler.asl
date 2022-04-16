@@ -308,7 +308,8 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 +!manageBeer : not overLimit(min, beer, fridge) & not ordered(beer) & limit(min, buy, beer, BatchSize) & cheapest(Provider, beer, Price, BatchSize) <-
 	.println("Tengo menos cerveza de la que deberia, voy a comprar mas");
 	if (BatchSize > 0) {
-		.send(Provider, tell, order(beer, BatchSize));
+		.concat("Me gustaria comprarte ", BatchSize, " cervezas", Msg);
+		.send(Provider, tell, msg(Msg));
 	} else {
 		.println("No puedo comprar cervezas en lotes de ", BatchSize);
 	}
@@ -316,8 +317,10 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 +!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance >= Price <-
 	.println("> Pago ", Price, " por el pedido #", OrderId);
 	+requestedPickUp(Product, Qtty, delivery);
-	.send(Provider, tell, received(OrderId));
-	.send(Provider, tell, pay(Price));
+	.concat("He recibido la orden ", OrderId, Msg);
+	.send(Provider, tell, msg(Msg));
+	.concat("Toma tu pago de ", Price, Msg2);
+	.send(Provider, tell, msg(Msg2));
 	.send(database, achieve, del(money, Price));
 	.abolish(has(money, Balance));
 	+has(money, Balance-Price);
@@ -331,7 +334,8 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	+requestedMoney(owner, Price-Balance).
 +!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance < Price & cannotPay(owner, _) <-
 	.println("> Devuelvo el pedido #", OrderId, ", ", owner, " no me ha concedido el dinero");
-	.send(Provider, tell, reject(OrderId));
+	.concat("Lo siento pero debo rechazar la orden ", OrderId, Msg);
+	.send(Provider, tell, msg(Msg));
 	.abolish(requestedPayment(Provider, OrderId, Product, Qtty, Price));
 	.abolish(requestedMoney(owner, _));
 	.abolish(ordered(Product)).

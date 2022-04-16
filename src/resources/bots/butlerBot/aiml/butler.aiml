@@ -60,7 +60,7 @@
 <!-- RULES FOR SUPERMARKET MESSAGES -->
 
 <category>
-  <pattern>Vendo beer a * * envio el pedido te llega en *</pattern>
+  <pattern>Vendo beer a * * envio el pedido llega en *</pattern>
   <template>
     <offer>
       <product>beer</product>

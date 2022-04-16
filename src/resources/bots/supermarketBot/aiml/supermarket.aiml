@@ -3,18 +3,16 @@
 
 <!-- RULES FOR BUTLER MESSAGES -->
 
-<!--.send(Provider, tell, order(beer, BatchSize)); //277  -->
 <category>
   <pattern>Me gustaria comprarte * cervezas</pattern>
   <template>
     <buy>
       <product>beer</product>
-      <amount><star/></amount>
+      <quantity><star/></quantity>
     </buy>
   </template>
 </category>
 
-<!--.send(Provider, tell, reject(OrderId)); //356 -->
 <category>
   <pattern>Lo siento pero debo rechazar la orden *</pattern>
   <template>
@@ -25,7 +23,6 @@
   </template>
 </category>
 
-<!--.send(Provider, tell, received(OrderId)); //373 -->
 <category>
   <pattern>He recibido la orden *</pattern>
   <template>
@@ -36,7 +33,6 @@
   </template>
 </category>
 
-<!--.send(Provider, tell, pay(TotalPrice)); //374 -->
 <category>
   <pattern>Toma tu pago de *</pattern>
   <template>
@@ -48,12 +44,11 @@
 
 <!-- RULES FOR MARKET MESSAGES -->
 
-<!-- .broadcast(tell, auction(start, AuctionNum, Product, Qtty)); //18 -->
 <category>
   <pattern>La subasta * acaba de empezar, se subastan * cervezas</pattern>
   <template>
     <auction>
-      <status>started></status>
+      <status>started</status>
 			<auction-num><star/></auction-num>
       <product>beer</product>
       <quantity><star index="2"/></quantity>
@@ -61,20 +56,20 @@
   </template>
 </category>
 
-<!-- .broadcast(tell, bid(max, AuctionNum, Winner, Max)); //31 -->
 <category>
-  <pattern>La subasta * ahora tiene la puja mas alta por parte de * que ha ofrecido *</pattern>
+  <pattern>La subasta * de * cervezas ahora tiene la puja mas alta por parte de * que ha ofrecido *</pattern>
   <template>
     <auction>
       <status>update</status>
       <auction-num><star/></auction-num>
-      <winner><star index="2"/></winner>
-      <amount><star index="3"/></amount>
+      <winner><star index="3"/></winner>
+      <product>beer</product>
+      <quantity><star index="2"/></quantity>
+      <price><star index="4"/></price>
     </auction>
   </template>
 </category>
 
-<!-- .broadcast(tell, auction(finish, AuctionNum, Product, Qtty, Winner, Value)); //45 -->
 <category>
   <pattern>La subasta * ha terminado, * ha comprado * cervezas por un valor total de *</pattern>
   <template>
@@ -82,9 +77,9 @@
       <status>finished</status>
       <auction-num><star/></auction-num>
       <winner><star index="2"/></winner>
-      <quantity><star index="3"/></quantity>
       <product>beer</product>
-      <amount><star index="4"/></amount>
+      <quantity><star index="3"/></quantity>
+      <price><star index="4"/></price>
     </auction>
   </template>
 </category>

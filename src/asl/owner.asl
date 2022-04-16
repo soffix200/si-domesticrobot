@@ -127,6 +127,11 @@ filter(Query, pay, [Amount]) :-
 	.println(Ag, " me ha pedido que le ceda ", Amount);
 	!pay(Ag, Amount).
 
+// # COMMUNICATION SERVICE
++!doService(Answer, Ag) : not service(Query, Service) <-
+	.println("-> [", Ag, "] ", Answer);
+	.send(Ag, tell, answer(Answer)).
+
 // ## HELPER PLAN pay(Ag, Amount)
 
 +!pay(butler, Amount) : has(money, Balance) & Balance >= Amount <-

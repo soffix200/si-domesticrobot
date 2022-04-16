@@ -76,12 +76,18 @@ filter(Query, bid, [AuctionNum, Amount]) :-
 // -------------------------------------------------------------------------
 
 +!auction : marketInit & not auctionInProgress <-
-	.println("[E] Comenzará la subasta ", AuctionNum, " (", Product, "x", Qtty, ")");
   ?auction(AuctionNum, Product, Qtty); ?time(bid, Delay);
+	.println("[E] Comenzara la subasta ", AuctionNum, " (", Product, "x", Qtty, ")");
 	+auctionInProgress;
   +numBids(AuctionNum, 0);
   +bids(AuctionNum, []);
-  .broadcast(tell, auction(start, AuctionNum, Product, Qtty));
+  .concat("La subasta ", AuctionNum, " acaba de empezar, se subastan ", Qtty, " cervezas", Msg);
+  .all_names(L);
+  for (.member(Ag, L)) {
+    if (.substring("supermarket", Ag)) {
+      .send(Ag, tell, msg(Msg));
+    }
+  }
   .wait(Delay*2);
   !auction.
 +!auction : marketInit &
@@ -93,8 +99,14 @@ filter(Query, bid, [AuctionNum, Amount]) :-
   ?bid(AuctionNum, Max, Winner);
   -+winner(AuctionNum, Winner, Max);
   -+numBids(AuctionNum, CurrentNumBids);
-  .println("> La puja máx alta para la subasta ", AuctionNum, " (", Product, "x", Qtty, ") es de ", Winner, " por ", Max);
-  .broadcast(tell, bid(max, AuctionNum, Winner, Max));
+  .println("> La puja mas alta para la subasta ", AuctionNum, " (", Product, "x", Qtty, ") es de ", Winner, " por ", Max);
+  .concat("La subasta ", AuctionNum, " de ", Qtty, " cervezas ahora tiene la puja mas alta por parte de ", Winner, " que ha ofrecido ", Max, Msg);
+  .all_names(L);
+  for (.member(Ag, L)) {
+    if (.substring("supermarket", Ag)) {
+      .send(Ag, tell, msg(Msg));
+    }
+  }
   .wait(BidTime);
   !auction.
 +!auction : marketInit &
@@ -109,6 +121,13 @@ filter(Query, bid, [AuctionNum, Amount]) :-
   .abolish(bid(AuctionNum, _, _));
 	.print("> El ganador de la subasta ", AuctionNum, " es ", Winner);
   .broadcast(tell, auction(finish, AuctionNum, Product, Qtty, Winner, Value));
+  .concat("La subasta ", AuctionNum, " ha terminado, ", Winner, " ha comprado ", Qtty, " cervezas por un valor total de ", Value, Msg);
+  .all_names(L);
+  for (.member(Ag, L)) {
+    if (.substring("supermarket", Ag)) {
+      .send(Ag, tell, msg(Msg));
+    }
+  }
   .wait(Cd);
 	-auctionInProgress;
   !auction.
