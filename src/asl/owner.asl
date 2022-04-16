@@ -148,7 +148,7 @@ filter(Query, pay, [Amount]) :-
 		}
 	} else {
 		if (Amount < Limit){
-			.println("Tengo dinero, ahora le pago a butler los ", Amount, " que me ha pedido");
+			.println("> Le pago a ", butler, " los ", Amount, " que me ha pedido");
 			-+paid(YY,MM,DD, Amount);
 			.abolish(has(money, Balance)); +has(money, Balance-Amount);
 			.concat("Ten los ", Amount, " que me pediste", Msg);
@@ -184,9 +184,9 @@ filter(Query, pay, [Amount]) :-
 // -------------------------------------------------------------------------
 
 +!expectPension : ownerInit & .date(YY,MM,1) & not lastPension(YY,MM) <-
+	.println("[E] Me ha llegado una pension de ", Amount);
 	?has(money, Balance);
 	?limit(max, owner, monthlyPension, Amount);
-	.println("Qué felicidad! Me ha llegado una pensión de ", Amount);
 	-+lastPension(YY,MM);
 	.abolish(has(money, Balance)); +has(money, Balance+Amount);
 	.send(assistant, achieve, remember(lastPension(YY,MM)));
@@ -211,11 +211,11 @@ filter(Query, pay, [Amount]) :-
 // -------------------------------------------------------------------------
 
 +!drinkBeer : not mood(owner, dormido) & healthConstraint(beer) <-
-	.println("Owner ha bebido demasiado por hoy.");
+	.println("[!] He bebido demasiado");
 	.wait(10000);
 	-asked(butler, beer).
 +!drinkBeer : not mood(owner, dormido) & has(owner, beer) & asked(butler, beer) <-
-	.println("Voy a empezar a beber cerveza.");
+	.println("> Empiezo a beber cerveza");
 	-asked(butler, beer);
 	sip(beer);
 	?sipMoodCount(owner, SipMoodCount); ?limit(max, mood, sipMoodCount, Limit);
@@ -229,7 +229,7 @@ filter(Query, pay, [Amount]) :-
 	}
 	+has(owner, halfemptycan).
 +!drinkBeer : not mood(owner, dormido) & has(owner, beer) & not asked(butler, beer) <-
-	.println("Voy a beber un sorbo de cerveza.");
+	.println("> Bebo un sorbo de cerveza");
 	sip(beer);
 	?sipMoodCount(owner, SipMoodCount); ?limit(max, mood, sipMoodCount, Limit);
 	-+sipMoodCount(owner, SipMoodCount+1);
@@ -243,10 +243,10 @@ filter(Query, pay, [Amount]) :-
 	}
 	+has(owner, halfemptycan).
 +!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & asked(butler, beer) <-
-	.println("Sigo esperando mi cerveza");
+	.println("[!] Sigo esperando mi cerveza");
 	.wait(1000).
 +!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & not asked(butler, beer) <-
-	.println("Pido una cerveza al butler");
+	.println("> Pido una cerveza al butler");
 	.send(butler, tell, msg("Traeme una cerveza"));
 	+asked(butler, beer).
 +!drinkBeer <- true.
@@ -260,7 +260,7 @@ filter(Query, pay, [Amount]) :-
 	-has(owner, halfemptycan).
 
 +has(owner, can) : mood(owner, euforico) | mood(owner, crispado) <-
-	.println("Voy a tirar una lata");
+	.println("> Tiro una lata");
 	?bounds(BX, BY);
 	.random(X); .random(Y);
 	basemath.floor(X*BX, PX); basemath.floor(Y*BY, PY);
@@ -273,10 +273,10 @@ filter(Query, pay, [Amount]) :-
 	.concat("He tirado una lata a ", PX, " ", PY, Msg);
 	.send(butler, tell, msg(Msg)).
 +has(owner, can) : mood(owner, amodorrado) | mood(owner, dormido) | mood(owner, despierto) | mood(owner, animado) <-
-	.println("Voy a pedirle al butler que venga a por la lata");
+	.println("> Pido a butler que venga a por la lata");
 	.send(butler, tell, msg("Ven a por la lata")).
 +has(owner, can) : mood(owner, despierto) | mood(owner, animado) <- // TODO and remove from previous intention
-	.println("Voy a llevar la lata al cubo de basura").
+	.println("> Llevo la lata al cubo de basura").
 
 +retrieved(can) : has(owner, can) <-
 	.abolish(has(owner, can)).
@@ -286,7 +286,7 @@ filter(Query, pay, [Amount]) :-
 // -------------------------------------------------------------------------
 
 +!wakeUp : mood(owner, dormido) <-
-	.println("Estoy cansado, voy a dormir una siesta");
+	.println("> Estoy cansado, voy a dormir una siesta");
 	.random(X);
 	?limit(min, nap, time, MinNapTime);
 	?limit(max, nap, time, MaxNapTime);
@@ -297,6 +297,6 @@ filter(Query, pay, [Amount]) :-
 // ## HELPER PLAN transitionMood
 
 +!transitionMood : mood(owner, CurrentMood) & nextMood(CurrentMood, NextMood) <-
-	.println("Voy a estar ", NextMood);
+	.println("> Voy a estar ", NextMood);
 	-+mood(owner, NextMood);
 	.send(assistant, achieve, remember(mood(owner, NextMood))).
