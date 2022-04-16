@@ -53,4 +53,50 @@ From Butler
 </category>
 
 
+<!--
+---------------------------
+From Market
+---------------------------
+-->
+
+
+<!-- .broadcast(tell, auction(start, AuctionNum, Product, Qtty)); //18 -->
+<category>
+  <pattern>La subasta * acaba de empezar, se subastan * cervezas</pattern>
+  <template>
+    <start-auction>
+      <num-auction><star/></num-auction>
+	  <amount><star index="2"/></amount>
+    </start-auction>
+  </template>
+</category>
+ 
+
+<!-- .broadcast(tell, bid(max, AuctionNum, Winner, Max)); //31 -->
+<category>
+  <pattern>La subasta * ahora tiene la puja más alta por parte de * que ha ofrecido *</pattern>
+  <template>
+    <finish-auction>
+      <num-auction><star/></num-auction>
+	  <winner><star index="2"/></winner>
+	  <value><star index="3"/></value>
+    </finish-auction>
+  </template>
+</category>
+
+
+<!-- .broadcast(tell, auction(finish, AuctionNum, Product, Qtty, Winner, Value)); //45 -->
+<category>
+  <pattern>La subasta * ha terminado, * ha comprado * cervezas por un valor total de *</pattern>
+  <template>
+    <finish-auction>
+      <num-auction><star/></num-auction>
+	  <winner><star index="2"/></winner>
+	  <amount><star index="3"/></amount>
+	  <value><star index="4"/></value>
+    </finish-auction>
+  </template>
+</category>
+
+
 </aiml>
