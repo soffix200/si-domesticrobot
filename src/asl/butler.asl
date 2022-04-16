@@ -23,9 +23,9 @@ overLimit(Type, Product, Location) :-
 	limit(Type, Location, Product, Limit) &
 	stored(Product, Location, Qtty) & Qtty >= Limit.
 
-cheapest(Provider, Product, Price) :-
-	price(Provider, Product, Price) &
-	not (price(Provider2, Product, Price2) & Provider2 \== Provider & Price2 < Price).
+cheapest(Provider, Product, Price, Qtty) :-
+	price(Provider, Product, Price, Cost, _) &
+	not (price(Provider2, Product, Price2, Cost2) & Provider2 \== Provider & Price2*Qtty+Cost2 < Price*Qtty+Cost).
 
 consumedSafe(YY,MM,DD, Product, Qtty) :-
 	consumed(YY,MM,DD, Product, Qtty) | Qtty = 0.
@@ -271,10 +271,8 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 	?location(delivery, OType, OX, OY); ?placement(OType, OPlacement);
 	?location(fridge, DType, DX, DY); ?placement(DType, DPlacement);
 	.send(mover, tell, move(beer, Qtty, location(delivery, OX, OY, OPlacement), location(fridge, DX, DY, DPlacement), Obstacles)).
-+!manageBeer : not overLimit(min, beer, fridge) & not ordered(beer) & cheapest(Provider, beer, Price) <-
++!manageBeer : not overLimit(min, beer, fridge) & not ordered(beer) & limit(min, buy, beer, BatchSize) & cheapest(Provider, beer, Price, BatchSize) <-
 	.println("Tengo menos cerveza de la que deberÃ­a, voy a comprar mÃ¡s");
-	.println("Cheapest is ", Provider, " @", Price);
-	?limit(min, buy, beer, BatchSize);
 	if (BatchSize > 0) {
 		.send(Provider, tell, order(beer, BatchSize));
 	} else {
@@ -331,13 +329,13 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 
 // ## HELPER THIGGER price
 
-+price(beer, NewPrice)[source(Provider)] :
-	(not price(Provider, beer, OldPrice)) | (NewPrice \== OldPrice)
++price(beer, NewPrice, NewCost, NewTime)[source(Provider)] :
+	(not price(Provider, beer, OldPrice, OldCost, OldTime)) | (NewPrice \== OldPrice) | (OldCost \== NewCost) | (OldTime \== NewTime)
 <-
-	.println("Entendido, ", Provider, " ahora me vendes una beer a ", NewPrice);
-	.abolish(price(Provider, beer, _));
-	+price(Provider, beer, NewPrice);
-	.abolish(price(beer, _)[source(Provider)]).
+	.println("Entendido, ", Provider, " ahora me vendes una beer a ", NewPrice, " y el envío me llega en ", NewTime, " costando ", NewCost);
+	.abolish(price(Provider, beer, _, _, _));
+	+price(Provider, beer, NewPrice, NewCost, NewTime);
+	.abolish(price(beer, _, _, _)[source(Provider)]).
 
 // ## HELPER TRIGGER delivered
 
@@ -385,7 +383,7 @@ filter(Answer, addingBot, [ToWrite,Route]):-
 // ### HELPER TRIGGER notEnough
 
 +notEnough(OrderId, Product, Qtty)[source(Provider)] <-
-	.abolish(price(Provider, Product, _));
+	.abolish(price(Provider, Product, _, _, _));
 	.wait(5000);
 	-ordered(beer);
 	.abolish(notEnough(OrderId, Product, Qtty)[source(Provider)]).

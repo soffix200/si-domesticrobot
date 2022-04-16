@@ -1,6 +1,9 @@
 beer(0).
 money(100).
 
+deliveryTime(butler, -1).
+deliveryCost(butler, -1).
+
 !initStore.
 
 // -------------------------------------------------------------------------
@@ -40,4 +43,18 @@ money(100).
 +!add(money,N) : money(M) <-
 	?filename(Filename);
 	-+beer(money, M+N);
+	.save_agent(Filename).
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN addDeliveryTime & addDeliveryCost
+// -------------------------------------------------------------------------
+
++!addDeliveryTime(Ag, Time) <-
+	?filename(Filename);
+	.abolish(deliveryTime(Ag, _)); +deliveryTime(Ag, Time);
+	.save_agent(Filename).
+
++!addDeliveryCost(Ag, Cost) <-
+	?filename(Filename);
+	.abolish(deliveryCost(Ag, _)); +deliveryCost(Ag, Cost);
 	.save_agent(Filename).
