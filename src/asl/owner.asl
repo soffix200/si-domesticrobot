@@ -16,7 +16,7 @@ nextMood(Current, Next) :- Current == dormido    & Next = despierto.
 
 healthConstraint(Product) :-
 	.date(YY,MM,DD) &
-	healthConstraint(Product,YY,MM,DD).
+	healthConstraint(Product, YY,MM,DD).
 
 // -------------------------------------------------------------------------
 // SERVICE INIT AND HELPER METHODS
@@ -26,6 +26,8 @@ service(Query, bring) :-
 	checkTag("<bring>", Query).
 service(Query, pay) :-
 	checkTag("<pay>", Query).
+service(Query, health) :-
+	checkTag("<health>", Query).
 
 checkTag(Tag, String) :-
 	.substring(Tag, String).
@@ -43,6 +45,8 @@ filter(Query, bring, [Status]) :-
 	tagValue("<status>", Query, Status).
 filter(Query, pay, [Amount]) :-
 	tagValue("<amount>", Query, Amount).
+filter(Query, health, [Beer]) :-
+	tagValue("<beer>", Query, Beer).
 
 // -------------------------------------------------------------------------
 // PRIORITIES AND PLAN INITIALIZATION
@@ -126,6 +130,12 @@ filter(Query, pay, [Amount]) :-
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) <-
 	.println(Ag, " me ha pedido que le ceda ", Amount);
 	!pay(Ag, Amount).
+
+// # HEALTH SERVICE
++!doService(Query, Ag) : service(Query, health) & filter(Query, health, [Beer]) & Beer == tooMuch <-
+	.println(Ag, " me ha dicho que he bebido demasiado por hoy");
+	.date(YY,MM,DD);
+	+healthConstraint(beer, YY,MM,DD).
 
 // # COMMUNICATION SERVICE
 +!doService(Answer, Ag) : not service(Query, Service) <-

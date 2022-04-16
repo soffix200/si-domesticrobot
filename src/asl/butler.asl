@@ -343,7 +343,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	.println("[!] ", Ag, " no puede beber mas ", beer, " por hoy");
 	.send(Ag, tell, msg(Msg));
 	.date(YY,MM,DD);
-	.send(Ag, tell, healthConstraint(beer,YY,MM,DD));
+	.send(Ag, tell, msg("Has bebido demasiada cerveza por hoy"));
 	-asked(Ag, beer).
 +!manageBeer <- true.
 

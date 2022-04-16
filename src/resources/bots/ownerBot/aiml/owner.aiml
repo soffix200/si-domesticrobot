@@ -21,4 +21,13 @@
 	</template>
 </category>
 
+<category>
+	<pattern>Has bebido demasiada cerveza por hoy</pattern>
+	<template>
+		<health>
+			<beer>tooMuch</beer>
+		</health>
+	</template>
+</category>
+
 </aiml>
