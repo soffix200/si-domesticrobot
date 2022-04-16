@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aiml version="2.0">
+
+<!--
+-------------------------------------------------------------------------
+Market received messages
+-------------------------------------------------------------------------
+
+---------------------------
+From Supermarket
+---------------------------
+-->
+
+<!-- .send(market, tell, placeBid(AuctionNum, 1)); //90 -->
+<category>
+  <pattern>Me gustaría ofertar * en la subasta *</pattern>
+  <template>
+    <auction-bid>
+      <bid><star/></bid>
+	  <auction-num><star/> <star index="2"/></auction-num>
+    </auction-bid>
+  </template>
+</category>
+
+<!-- .send(market, tell, placeBid(AuctionNum, Bid+1)). //116 -->
+<category>
+  <pattern>Me gustaría ofertar * en la subasta *</pattern>
+  <template>
+    <auction-bid-up>
+      <bid><star/>+1</bid>
+	  <auction-num><star/> <star index="2"/></auction-num>
+    </auction-bid-up>
+  </template>
+</category>
+
+</aiml>
