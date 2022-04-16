@@ -1,4 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <aiml version="2.0">
 
+<!-- RULES FOR BUTLER MESSAGES -->
+
+<category>
+	<pattern>No quedan cervezas en el frigo, comprare mas</pattern>
+	<template>
+		<bring>
+			<status>notAvailable</status>
+		</bring>
+	</template>
+</category>
+
+<category>
+	<pattern>Necesito * euros para comprar cervezas</pattern>
+	<template>
+		<pay>
+			<amount><star/></amount>
+		</pay>
+	</template>
+</category>
+
+<category>
+	<pattern>Has bebido demasiada cerveza por hoy</pattern>
+	<template>
+		<health>
+			<beer>tooMuch</beer>
+		</health>
+	</template>
+</category>
+
 </aiml>

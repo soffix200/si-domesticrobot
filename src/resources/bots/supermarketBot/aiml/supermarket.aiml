@@ -1,4 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <aiml version="2.0">
 
+<!-- RULES FOR BUTLER MESSAGES -->
+
+<category>
+  <pattern>Me gustaria comprarte * cervezas</pattern>
+  <template>
+    <buy>
+      <product>beer</product>
+      <quantity><star/></quantity>
+    </buy>
+  </template>
+</category>
+
+<category>
+  <pattern>Lo siento pero debo rechazar la orden *</pattern>
+  <template>
+    <order>
+      <status>rejected</status>
+      <order-id><star/></order-id>
+    </order>
+  </template>
+</category>
+
+<category>
+  <pattern>He recibido la orden *</pattern>
+  <template>
+    <order>
+      <status>received</status>
+      <order-id><star/></order-id>
+    </order>
+  </template>
+</category>
+
+<category>
+  <pattern>Toma tu pago de *</pattern>
+  <template>
+    <pay>
+      <amount><star/></amount>
+    </pay>
+  </template>
+</category>
+
+<!-- RULES FOR MARKET MESSAGES -->
+
+<category>
+  <pattern>La subasta * acaba de empezar, se subastan * cervezas</pattern>
+  <template>
+    <auction>
+      <status>started</status>
+			<auction-num><star/></auction-num>
+      <product>beer</product>
+      <quantity><star index="2"/></quantity>
+    </auction>
+  </template>
+</category>
+
+<category>
+  <pattern>La subasta * de * cervezas ahora tiene la puja mas alta por parte de * que ha ofrecido *</pattern>
+  <template>
+    <auction>
+      <status>update</status>
+      <auction-num><star/></auction-num>
+      <winner><star index="3"/></winner>
+      <product>beer</product>
+      <quantity><star index="2"/></quantity>
+      <price><star index="4"/></price>
+    </auction>
+  </template>
+</category>
+
+<category>
+  <pattern>La subasta * ha terminado, * ha comprado * cervezas por un valor total de *</pattern>
+  <template>
+    <auction>
+      <status>finished</status>
+      <auction-num><star/></auction-num>
+      <winner><star index="2"/></winner>
+      <product>beer</product>
+      <quantity><star index="3"/></quantity>
+      <price><star index="4"/></price>
+    </auction>
+  </template>
+</category>
+
 </aiml>

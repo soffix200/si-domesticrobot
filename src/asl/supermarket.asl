@@ -7,15 +7,76 @@ limit(min, reeval, price, 20000).
 limit(min, stock,  beer,  10).
 limit(max, cost,   beer,  5).
 
+// -------------------------------------------------------------------------
+// SERVICE INIT AND HELPER METHODS
+// -------------------------------------------------------------------------
+
+service(Query, buy) :-
+	checkTag("<buy>", Query).
+service(Query, order) :-
+	checkTag("<order>", Query).
+service(Query, pay) :-
+	checkTag("<pay>", Query).
+service(Query, auction) :-
+	checkTag("<auction>", Query).
+
+checkTag(Tag, String) :-
+	.substring(Tag, String).
+
+tagValue(Tag, Query, Literal) :-
+	.substring(Tag, Query, Fst) &
+	.length(Tag, N) &
+	.delete(0, Tag, RestTag) &
+	.concat("</", RestTag, EndTag) &
+	.substring(EndTag, Query, End) &
+	.substring(Query, Parse, Fst+N, End) &
+	.term2string(Literal, Parse).
+
+filter(Query, buy, [Product, Qtty]) :-
+	tagValue("<product>", Query, Product) &
+	tagValue("<quantity>", Query, Qtty).
+filter(Query, order, [Status, OrderId]) :-
+	tagValue("<status>", Query, Status) &
+	tagValue("<order-id>", Query, OrderId).
+filter(Query, pay, [Amount]) :-
+	tagValue("<amount>", Query, Amount).
+filter(Query, auction, [Status, AuctionNum, Winner, Product, Qtty, Price]) :-
+	tagValue("<status>", Query, Status) &
+	tagValue("<auction-num>", Query, AuctionNum) &
+	tagValue("<winner>", Query, Winner) &
+	tagValue("<product>", Query, Product) &
+	tagValue("<quantity>", Query, Qtty) &
+	tagValue("<price>", Query, Price).
+filter(Query, auction, [Status, AuctionNum, Product, Qtty]) :-
+	tagValue("<status>", Query, Status) &
+	tagValue("<auction-num>", Query, AuctionNum) &
+	tagValue("<product>", Query, Product) &
+	tagValue("<quantity>", Query, Qtty).
+
+// -------------------------------------------------------------------------
+// PRIORITIES AND PLAN INITIALIZATION
+// -------------------------------------------------------------------------
+
 !initSupermarket.
+!dialog.
 !offerBeer.
 !buyBeer.
 !sellBeer.
 
 +!initSupermarket <-
+	!initBot;
 	!createStore;
 	!setDeliveryTime(butler);
 	+supermarketInit.
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN initBot
+// -------------------------------------------------------------------------
+
++!initBot <-
+	.my_name(Name); .concat(Name, "Bot", BotName);
+	makeArtifact(BotName, "bot.ChatBOT", ["supermarketBot"], BotId);
+	focus(BotId).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN createStore
@@ -59,14 +120,111 @@ limit(max, cost,   beer,  5).
 +!setDeliveryTime(_) <- true.
 
 // -------------------------------------------------------------------------
+// DEFINITION FOR PLAN dialog
+// -------------------------------------------------------------------------
+
++!dialog : supermarketInit & msg(Msg)[source(Ag)] <-
+	.abolish(msg(Msg)[source(Ag)]);
+	chatSincrono(Msg, Answer);
+	!doService(Answer, Ag);
+	!dialog.
++!dialog <- !dialog.
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR ACTION SERVICES
+// -------------------------------------------------------------------------
+
+// # BUY SERVICE
++!doService(Query, Ag) : service(Query, buy) & filter(Query, buy, [Product, Qtty]) <-
+	.println("Pedido de ", Qtty, " ", Product, " recibido de ", Ag);
+	?currentOrderId(OrderId);
+	+order(OrderId, Ag, Product, Qtty).
+
+// # ORDER SERVICE
++!doService(Query, Ag) : service(Query, order) & filter(Query, order, [rejected, OrderId]) <-
+	.println("Pedido ", OrderId, " rechazado por ", Ag);
+	return(Product, Qtty).
++!doService(Query, Ag) : service(Query, order) & filter(Query, order, [received, OrderId]) <-
+	.println("Pedido ", OrderId, " recibido por ", Ag).
+
+// # PAY SERVICE
++!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) <-
+	.println("Pago de ", Amount, " recibido de ", Ag);
+	?store(Store); ?has(money, Balance);
+	.abolish(has(money, _)); +has(money, Balance+Amount);
+	.send(Store, achieve, add(money, Amount)).
+
+// # AUCTION SERVICE (START)
++!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [started, AuctionNum, Product, Qtty]) &
+	requestedPurchase(Product) &
+	has(money, Balance) & Balance >= 1 &
+	limit(max, cost, beer, Limit) & 1 <= Limit
+<-
+	.println("La subasta ", AuctionNum, " ha comenzado. Pujo 1");
+	.concat("Me gustaria ofertar ", 1, " en la subasta ", AuctionNum, Msg);
+	.send(market, tell, msg(Msg)).
++!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [started, AuctionNum, Product, Qtty]) <-
+	.println("La subasta ", AuctionNum, " ha comenzado. No participo").
+
+// # AUCTION SERVICE (UPDATE)
++!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [update, AuctionNum, Winner, Product, Qtty, Price]) &
+	requestedPurchase(Product) &
+	.my_name(Self) & Self == Winner
+<-
+	.println("Voy ganando en la subasta ", AuctionNum);
+	-+winningAuction(AuctionNum).
++!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [update, AuctionNum, Winner, Product, Qtty, Price]) &
+	requestedPurchase(Product) &
+	.my_name(Self) & Self \== Winner &
+	has(money, Balance) & Balance >= Bid &
+	limit(max, cost, beer, Limit) & Bid+1 <= Limit
+<-
+	-println("No voy ganando en la subasta ", AuctionNum, ". Pujo ", Bid+1);
+	-winningAuction(AuctionNum);
+	.concat("Me gustaria ofertar ", Bid+1, " en la subasta ", AuctionNum, Msg);
+	.send(market, tell, msg(Msg));
+	-+winningAuction(AuctionNum).
++!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [update, AuctionNum, Winner, Product, Qtty, Price]) &
+	winningAuction(AuctionNum)
+<-
+	.println("Dejo de participar en la subasta ", AuctionNum);
+	-winningAuction(AuctionNum).
++!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [update, AuctionNum, Winner, Product, Qtty, Price]) &
+	not winningAuction(AuctionNum)
+<-
+	.println("Sigo sin participar en la subasta ", AuctionNum);
+	-winningAuction(AuctionNum).
+
+// # AUCTION SERVICE (FINISH)
++!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [finished, AuctionNum, Winner, Product, Qtty, Price]) &
+	.my_name(Self) & Self == Winner
+<-
+	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
+	.abolish(has(beer, _)); +has(beer, StoredBeer+Qtty); .send(Store, achieve, add(beer, Qtty));
+	.abolish(has(money, _)); +has(money, StoredMoney-TotalPrice); .send(Store, achieve, del(money, TotalPrice));
+	-+cost(beer, TotalPrice/Qtty);
+	-winningAuction(AuctionNum);
+	.abolish(requestedPurchase(Product));
+	.abolish(bid(_, AuctionNum, _, _)).
++!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [finished, AuctionNum, Winner, Product, Qtty, Price]) <-
+	.println("No he ganado en la subasta ", AuctionNum);
+	-winningAuction(AuctionNum);
+	.abolish(bid(_, AuctionNum, _, _)).
+
+// # COMMUNICATION SERVICE
++!doService(Answer, Ag) : not service(Answer, Service) <-
+	.println("-> [", Ag, "] ", Answer);
+	.send(Ag, tell, answer(Answer)).
+
+// -------------------------------------------------------------------------
 // DEFINITION FOR PLAN offerBeer
 // -------------------------------------------------------------------------
 
 +!offerBeer : supermarketInit & has(beer, Qtty) & Qtty > 0 <-
 	?price(beer, Price); ?deliveryTime(butler, Time); ?deliveryCost(butler, Cost);
-	basemath.truncate(Price, PriceToDisplay);
-	.println("Vendo beer a ", PriceToDisplay, " [+", Cost, " envio]");
-	.send(butler, tell, price(beer, Price, Cost, Time));
+	.concat("Vendo beer a ", Price, " ", Cost, " envio el pedido llega en ", Time, Msg);
+	.println("> ", Msg);
+	.send(butler, tell, msg(Msg));
 	!evaluatePrice(beer).
 +!offerBeer <- !offerBeer.
 
@@ -83,14 +241,16 @@ limit(max, cost,   beer,  5).
 +!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N == M <- // No beers sold; price must be reduced.
 	?price(beer, Price); ?cost(beer, Cost);
 	if (Price > Cost+0.1 & Price-((Price-Cost)*0.5) > Cost) {
-		-+price(beer, Price-((Price-Cost)*0.5));
+		basemath.truncate(Price-((Price-Cost)*0.5), NewPrice);
 	} else {
-		-+price(beer, Cost);
+		basemath.truncate(Cost, NewPrice);
 	}
+	-+price(beer, NewPrice);
 	!offerBeer.
 +!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N > M <- // Beers sold; price must be increased.
 	?price(beer, Price); ?cost(beer, Cost);
-	-+price(beer, Price*1.2);
+	basemath.truncate(Price*1.2, NewPrice);
+	-+price(beer, NewPrice);
 	!offerBeer.
 
 // -------------------------------------------------------------------------
@@ -102,44 +262,10 @@ limit(max, cost,   beer,  5).
 	has(beer, StoredQtty) & limit(min, stock, beer, Min) & StoredQtty < Min &
 	not requestedPurchase(beer)
 <-
+	.println("> Necesito comprar mas cervezas, lo hare en la siguiente puja");
 	+requestedPurchase(beer);
 	!buyBeer.
 +!buyBeer <- !buyBeer.
-
-// ## HELPER TRIGGERS auction
-
-+auction(start, AuctionNum, Product, Qtty) :
-	requestedPurchase(Product) &
-	has(money, Balance) & Balance >= 1 &
-	limit(max, cost, beer, Limit) & 1 <= Limit
-<-
-	.send(market, tell, placeBid(AuctionNum, 1));
-	.abolish(auction(start, AuctionNum, Product, Qtty)).
-
-+auction(finish, AuctionNum, Product, Qtty, Winner, TotalPrice) : .my_name(Self) & Self == Winner <-
-	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
-	.abolish(has(beer, _)); +has(beer, StoredBeer+Qtty); .send(Store, achieve, add(beer, Qtty));
-	.abolish(has(money, _)); +has(money, StoredMoney-TotalPrice); .send(Store, achieve, del(money, TotalPrice));
-	-+cost(beer, TotalPrice/Qtty);
-	.abolish(winningAuction(AuctionNum));
-	.abolish(requestedPurchase(Product));
-	.abolish(bid(_, AuctionNum, _, _));
-	.abolish(auction(finish, AuctionNum, _, _, _, _)).
-+auction(finish, AuctionNum, Product, Qtty, Winner, TotalPrice) : .my_name(Self) & Self \== Winner <-
-	.abolish(winningAuction(AuctionNum));
-	.abolish(bid(_, AuctionNum, _, _));
-	.abolish(auction(finish, AuctionNum, _, _, _, _)).
-
-+bid(max, AuctionNum, Bidder, Bid) : .my_name(Self) & Self == Bidder & requestedPurchase(Product)  <-
-	-+winningAuction(AuctionNum).
-+bid(max, AuctionNum, Bidder, Bid) :
-	.my_name(Self) & Self \== Bidder &
-	requestedPurchase(Product) &
-	has(money, Balance) & Balance >= Bid &
-	limit(max, cost, beer, Limit) & Bid+1 <= Limit
-<-
-	-winningAuction(Auction);
-	.send(market, tell, placeBid(AuctionNum, Bid+1)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN sellBeer
@@ -152,13 +278,14 @@ limit(max, cost,   beer,  5).
 	deliveryCost(Ag, Cost) & has(money, Balance) & Balance >= Cost
 <-
 	?store(Store); ?price(beer, Price); ?deliveryTime(Ag, Time); ?deliveryCost(Ag, Cost);
-	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (en stock)");
+	.println("> Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (en stock)");
 	-+currentOrderId(OrderId+1);
 	.abolish(has(money, _)); +has(money, Balance-Cost);
 	.send(Store, achieve, del(money, Cost));
 	deliver(beer, OrderedQtty, Time);
 	.abolish(has(beer, _)); +has(beer, StoredQtty-OrderedQtty);
-	.send(Ag, tell, delivered(OrderId, beer, OrderedQtty, OrderedQtty*Price+Cost));
+	.concat("He entregado el pedido ", OrderId, " que contiene ", OrderedQtty, " cervezas, el importe asciende a ", OrderedQtty*Price+Cost, Msg);
+	.send(Ag, tell, msg(Msg));
 	.send(Store, achieve, del(beer, OrderedQtty));
 	.abolish(order(OrderId, _, _, _));
 	!sellBeer.
@@ -166,30 +293,10 @@ limit(max, cost,   beer,  5).
 	currentOrderId(OrderId) & order(OrderId, Ag, beer, OrderedQtty) &
 	has(beer, StoredQtty) & StoredQtty < OrderedQtty
 <-
-	.println("Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (rechazado)");
+	.println("> Procesando pedido de ", OrderedQtty, " cervezas recibido de ", Ag, " (sin stock)");
 	-+currentOrderId(OrderId+1);
-	.send(Ag, tell, notEnough(OrderId, beer, OrderedQtty));
+	.concat("Lo siento no puedo enviar el pedido ", OrderId, " que contiene ", OrderedQtty, " cervezas", Msg);
+	.send(Ag, tell, msg(Msg));
 	.abolish(order(OrderId, _, _, _));
 	!sellBeer.
 +!sellBeer <- !sellBeer.
-
-// ## HELPER TRIGGER order
-
-+order(Product, Qtty)[source(Ag)] <-
-	.println("Pedido de ", Qtty, " ", Product, " recibido de ", Ag);
-	?currentOrderId(OrderId);
-	+order(OrderId, Ag, Product, Qtty);
-	.abolish(order(Product, Qtty)[source(Ag)]).
-
-// ## HELPER TRIGGER pay
-
-+pay(TotalPrice)[source(Ag)] : has(money,Qtd) <-
-	?store(Store);
-	basemath.truncate(TotalPrice, TotalPriceToDisplay);
-	.println("Pago de ", TotalPriceToDisplay, " recibido de ", Ag);
-	.abolish(has(money, _)); +has(money, Qtd+TotalPrice);
-	.send(Store, achieve, add(money,TotalPrice)).
-
-+reject(OrderId)[source(Ag)] : order(OrderId, Ag, Product, Qtty) <-
-	return(Product, Qtty);
-	.abolish(order(OrderId, Ag, Product, Qtty)).

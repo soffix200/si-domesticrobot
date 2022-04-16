@@ -1,4 +1,100 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <aiml version="2.0">
 
+<!-- RULES FOR OWNER MESSAGES -->
+
+<category>
+  <pattern>Ten los * que me pediste</pattern>
+  <template>
+    <pay>
+      <status>approved</status>
+      <amount><star/></amount>
+    </pay>
+  </template>
+</category>
+
+<category>
+  <pattern>No puedo pagarte *</pattern>
+  <template>
+    <pay>
+      <status>rejected</status>
+      <amount><star/></amount>
+    </pay>
+  </template>
+</category>
+
+<category>
+  <pattern>Traeme una cerveza</pattern>
+  <template>
+    <bring>
+      <product>beer</product>
+    </bring>
+  </template>
+</category>
+
+<category>
+  <pattern>He tirado una lata a * *</pattern>
+  <template>
+    <clean>
+      <object>can</object>
+      <position>
+        <floor>
+          <x><star/></x>
+          <y><star index="2"/></y>
+        </floor>
+      </position>
+    </clean>
+  </template>
+</category>
+
+<category>
+  <pattern>Ven a por la lata</pattern>
+  <template>
+    <clean>
+      <object>can</object>
+      <position>owner</position>
+    </clean>
+  </template>
+</category>
+
+<!-- RULES FOR SUPERMARKET MESSAGES -->
+
+<category>
+  <pattern>Vendo beer a * * envio el pedido llega en *</pattern>
+  <template>
+    <offer>
+      <product>beer</product>
+      <price><star/></price>
+      <cost><star index="2"/></cost>
+      <time><star index="3"/></time>
+    </offer>
+  </template>
+</category>
+
+<category>
+  <pattern>He entregado el pedido * que contiene * cervezas, el importe asciende a *</pattern>
+  <template>
+    <deliver>
+      <status>delivered</status>
+      <order-id><star/></order-id>
+      <product>beer</product>
+      <quantity><star index="2"/></quantity>
+      <price><star index="3"/></price>
+    </deliver>
+  </template>
+</category>
+
+<category>
+  <pattern>Lo siento no puedo enviar el pedido * que contiene * cervezas</pattern>
+  <template>
+    <deliver>
+      <status>rejected</status>
+      <order-id><star/></order-id>
+      <product>beer</product>
+      <quantity><star index="2"/></quantity>
+      <price>nil</price>
+    </deliver>
+  </template>
+</category>
+
 </aiml>

@@ -43,14 +43,18 @@ public class ChatBOT extends Artifact {
 	}
 
 	@OPERATION void chat(String request) {
-		String response = chatSession.multisentenceRespond(request)
-		                  .replaceAll("&lt;", "<").replaceAll("&gt;", ">");
+		String toproc = request.replaceAll("\\.", "<point>");
+		String response = chatSession.multisentenceRespond(toproc)
+		                  .replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+											.replaceAll("<point>", "\\.");
 		signal("answer", response);
 	}
 
 	@OPERATION void chatSincrono(String request, OpFeedbackParam<String> answer) {
-		String response = chatSession.multisentenceRespond(request)
-		                  .replaceAll("&lt;", "<").replaceAll("&gt;", ">");
+		String toproc = request.replaceAll("\\.", "<point>");
+		String response = chatSession.multisentenceRespond(toproc)
+		                  .replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+											.replaceAll("<point>", "\\.");
 		answer.set(response);
 	}
 
