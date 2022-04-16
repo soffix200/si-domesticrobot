@@ -145,7 +145,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 // -------------------------------------------------------------------------
 
 +!dialog : butlerInit & msg(Msg)[source(Ag)] <-
-	// .println("[", Ag, "]: ", Msg);
+	// .println("<- [", Ag, "]: ", Msg);
 	.abolish(msg(Msg)[source(Ag)]);
 	chatSincrono(Msg, Answer);
 	!doService(Answer, Ag);
@@ -314,7 +314,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	}
 	+ordered(beer).
 +!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance >= Price <-
-	.println("> Pago ", Price, " por el pedido ", OrderId);
+	.println("> Pago ", Price, " por el pedido #", OrderId);
 	+requestedPickUp(Product, Qtty, delivery);
 	.send(Provider, tell, received(OrderId));
 	.send(Provider, tell, pay(Price));
@@ -326,12 +326,15 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 +!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance < Price & not requestedMoney(owner, _) <-
 	.println("[!] No tengo dinero para pagar el pedido ", OrderId, ", se lo solicito a ", owner);
 	.abolish(cannotPay(owner, _));
-	.send(owner, tell, pay(butler, Price-Balance));
+	.concat("Necesito ", Price-Balance, " euros para comprar cervezas", Msg);
+	.send(owner, tell, msg(Msg));
 	+requestedMoney(owner, Price-Balance).
 +!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance < Price & cannotPay(owner, _) <-
-	.println("> Devuelvo el pedido ", OrderId, " (", owner, ") no me ha concedido el dinero");
+	.println("> Devuelvo el pedido #", OrderId, ", ", owner, " no me ha concedido el dinero");
 	.send(Provider, tell, reject(OrderId));
-	.abolish(requestedMoney(owner, _)).
+	.abolish(requestedPayment(Provider, OrderId, Product, Qtty, Price));
+	.abolish(requestedMoney(owner, _));
+	.abolish(ordered(Product)).
 +!manageBeer : asked(Ag, beer) & healthConstraint(beer, Ag, Msg) <-
 	.println("[!] ", Ag, " no puede beber mas ", beer, " por hoy");
 	.send(Ag, tell, msg(Msg));
@@ -361,7 +364,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 +moved(failure, Product, Qtty, Origin, Destination)[source(Mover)] <-
 	.println("! Fallo moviendo ", Product, "x", Qtty, ": ", Origin, "->", Destination);
 	if (Destination == owner) {
-		.send(Destination, tell, msg("No me queda, voy a comprar mÃ¡s"));
+		.send(Destination, tell, msg("No quedan cervezas en el frigo, comprare mas"));
 	}
 	.abolish(moving(Mover, Product, Qtty, Origin, Destination));
 	.abolish(moved(failure, Product, Qtty, Origin, Destination)[source(Mover)]).

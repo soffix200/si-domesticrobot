@@ -18,16 +18,49 @@ healthConstraint(Product) :-
 	.date(YY,MM,DD) &
 	healthConstraint(Product,YY,MM,DD).
 
-!setupTool("Owner", "Butler"). // THIS MAY CRASH
+// -------------------------------------------------------------------------
+// SERVICE INIT AND HELPER METHODS
+// -------------------------------------------------------------------------
+
+service(Query, bring) :-
+	checkTag("<bring>", Query).
+service(Query, pay) :-
+	checkTag("<pay>", Query).
+
+checkTag(Tag, String) :-
+	.substring(Tag, String).
+
+tagValue(Tag, Query, Literal) :-
+	.substring(Tag, Query, Fst) &
+	.length(Tag, N) &
+	.delete(0, Tag, RestTag) &
+	.concat("</", RestTag, EndTag) &
+	.substring(EndTag, Query, End) &
+	.substring(Query, Parse, Fst+N, End) &
+	.term2string(Literal, Parse).
+
+filter(Query, bring, [Status]) :-
+	tagValue("<status>", Query, Status).
+filter(Query, pay, [Amount]) :-
+	tagValue("<amount>", Query, Amount).
+
+// -------------------------------------------------------------------------
+// PRIORITIES AND PLAN INITIALIZATION
+// -------------------------------------------------------------------------
 
 !initOwner.
+!dialog.
 !talkButler.
 !expectPension.
+!cheerUp.
 
 +!initOwner <-
+	!initBot;
+	!setupTool("Owner", "Butler");
 	!createAssistant;
-	!cheerUp.
-+!cheerUp : assistantCreated <-
+	+ownerInit.
+
++!cheerUp : ownerInit <-
 	!cleanHouse; // TODO
 	!drinkBeer;
 	!wakeUp;
@@ -35,50 +68,25 @@ healthConstraint(Product) :-
 +!cheerUp <- !cheerUp.
 
 // -------------------------------------------------------------------------
-// TRIGGERS
+// DEFINITION FOR PLAN initBot
 // -------------------------------------------------------------------------
 
-+pay(butler, Amount) : has(money, Balance) & Balance >= Amount <-
-	.date(YY,MM,DD);
-	?limit(max, butler, dailyPayment, Limit);
-	if (paid(YY,MM,DD, AmountPaid)) {
-		if (AmountPaid + Amount <= Limit) {
-			.println("Tengo dinero, ahora le pago a butler los ", Amount, " que me ha pedido");
-			-+paid(YY,MM,DD, AmountPaid+Amount);
-			.abolish(has(money, Balance)); +has(money, Balance-Amount);
-			.concat("Ten los ", Amount, " que me pediste", Msg);
-			.send(butler, tell, msg(Msg));
-			.send(assistant, achieve, remember(paid(YY,MM,DD, AmountPaid+Amount)));
-			.send(assistant, achieve, remember(has(money, Balance-Amount)));
-		} else {
-			.println("No puedo gastar más en cervezas hoy o me desahuciarán");
-			.concat("No puedo pagarte ", Amount, Msg);
-			.send(butler, tell, msg(Msg));
-		}
-	} else {
-		if (Amount < Limit){
-			.println("Tengo dinero, ahora le pago a butler los ", Amount, " que me ha pedido");
-			-+paid(YY,MM,DD, Amount);
-			.abolish(has(money, Balance)); +has(money, Balance-Amount);
-			.concat("Ten los ", Amount, " que me pediste", Msg);
-			.send(butler, tell, msg(Msg));
-			.send(assistant, achieve, remember(paid(YY,MM,DD, Amount)));
-			.send(assistant, achieve, remember(has(money, Balance-Amount)));
-		} else {
-			.println("Esa cantidad est� por encima de mi presupuesto diario!");
-			.concat("No puedo pagarte ", Amount, Msg);
-			.send(butler, tell, msg(Msg));
-		}
-	}
-	.abolish(pay(butler, Amount)).
-+pay(butler, Amount) : has(money, Balance) & Balance < Amount<-
-	.println("No me queda dinero, a ver si la pensi�n llega pronto");
-	.concat("No puedo pagarte ", Amount, Msg);
-	.send(butler, tell, msg(Msg));
-	.abolish(pay(butler, Amount)).
++!initBot <-
+	makeArtifact("ownerBot", "bot.ChatBOT", ["ownerBot"], BotId);
+	focus(BotId).
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR createAssistant
+// DEFINITION FOR PLAN setupTool
+// -------------------------------------------------------------------------
+
++!setupTool(Master, Butler) <-
+	makeArtifact("GUI","gui.Console",[],GUI);
+	setBotMasterName(Master);
+	setBotName(Butler);
+	focus(GUI). 
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN createAssistant
 // -------------------------------------------------------------------------
 
 +!createAssistant <-
@@ -93,14 +101,89 @@ healthConstraint(Product) :-
 	.send(assistant, askOne, lastPension(YY,MM), PensionResponse); -+PensionResponse;
 	.send(assistant, askOne, paid(YY,MM,DD, Money), PaidResponse); -+PaidResponse;
 	.send(assistant, askOne, mood(owner, Mood), mood(owner, Mood)); -+mood(owner, Mood);
-	.send(assistant, askOne, sipMoodCount(owner, Count), SipMoodCountResponse); -+SipMoodCountResponse;
-	+assistantCreated.
+	.send(assistant, askOne, sipMoodCount(owner, Count), SipMoodCountResponse); -+SipMoodCountResponse.
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN dialog
+// -------------------------------------------------------------------------
+
++!dialog : ownerInit & msg(Msg)[source(Ag)] <-
+	.abolish(msg(Msg)[source(Ag)]);
+	chatSincrono(Msg, Answer);
+	!doService(Answer, Ag);
+	!dialog.
++!dialog <- !dialog.
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR ACTION SERVICES
+// -------------------------------------------------------------------------
+
+// # BRING SERVICE
++!doService(Query, Ag) : service(Query, bring) & filter(Query, bring, [notAvailable]) <-
+	.println(Ag, " me ha dicho que no le quedan cervezas").
+
+// # PAY SERVICE
++!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) <-
+	.println(Ag, " me ha pedido que le ceda ", Amount);
+	!pay(Ag, Amount).
+
+// ## HELPER PLAN pay(Ag, Amount)
+
++!pay(butler, Amount) : has(money, Balance) & Balance >= Amount <-
+	.date(YY,MM,DD);
+	?limit(max, butler, dailyPayment, Limit);
+	if (paid(YY,MM,DD, AmountPaid)) {
+		if (AmountPaid + Amount <= Limit) {
+			.println("> Le pago a ", butler, " los ", Amount, " que me ha pedido");
+			-+paid(YY,MM,DD, AmountPaid+Amount);
+			.abolish(has(money, Balance)); +has(money, Balance-Amount);
+			.concat("Ten los ", Amount, " que me pediste", Msg);
+			.send(butler, tell, msg(Msg));
+			.send(assistant, achieve, remember(paid(YY,MM,DD, AmountPaid+Amount)));
+			.send(assistant, achieve, remember(has(money, Balance-Amount)));
+		} else {
+			.println("[!] No puedo gastar mas en cervezas hoy o me deshauciaran");
+			.concat("No puedo pagarte ", Amount, Msg);
+			.send(butler, tell, msg(Msg));
+		}
+	} else {
+		if (Amount < Limit){
+			.println("Tengo dinero, ahora le pago a butler los ", Amount, " que me ha pedido");
+			-+paid(YY,MM,DD, Amount);
+			.abolish(has(money, Balance)); +has(money, Balance-Amount);
+			.concat("Ten los ", Amount, " que me pediste", Msg);
+			.send(butler, tell, msg(Msg));
+			.send(assistant, achieve, remember(paid(YY,MM,DD, Amount)));
+			.send(assistant, achieve, remember(has(money, Balance-Amount)));
+		} else {
+			.println("[!] No puedo gastar una cantidad mayor a mi presupuesto diario");
+			.concat("No puedo pagarte ", Amount, Msg);
+			.send(butler, tell, msg(Msg));
+		}
+	}.
++!pay(butler, Amount) : has(money, Balance) & Balance < Amount<-
+	.println("[!] No tengo dinero");
+	.concat("No puedo pagarte ", Amount, Msg);
+	.send(butler, tell, msg(Msg)).
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN talkButler
+// -------------------------------------------------------------------------
+
++!talkButler : ownerInit & not mood(owner, dormido) <- // TODO different messages for each mood
+	.send(butler, tell, msg("Test message")); // TODO IMPLEMENT AIML
+	.random(X);
+	?limit(min, talk, waitTime, MinWaitTime);
+	?limit(max, talk, waitTime, MaxWaitTime);
+	.wait(MinWaitTime + (MaxWaitTime - MinWaitTime)*X);
+	!talkButler.
++!talkButler <- !talkButler.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN expectPension
 // -------------------------------------------------------------------------
 
-+!expectPension : assistantCreated & .date(YY,MM,1) & not lastPension(YY,MM) <-
++!expectPension : ownerInit & .date(YY,MM,1) & not lastPension(YY,MM) <-
 	?has(money, Balance);
 	?limit(max, owner, monthlyPension, Amount);
 	.println("Qué felicidad! Me ha llegado una pensión de ", Amount);
@@ -110,33 +193,10 @@ healthConstraint(Product) :-
 	.send(assistant, achieve, remember(has(money, Balance+Amount)));
 	.wait(3600000);
 	!expectPension.
-+!expectPension : assistantCreated <-
++!expectPension : ownerInit <-
 	.wait(3600000);
 	!expectPension.
 +!expectPension <- !expectPension.
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN setupTool
-// -------------------------------------------------------------------------
-
-+!setupTool(Master, Butler) <-
-	makeArtifact("GUI","gui.Console",[],GUI);
-	setBotMasterName(Master);
-	setBotName(Butler);
-	focus(GUI). 
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN talkButler
-// -------------------------------------------------------------------------
-
-+!talkButler : not mood(owner, dormido) <- // TODO different messages for each mood
-	.send(butler, tell, msg("Test message")); // TODO IMPLEMENT AIML
-	.random(X);
-	?limit(min, talk, waitTime, MinWaitTime);
-	?limit(max, talk, waitTime, MaxWaitTime);
-	.wait(MinWaitTime + (MaxWaitTime - MinWaitTime)*X);
-	!talkButler.
-+!talkButler <- !talkButler.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN cleanHouse

@@ -8,7 +8,7 @@
 	<pattern>No quedan cervezas en el frigo, comprare mas</pattern>
 	<template>
 		<bring>
-			<status>not-available</status>
+			<status>notAvailable</status>
 		</bring>
 	</template>
 </category>
@@ -17,11 +17,9 @@
 <category>
 	<pattern>Necesito * euros para comprar cervezas</pattern>
 	<template>
-		<money>
-			<require>
-				<amount><star/></amount>
-			</require>
-		</money>
+		<pay>
+			<amount><star/></amount>
+		</pay>
 	</template>
 </category>
 
