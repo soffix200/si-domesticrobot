@@ -6,10 +6,10 @@ automaton(dustman, inactive).
 automaton(mover,   inactive).
 automaton(shopper, inactive).
 
-limit(min, fridge,   beer,  3 ). // Mínimo de cervezas que debería haber en el frigo, si hay menos se ordenan más
+limit(min, fridge,   beer,  3 ). // Minimo de cervezas que deberia haber en el frigo, si hay menos se ordenan mas
 limit(max, dumpster, trash, 5 ).
 limit(max, owner,    beer,  10).
-limit(min, buy,      beer,  3 ). // Cantidad de cervezas a pedirle al súper (en cada orden)
+limit(min, buy,      beer,  3 ). // Cantidad de cervezas a pedirle al super (en cada orden)
 
 stored(beer,  fridge,   1).      // Si se comienza sin la creencia de tener cerveza, no se va a la nevera y
                                  // por ende hay que esperar a que el pedido llegue para comprobar el stock
@@ -49,6 +49,8 @@ service(Query, offer) :-
 	checkTag("<offer>", Query).
 service(Query, deliver) :-
 	checkTag("<deliver>", Query).
+service(Query, conversation) :-
+	checkTag("<conversation>", Query).
 
 checkTag(Tag, String) :-
 	.substring(Tag, String).
@@ -85,6 +87,8 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	tagValue("<product>", Query, Product) &
 	tagValue("<quantity>", Query, Qtty) &
 	tagValue("<price>", Query, Price).
+filter(Query, conversation, [Topic]) :-
+	tagValue("<topic>", Query, Topic).
 
 // -------------------------------------------------------------------------
 // PRIORITIES AND PLAN INITIALIZATION
@@ -164,7 +168,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	.abolish(has(money, _)); +has(money, Balance + Amount);
 	.send(database, achieve, add(money, Amount)).
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [rejected, Amount]) <-
-	.println(Ag, " ha rechazado el pago de ", Amount, " que la había pedido");
+	.println(Ag, " ha rechazado el pago de ", Amount, " que la habia pedido");
 	+cannotPay(owner, Amount).
 
 // # BRING SERVICE
@@ -211,11 +215,25 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 		+requestedPayment(Ag, OrderId, Product, Qtty, Price);
 	}.
 
+// # CONVERSATION SERVICE
++!doService(Query, Ag) : service(Query, conversation) & filter(Query, conversation, [time]) <-
+	.time(HH,MM,SS);
+	.concat("Son las ", HH, ":", MM, ":", SS, Msg);
+	.println("-> [", Ag, "] ", Msg);
+	.send(Ag, tell, msg(Msg)).
++!doService(Query, Ag) : service(Query, conversation) & filter(Query, conversation, [money]) <-
+	?has(money, Balance);
+	.concat("Me queda ", Balance, Msg);
+	.println("-> [", Ag, "] ", Msg);
+	.send(Ag, tell, msg(Msg)).
+
 // # COMMUNICATION SERVICE
-+!doService(Answer, Ag) : not service(Query, Service) <-
++!doService(Answer, Ag) : not service(Answer, Service) & Answer \== "I have no answer for that." <-
 	.println("-> [", Ag, "] ", Answer);
 	.send(Ag, tell, answer(Answer)).
-
++!doService(Answer, Ag) : not service(Answer, Service) & Answer == "I have no answer for that." <-
+	true.
+	
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN cleanHouse
 // -------------------------------------------------------------------------

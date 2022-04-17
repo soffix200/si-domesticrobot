@@ -124,4 +124,57 @@
   </template>
 </category>
 
+<category>
+  <pattern>^ hora ^</pattern>
+  <template>
+    <conversation>
+      <topic>time</topic>
+    </conversation>
+  </template>
+</category>
+
+<category>
+  <pattern>^ dinero ^</pattern>
+  <template>
+    <conversation>
+      <topic>money</topic>
+    </conversation>
+  </template>
+</category>
+
+<category>
+  <pattern>^ agradezco ^</pattern>
+  <template>
+    Es un placer poder servirle mi amo
+  </template>
+</category>
+
+<category>
+  <pattern>^ tomarte una cerveza ^</pattern>
+  <template>
+    Mi deber es otro mi amo
+  </template>
+</category>
+
+<category>
+  <pattern>^ mejor amigo ^</pattern>
+  <template>
+    Le recuerdo que soy un robot, no tengo sentimientos
+  </template>
+</category>
+
+<category>
+  <pattern>^ sensacion ^ realidad ^ deformada ^</pattern>
+  <template>
+    Tal vez es el momento de ir parando hoy con las cervezas
+  </template>
+</category>
+
+<category>
+  <pattern>^ duermes ^</pattern>
+  <template>
+    Bien sabe que no, no lo necesito, mi unico proposito en esta vida es satisfacer sus necesidades
+  </template>
+</category>
+
 </aiml>
