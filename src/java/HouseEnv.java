@@ -12,7 +12,6 @@ import java.util.LinkedList;
 
 public class HouseEnv extends Environment {
 
-	// common literals
 	public static final Literal moveTowards  = Literal.parseLiteral("move_towards");
 	public static final Literal openFridge   = Literal.parseLiteral("open(fridge)");
 	public static final Literal closeFridge  = Literal.parseLiteral("close(fridge)");
@@ -28,7 +27,6 @@ public class HouseEnv extends Environment {
 	public static final Literal enterMap     = Literal.parseLiteral("enter(map)");
 	public static final Literal exitMap      = Literal.parseLiteral("exit(map)");
 
-	// TODO RETHINK
 	public static final Literal hob  = Literal.parseLiteral("has(owner,beer)");
 	public static final Literal hnob = Literal.parseLiteral("hasnot(owner,beer)");
 
@@ -36,7 +34,7 @@ public class HouseEnv extends Environment {
 	
 	private CartagoEnvironment cartagoEnv;
 
-	HouseModel model; // the model of the grid
+	HouseModel model;
 
 	@Override
 	public void init(String[] args) {
@@ -52,7 +50,6 @@ public class HouseEnv extends Environment {
 	}
 	
 	public void startCartago(String[] args) { 
-		// String[] myargs =  {"local", "Console"};
 		cartagoEnv = new CartagoEnvironment();
 		cartagoEnv.init(args);
 	}  

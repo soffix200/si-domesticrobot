@@ -5,11 +5,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.HashSet;
 
-import java.io.File;  // Import the File class
-import java.io.FileWriter;   // Import the FileWriter class
-import java.io.FileNotFoundException;  // Import this class to handle errors
-import java.io.IOException;  // Import the IOException class to handle errors
-import java.util.Scanner; // Import the Scanner class to read text files
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Scanner;
 
 import org.json.*;
 
@@ -33,10 +33,10 @@ public class HouseModel extends GridWorldModel {
 	public static final int GSize = 11;
 
 	boolean fridgeOpen   = false; // whether the fridge is open
-	int sipCount         = 0; // how many sip the owner did
-	int trashCount 		   = 0; // how many trash cans are in dumpster
-	int beersInFridge    = 3; // how many beers are available
-	int beersInDelivery  = 0; // how many beers have been delivered to the delivery location
+	int sipCount         = 0;     // how many sip the owner did
+	int trashCount       = 0;     // how many trash cans are in dumpster
+	int beersInFridge    = 3;     // how many beers are available
+	int beersInDelivery  = 0;     // how many beers have been delivered to the delivery location
 
 	Set<Integer> carryingBeer  = new HashSet<Integer>(); // agentCodes of agents carrying beer
 	Set<Integer> carryingCan   = new HashSet<Integer>(); // agentCodes of agents carrying cans
@@ -61,13 +61,10 @@ public class HouseModel extends GridWorldModel {
 	boolean atCan      = false;
 
 	public HouseModel() {
-		// create a 11x11 grid with two mobile agents
 		super(GSize, GSize, 4);
 
-		// Base location of agents
 		setAgPos(OWNER, lSofa);
 
-		// initial location of various furniture
 		add(SOFA,     lSofa);
 		add(FRIDGE,   lFridge);
 		add(DELIVERY, lDelivery);

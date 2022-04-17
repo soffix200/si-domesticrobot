@@ -13,7 +13,7 @@ public class HouseView extends GridWorldView {
 	public HouseView(HouseModel model) {
 		super(model, "Domestic Robot", 700);
 		hmodel = model;
-		defaultFont = new Font("Arial", Font.BOLD, 16); // change default font
+		defaultFont = new Font("Arial", Font.BOLD, 16);
 		setVisible(true);
 		repaint();
 	}

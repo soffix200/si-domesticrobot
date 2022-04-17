@@ -1,4 +1,3 @@
-// Environment code for project prueba.mas2j
 package bot;
 
 import cartago.*;
