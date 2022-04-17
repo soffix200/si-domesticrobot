@@ -1,5 +1,5 @@
-//REMEMBER TO DELETE TEMP IF THIS FILE IS CHANGED
-// Beliefs and rules
+// REMEMBER TO DELETE TEMP IF THIS FILE IS CHANGED
+
 has(money, 0).
 
 !initStore.

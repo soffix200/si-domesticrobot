@@ -28,16 +28,15 @@ public class MixedAgentArch extends AgArch {
 		jasonEnvActions.add("store");
 		jasonEnvActions.add("enter");
 		jasonEnvActions.add("exit");
-		// add other actions here
 	}
 
 	/** Send specific actions to Jason environment */
 	@Override
 	public void act(ActionExec act) {
 		if (jasonEnvActions.contains(act.getActionTerm().getFunctor())) {
-			getCentArch().act(act); // uses the local ag arch
+			getCentArch().act(act);
 		} else {
-			super.act(act); // uses cartago ag arch
+			super.act(act);
 		}
 	}
 
