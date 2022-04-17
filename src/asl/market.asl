@@ -120,7 +120,6 @@ filter(Query, bid, [AuctionNum, Amount]) :-
   -+auction(AuctionNum+1, Product, Qtty);
   .abolish(bid(AuctionNum, _, _));
 	.print("> El ganador de la subasta ", AuctionNum, " es ", Winner);
-  .broadcast(tell, auction(finish, AuctionNum, Product, Qtty, Winner, Value));
   .concat("La subasta ", AuctionNum, " ha terminado, ", Winner, " ha comprado ", Qtty, " cervezas por un valor total de ", Value, Msg);
   .all_names(L);
   for (.member(Ag, L)) {
