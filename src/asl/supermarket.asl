@@ -6,7 +6,7 @@ cost(beer, 2).
 
 limit(min, reeval, price, 20000).
 limit(min, stock,  beer,  10).
-limit(max, cost,   beer,  5).
+limit(max, cost,   beer,  3).
 
 // -------------------------------------------------------------------------
 // SERVICE INIT AND HELPER METHODS
@@ -20,6 +20,8 @@ service(Query, pay) :-
 	checkTag("<pay>", Query).
 service(Query, auction) :-
 	checkTag("<auction>", Query).
+service(Query, alliance) :-
+	checkTag("<alliance>", Query).
 
 checkTag(Tag, String) :-
 	.substring(Tag, String).
@@ -53,6 +55,19 @@ filter(Query, auction, [Status, AuctionNum, Product, Qtty]) :-
 	tagValue("<auction-num>", Query, AuctionNum) &
 	tagValue("<product>", Query, Product) &
 	tagValue("<quantity>", Query, Qtty).
+filter(Query, alliance, [Action, AuctionNum, Qtty, Product, Price]) :-
+	tagValue("<action>", Query, Action) &
+	tagValue("<auction-num>", Query, AuctionNum) &
+	tagValue("<quantity>", Query, Qtty) &
+	tagValue("<product>", Query, Product) &
+	tagValue("<price>", Query, Price).
+filter(Query, alliance, [Action, AuctionNum, MaxPrice]) :-
+	tagValue("<action>", Query, Action) &
+	tagValue("<auction-num>", Query, AuctionNum) &
+	tagValue("<max-price>", Query, MaxPrice).
+filter(Query, alliance, [Action, AuctionNum]) :-
+	tagValue("<action>", Query, Action) &
+	tagValue("<auction-num>", Query, AuctionNum).
 
 // -------------------------------------------------------------------------
 // PRIORITIES AND PLAN INITIALIZATION
@@ -140,6 +155,7 @@ filter(Query, auction, [Status, AuctionNum, Product, Qtty]) :-
 // -------------------------------------------------------------------------
 
 +!dialog : supermarketInit & msg(Msg)[source(Ag)] <-
+	// .println("<- [", Ag, "]: ", Msg);
 	.abolish(msg(Msg)[source(Ag)]);
 	chatSincrono(Msg, Answer);
 	!doService(Answer, Ag);
@@ -185,11 +201,24 @@ filter(Query, auction, [Status, AuctionNum, Product, Qtty]) :-
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [started, AuctionNum, Product, Qtty]) &
 	requestedPurchase(Product) &
 	has(money, Balance) & Balance >= 1 &
-	limit(max, cost, beer, Limit) & 1 <= Limit
+	limit(max, cost, beer, Limit) & 1 <= Limit*Qtty
 <-
-	.println("La subasta ", AuctionNum, " ha comenzado. Pujo 1");
-	.concat("Me gustaria ofertar ", 1, " en la subasta ", AuctionNum, Msg);
-	.send(market, tell, msg(Msg));
+	if (not alliance(AuctionNum, _, _, _)) {
+		Supermarkets = 0;
+		.all_names(L);
+		for ( .range(I,1,2) ) {
+			.random(L, M);
+			if (.substring("supermarket", M) & not .substring("store", M) & not .my_name(M) & not definedTarget) {
+				.concat("Quieres aliarte conmigo para la subasta ", AuctionNum, " hasta un maximo de ", Balance, Msg);
+				.send(M, tell, msg(Msg));
+				+definedTarget;
+			}
+		}
+		-definedTarget;
+	}
+	.println("< La subasta ", AuctionNum, " ha comenzado. Pujo 1");
+	.concat("Me gustaria ofertar ", 1, " en la subasta ", AuctionNum, Msg2);
+	.send(market, tell, msg(Msg2));
 	-+winningAuction(AuctionNum).
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [started, AuctionNum, Product, Qtty]) <-
 	.println("La subasta ", AuctionNum, " ha comenzado. No participo").
@@ -199,45 +228,117 @@ filter(Query, auction, [Status, AuctionNum, Product, Qtty]) :-
 	requestedPurchase(Product) &
 	.my_name(Self) & Self == Winner
 <-
-	.println("Voy ganando en la subasta ", AuctionNum);
+	.println("< Voy ganando en la subasta ", AuctionNum, " con mi puja de ", Price);
 	-+winningAuction(AuctionNum).
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [update, AuctionNum, Winner, Product, Qtty, Price]) &
 	requestedPurchase(Product) &
 	.my_name(Self) & Self \== Winner &
-	has(money, Balance) & Balance >= Bid &
-	limit(max, cost, beer, Limit) & Bid+1 <= Limit
+	has(money, Balance) & Balance >= Price &
+	limit(max, cost, beer, Limit) & Price+1 <= Limit*Qtty &
+	not alliance(AuctionNum, slave, me)
 <-
-	-println("No voy ganando en la subasta ", AuctionNum, ". Pujo ", Bid+1);
+	.findall(X, alliance(AuctionNum, X, _), AllianceMembers);
+	if (not alliance(AuctionNum, _, _) | alliance(AuctionNum, master, me)) {
+		.all_names(Agents);
+		.difference(Agents, AllianceMembers, L);
+		for ( .range(I,1,2) ) {
+			.random(L, M);
+			if (.substring("supermarket", M) & not .substring("store", M) & not .my_name(M) & not definedTarget) {
+				.concat("Quieres aliarte conmigo para la subasta ", AuctionNum, " hasta un maximo de ", Balance, Msg);
+				.send(M, tell, msg(Msg));
+				+definedTarget;
+			}
+		}
+		-definedTarget;
+	}
+	.println("< No voy ganando en la subasta ", AuctionNum, ". Pujo ", Price+1);
 	-winningAuction(AuctionNum);
-	.concat("Me gustaria ofertar ", Bid+1, " en la subasta ", AuctionNum, Msg);
+	.concat("Me gustaria ofertar ", Price+1, " en la subasta ", AuctionNum, Msg);
 	.send(market, tell, msg(Msg));
 	-+winningAuction(AuctionNum).
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [update, AuctionNum, Winner, Product, Qtty, Price]) &
 	winningAuction(AuctionNum)
 <-
-	.println("Dejo de participar en la subasta ", AuctionNum);
+	.println("< Dejo de participar en la subasta ", AuctionNum);
 	-winningAuction(AuctionNum).
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [update, AuctionNum, Winner, Product, Qtty, Price]) &
 	not winningAuction(AuctionNum)
 <-
-	.println("Sigo sin participar en la subasta ", AuctionNum);
-	-winningAuction(AuctionNum).
+	true.
 
 // # AUCTION SERVICE (FINISH)
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [finished, AuctionNum, Winner, Product, Qtty, Price]) &
 	.my_name(Self) & Self == Winner
 <-
+	.println("> He ganado la subasta ", AuctionNum, " de ", Product, "(x", Qtty, ")");
 	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
-	.abolish(has(beer, _)); +has(beer, StoredBeer+Qtty); .send(Store, achieve, add(beer, Qtty));
 	.abolish(has(money, _)); +has(money, StoredMoney-Price); .send(Store, achieve, del(money, Price));
+	if (alliance(AuctionNum, master, me)) {
+		.findall(A, alliance(AuctionNum, slave, A), AllianceMembers);
+		.length(AllianceMembers, Count);
+		basemath.floor(Qtty/(Count+1), AssignedQtty);
+		RemeaningQtty = Qtty - (AssignedQtty*Count);
+		for (.member(M, AllianceMembers)) {
+			.println("> Reparto a ", M, " su parte proporcional de ", AssignedQtty);
+			.concat("Por la alianza en la subasta ", AuctionNum, " te corresponden ", AssignedQtty, " cervezas a cambio de ", Price*(AssignedQtty/Qtty), " euros", Msg);
+			.send(M, tell, msg(Msg));
+		}
+		.abolish(has(money, _)); +has(money, StoredMoney+(Price*((Qtty-RemeaningQtty)/Qtty))); .send(Store, achieve, del(money, Price*((Qtty-RemeaningQtty)/Qtty)));
+		.println("> Me quedo con mi parte de ", RemeaningQtty);
+		.abolish(has(beer, _)); +has(beer, StoredBeer+RemeaningQtty); .send(Store, achieve, add(beer, RemeaningQtty));
+	} else {
+		.abolish(has(beer, _)); +has(beer, StoredBeer+Qtty); .send(Store, achieve, add(beer, Qtty));
+	}
 	-+cost(beer, Price/Qtty);
 	-winningAuction(AuctionNum);
 	.abolish(requestedPurchase(Product));
-	.abolish(bid(_, AuctionNum, _, _)).
+	.abolish(formingAlliance(AuctionNum, _, _, _));
+	.abolish(alliance(AuctionNum, _, _)).
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [finished, AuctionNum, Winner, Product, Qtty, Price]) <-
-	.println("No he ganado en la subasta ", AuctionNum);
+	.println("> No he ganado en la subasta ", AuctionNum);
 	-winningAuction(AuctionNum);
-	.abolish(bid(_, AuctionNum, _, _)).
+	.abolish(formingAlliance(AuctionNum, _, _, _));
+	.abolish(alliance(AuctionNum, _, _)).
+
+// # ALLIANCE SERVICE
++!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [purpose, AuctionNum, MaxPrice]) &
+	requestedPurchase(Product) & not alliance(AuctionNum, _, _) & not formingAlliance(AuctionNum, _, _, _) &
+	has(money, Balance) & Balance >= MaxPrice/2
+<-
+	.concat("De acuerdo, compremos juntos en la subasta ", AuctionNum, Msg);
+	.send(Ag, tell, msg(Msg));
+	+formingAlliance(AuctionNum, MaxPrice, master, Ag);
+	+formingAlliance(AuctionNum, MaxPrice, slave, me).
++!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [purpose, AuctionNum, MaxPrice]) <-
+	.concat("No deseo aliarme para la subasta ", AuctionNum, Msg);
+	.send(Ag, tell, msg(Msg)).
++!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [confirm, AuctionNum]) &
+	not alliance(AuctionNum, slave, me) & not formingAlliance(AuctionNum, _, slave, me)
+<-
+	.println(Ag, " ha aceptado formar parte de mi alianza");
+	+alliance(AuctionNum, master, me);
+	+alliance(AuctionNum, slave, Ag);
+	.concat("Alianza formada para la subasta ", AuctionNum, Msg);
+	.send(Ag, tell, msg(Msg)).
++!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [confirm, AuctionNum]) &
+	(alliance(AuctionNum, slave, me) | formingAlliance(AuctionNum, _, slave, me))
+<-
+	.concat("Demasiado tarde, ya he formado una alianza para la subasta ", AuctionNum, Msg);
+	.send(Ag, tell, msg(Msg)).
++!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [reject, AuctionNum]) <- true.
++!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [nack, AuctionNum]) <-
+	.abolish(formingAlliance(AuctionNum, _, _, _)).
++!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [ack, AuctionNum]) <-
+	.println("Me he unido satisfactoriamente a la alianza creada por ", Ag);
+	+alliance(AuctionNum, master, Ag);
+	+alliance(AuctionNum, slave, me);
+	.abolish(formingAlliance(AuctionNum, _, _, _)).
++!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [distribute, AuctionNum, Qtty, Product, Price]) <-
+	.println(Ag, " me entrega mi parte de la compra conjunta (", Qtty, " ", Product, ")");
+	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
+	.abolish(has(money, _)); +has(money, StoredMoney+Price); .send(Store, achieve, del(money, Price));
+	.abolish(has(beer, _)); +has(beer, StoredBeer+Qtty); .send(Store, achieve, add(beer, Qtty));
+	-+cost(beer, Price/Qtty).
 
 // # COMMUNICATION SERVICE
 +!doService(Answer, Ag) : not service(Answer, Service) <-

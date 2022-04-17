@@ -84,4 +84,69 @@
   </template>
 </category>
 
+<category>
+  <pattern>Quieres aliarte conmigo para la subasta * hasta un maximo de *</pattern>
+  <template>
+    <alliance>
+      <action>purpose</action>
+      <auction-num><star/></auction-num>
+      <max-price><star index="2"/></max-price>
+    </alliance>
+  </template>
+</category>
+
+<category>
+  <pattern>De acuerdo, compremos juntos en la subasta *</pattern>
+  <template>
+    <alliance>
+      <action>confirm</action>
+      <auction-num><star/></auction-num>
+      <max-price><star index="2"/></max-price>
+    </alliance>
+  </template>
+</category>
+
+<category>
+  <pattern>No deseo aliarme para la subasta *</pattern>
+  <template>
+    <alliance>
+      <action>reject</action>
+      <auction-num><star/></auction-num>
+    </alliance>
+  </template>
+</category>
+
+<category>
+  <pattern>Alianza formada para la subasta *</pattern>
+  <template>
+    <alliance>
+      <action>ack</action>
+      <auction-num><star/></auction-num>
+    </alliance>
+  </template>
+</category>
+
+<category>
+  <pattern>Demasiado tarde, ya he formado una alianza para la subasta *</pattern>
+  <template>
+    <alliance>
+      <action>nack</action>
+      <auction-num><star/></auction-num>
+    </alliance>
+  </template>
+</category>
+
+<category>
+  <pattern>Por la alianza en la subasta * te corresponden * cervezas a cambio de * euros</pattern>
+  <template>
+    <alliance>
+      <action>distribute</action>
+      <auction-num><star/></auction-num>
+      <quantity><star index="2"/></quantity>
+      <product>beer</product>
+      <price><star index="3"/></price>
+    </alliance>
+  </template>
+</category>
+
 </aiml>
