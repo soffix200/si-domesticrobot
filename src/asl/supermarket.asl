@@ -2,7 +2,7 @@ currentOrderId(1).
 
 cost(beer, 2).
 
-// paymentMoment(beforeDelivery | afterDelivery). // If not set here, defined randomly
+//paymentMoment(beforeDelivery | afterDelivery). // If not set here, defined randomly. If set, must delete "!setPaymentMoment;"
 
 limit(min, reeval, price, 20000).
 limit(min, stock,  beer,  10).
@@ -178,9 +178,12 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 +!doService(Query, Ag) : service(Query, order) & filter(Query, order, [rejected, OrderId]) <-
 	?order(OrderId, Ag, Product, Qtty);
 	.println("Pedido ", OrderId, " rechazado por ", Ag);
-	.abolish(pendingPayment(OrderId, _));
 	.abolish(order(OrderId, _, _, _));
-	return(Product, Qtty).
+	.abolish(accepted(OrderId));
+	.abolish(pendingPayment(OrderId, _));
+	if (paymentMoment(afterDelivery)) {
+		return(Product, Qtty);
+	}.
 +!doService(Query, Ag) : service(Query, order) & filter(Query, order, [received, OrderId]) <-
 	.println("Pedido ", OrderId, " recibido por ", Ag).
 
