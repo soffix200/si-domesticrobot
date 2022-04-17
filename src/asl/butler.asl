@@ -24,8 +24,8 @@ overLimit(Type, Product, Location) :-
 	stored(Product, Location, Qtty) & Qtty >= Limit.
 
 cheapest(Provider, Product, Price, Qtty) :-
-	price(Provider, Product, Price, Cost, _) &
-	not (price(Provider2, Product, Price2, Cost2) & Provider2 \== Provider & Price2*Qtty+Cost2 < Price*Qtty+Cost).
+	price(Provider, Product, Price, Cost, _, _) &
+	not (price(Provider2, Product, Price2, Cost2, _, _) & Provider2 \== Provider & Price2*Qtty+Cost2 < Price*Qtty+Cost).
 
 consumedSafe(YY,MM,DD, Product, Qtty) :-
 	consumed(YY,MM,DD, Product, Qtty) | Qtty = 0.
@@ -69,15 +69,16 @@ filter(Query, bring, [Product]) :-
 	tagValue("<product>", Query, Product).
 filter(Query, clean, [Object, Position]) :-
 	tagValue("<object>", Query, Object) &
-	tagValue("<position>", Query, Position). // TODO not parsed
+	tagValue("<position>", Query, Position).
 filter(Query, floor, [FX, FY]) :-
 	tagValue("<x>", Query, FX) &
 	tagValue("<y>", Query, FY).
-filter(Query, offer, [Product, Price, Cost, Time]) :-
+filter(Query, offer, [Product, Price, Cost, Time, Payment]) :-
 	tagValue("<product>", Query, Product) &
 	tagValue("<price>", Query, Price) &
 	tagValue("<cost>", Query, Cost) &
-	tagValue("<time>", Query, Time).
+	tagValue("<time>", Query, Time) &
+	tagValue("<payment>", Query, Payment).
 filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	tagValue("<status>", Query, Status) &
 	tagValue("<order-id>", Query, OrderId) &
@@ -145,7 +146,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 // -------------------------------------------------------------------------
 
 +!dialog : butlerInit & msg(Msg)[source(Ag)] <-
-	// .println("<- [", Ag, "]: ", Msg);
+	.println("<- [", Ag, "]: ", Msg);
 	.abolish(msg(Msg)[source(Ag)]);
 	chatSincrono(Msg, Answer);
 	!doService(Answer, Ag);
@@ -180,20 +181,35 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	+requestedRetrieval(Object, floor(FX, FY)).
 
 // # OFFER SERVICE
-+!doService(Query, Ag) : service(Query, offer) & filter(Query, offer, [Product, Price, Cost, Time]) <-
-	.println(Ag, " me vende un ", Product, " a ", Price, " y el envio me llega en ", Time, " costando ", Cost);
-	.abolish(price(Ag, Product, _, _, _));
-	+price(Ag, Product, Price, Cost, Time).
++!doService(Query, Ag) : service(Query, offer) & filter(Query, offer, [Product, Price, Cost, Time, Payment]) <-
+	if (Payment == beforeDelivery) {
+		.println(Ag, " me vende un ", Product, " a ", Price, " y el envio me llega en ", Time, " costando ", Cost, " (pago al contado)");
+	} else {
+		.println(Ag, " me vende un ", Product, " a ", Price, " y el envio me llega en ", Time, " costando ", Cost, " (pago contrarreembolso)");
+	}
+	.abolish(price(Ag, Product, _, _, _, _));
+	+price(Ag, Product, Price, Cost, Time, Payment).
 
 // # DELIVER SERVICE
 +!doService(Query, Ag) : service(Query, deliver) & filter(Query, deliver, [rejected, OrderId, Product, Qtty, Price]) <-
 	.println(Ag, " ha rechazado mi pedido de ", Qtty, " ", Product, " #", OrderId);
-	.abolish(price(Ag, Product, _, _, _));
+	.abolish(price(Ag, Product, _, _, _, _));
 	.wait(3000);
 	-ordered(beer).
 +!doService(Query, Ag) : service(Query, deliver) & filter(Query, deliver, [delivered, OrderId, Product, Qtty, Price]) <-
 	.println(Ag, " ha entregado mi pedido de ", Qtty, " ", Product, " #", OrderId);
-	+requestedPayment(Ag, OrderId, Product, Qtty, Price).
+	?price(Ag, Product, _, _, _, Payment);
+	if (Payment == afterDelivery) {
+		+requestedPayment(Ag, OrderId, Product, Qtty, Price);
+	}
+	.concat("He recibido la orden ", OrderId, Msg);
+	.send(Ag, tell, msg(Msg));
+	+requestedPickUp(Product, Qtty, delivery).
++!doService(Query, Ag) : service(Query, deliver) & filter(Query, deliver, [accepted, OrderId, Product, Qtty, Price]) <-
+	.println(Ag, " ha aceptado mi pedido de ", Qtty, " ", Product, " #", OrderId);
+	if (Payment == beforeDelivery) {
+		+requestedPayment(Ag, OrderId, Product, Qtty, Price);
+	}.
 
 // # COMMUNICATION SERVICE
 +!doService(Answer, Ag) : not service(Query, Service) <-
@@ -306,7 +322,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	?location(fridge, DType, DX, DY); ?placement(DType, DPlacement);
 	.send(mover, tell, move(beer, Qtty, location(delivery, OX, OY, OPlacement), location(fridge, DX, DY, DPlacement), Obstacles)).
 +!manageBeer : not overLimit(min, beer, fridge) & not ordered(beer) & limit(min, buy, beer, BatchSize) & cheapest(Provider, beer, Price, BatchSize) <-
-	.println("Tengo menos cerveza de la que deberia, voy a comprar mas");
+	.println("> Tengo menos cerveza de la que deberia, voy a comprar mas en ", Provider);
 	if (BatchSize > 0) {
 		.concat("Me gustaria comprarte ", BatchSize, " cervezas", Msg);
 		.send(Provider, tell, msg(Msg));
@@ -316,11 +332,8 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	+ordered(beer).
 +!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance >= Price <-
 	.println("> Pago ", Price, " por el pedido #", OrderId);
-	+requestedPickUp(Product, Qtty, delivery);
-	.concat("He recibido la orden ", OrderId, Msg);
+	.concat("Toma tu pago de ", Price, Msg);
 	.send(Provider, tell, msg(Msg));
-	.concat("Toma tu pago de ", Price, Msg2);
-	.send(Provider, tell, msg(Msg2));
 	.send(database, achieve, del(money, Price));
 	.abolish(has(money, Balance));
 	+has(money, Balance-Price);
