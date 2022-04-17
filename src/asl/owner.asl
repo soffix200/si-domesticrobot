@@ -3,7 +3,7 @@ limit(min, talk,   waitTime,         1000).
 limit(min, nap,    time,           120000).
 limit(max, nap,    time,           720000).
 limit(max, mood,   sipMoodCount,        6).
-limit(max, butler, dailyPayment,      50).
+limit(max, butler, dailyPayment,       50).
 limit(max, owner,  monthlyPension,   2000).
 limit(max, owner,  cleanChance,        10).
 
@@ -56,6 +56,8 @@ service(Query, bring) :-
 	checkTag("<bring>", Query).
 service(Query, pay) :-
 	checkTag("<pay>", Query).
+service(Query, retrieve) :-
+	checkTag("<retrieve>", Query).
 service(Query, health) :-
 	checkTag("<health>", Query).
 service(Query, conversation) :-
@@ -77,6 +79,8 @@ filter(Query, bring, [Status]) :-
 	tagValue("<status>", Query, Status).
 filter(Query, pay, [Amount]) :-
 	tagValue("<amount>", Query, Amount).
+filter(Query, retrieve, [Object]) :-
+	tagValue("<object>", Query, Object).
 filter(Query, health, [Beer]) :-
 	tagValue("<beer>", Query, Beer).
 filter(Query, conversation, [Topic]) :-
@@ -102,7 +106,6 @@ filter(Query, conversation, [Topic]) :-
 	+ownerInit.
 
 +!cheerUp : ownerInit <-
-	!cleanHouse; // TODO
 	!drinkBeer;
 	!wakeUp;
 	!cheerUp.
@@ -168,6 +171,17 @@ filter(Query, conversation, [Topic]) :-
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) <-
 	.println(Ag, " me ha pedido que le ceda ", Amount);
 	!pay(Ag, Amount).
+
+// # RETRIEVE SERVICE
++!doService(Query, Ag) : service(Query, retrieve) & filter(Query, retrieve, [Object]) &
+	has(owner, Object)
+<-
+	.println(Ag, " ha recogido mi ", Object);
+	.abolish(has(owner, Object)).
++!doService(Query, Ag) : service(Query, retrieve) & filter(Query, retrieve, [Object]) &
+	not has(owner, Object)
+<-
+	.println(Ag, " no ha podido recoger ", Object, ", no lo tengo").
 
 // # HEALTH SERVICE
 +!doService(Query, Ag) : service(Query, health) & filter(Query, health, [Beer]) & Beer == tooMuch <-
@@ -262,14 +276,6 @@ filter(Query, conversation, [Topic]) :-
 +!expectPension <- !expectPension.
 
 // -------------------------------------------------------------------------
-// DEFINITION FOR PLAN cleanHouse
-// -------------------------------------------------------------------------
-
-+!cleanHouse : mood(owner, despierto) <- true. // TODO; not yet implemented
-+!cleanHouse : limit(max, owner, cleanChance, Chance) & .random(X) & X*100 <= Chance <- true. // TODO; not yet implemented
-+!cleanHouse <- true.
-
-// -------------------------------------------------------------------------
 // DEFINITION FOR PLAN drinkBeer
 // -------------------------------------------------------------------------
 
@@ -357,10 +363,7 @@ filter(Query, conversation, [Topic]) :-
 	-has(owner, can);
 	.concat("He tirado una lata a ", PX, " ", PY, Msg);
 	.send(butler, tell, msg(Msg)).
-+has(owner, can) : mood(owner, amodorrado) | mood(owner, dormido) <-
-	.println("> Pido a butler que venga a por la lata");
-	.send(butler, tell, msg("Ven a por la lata")).
-+has(owner, can) : mood(owner, despierto) | mood(owner, animado) <-
++has(owner, can) : mood(owner, despierto) <-
 	.println("> Llevo la lata al cubo de basura");
 	get(can);
 	.println("Desplazandose a dumpster");
@@ -371,9 +374,22 @@ filter(Query, conversation, [Topic]) :-
 	.println("Desplazandose al sofa");
 	?location(owner, _, X, Y);
 	!goAtLocation(X, Y, top).
-
-+retrieved(can) : has(owner, can) <-
-	.abolish(has(owner, can)).
++has(owner, can) : mood(owner, animado) &
+	limit(max, owner, cleanChance, Chance) & .random(Ran) & Ran*100 < Chance
+<-
+	.println("> Llevo la lata al cubo de basura");
+	get(can);
+	.println("Desplazandose a dumpster");
+	?location(dumpster, _, DumpX, DumpY);
+	!goAtLocation(DumpX, DumpY, side);
+	.println("Tirando ", can);
+	recycle(can);
+	.println("Desplazandose al sofa");
+	?location(owner, _, X, Y);
+	!goAtLocation(X, Y, top).
++has(owner, can) <-
+	.println("> Pido a butler que venga a por la lata");
+	.send(butler, tell, msg("Ven a por la lata")).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN wakeUp

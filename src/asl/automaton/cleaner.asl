@@ -119,8 +119,9 @@ obstacles([]).
 +!pick(Object, floor) : Object == can <-
 	get(Object).
 +!pick(Object, Agent) : Object == can & Agent == owner <-
-	get(Object).
-	.send(Agent, tell, retrieved(Object)). // TODO not implemented
+	get(Object);
+	.concat("Gracias por la ", Object, Msg);
+	.send(Agent, tell, msg(Msg)).
 
 // ## HELPER PLAN trash
 
