@@ -25,47 +25,47 @@ public class HouseView extends GridWorldView {
 		Location lCleaner = hmodel.getAgPos(HouseModel.CLEANER);
 		Location lDustman = hmodel.getAgPos(HouseModel.DUSTMAN);
 		Location lMover   = hmodel.getAgPos(HouseModel.MOVER);
-		super.drawObstacle(g,x,y);
-		//super.drawAgent(g, x, y, Color.lightGray, -1);
 		switch (object) {
-			case HouseModel.FRIDGE:
-				super.drawAgent(g, x, y, Color.white, -1);
-				if (lOwner.equals(hmodel.lFridge)) {
-					super.drawAgent(g, x, y, Color.yellow, -1);
-				}
+			case HouseModel.SOFA:
 				g.setColor(Color.black);
-				drawString(g, x, y, defaultFont, "Fridge ("+hmodel.beersInFridge+")");
+				super.drawObstacle(g, x, y);
+				super.drawAgent(g, x, y, Color.orange, -1);
+				break;
+			case HouseModel.FRIDGE:
+				g.setColor(Color.black);
+				super.drawObstacle(g, x, y);
+				super.drawAgent(g, x, y, Color.lightGray, -1);
+				g.setColor(Color.black);
+				drawString(g, x, y, defaultFont, "Fdg ("+hmodel.beersInFridge+")");
 				break;
 			case HouseModel.DELIVERY:
-				super.drawAgent(g, x, y, Color.green, -1);
+				g.setColor(Color.white);
+				super.drawObstacle(g, x, y);
 				if (lOwner.equals(hmodel.lDelivery)) {
-					super.drawAgent(g, x, y, Color.yellow, -1);
+					super.drawAgent(g, x, y, Color.cyan, -1);
+				} else {
+					super.drawAgent(g, x, y, Color.green, -1);
 				}
 				g.setColor(Color.black);
-				drawString(g, x, y, defaultFont, "Delivery");
+				drawString(g, x, y, defaultFont, "Del ("+hmodel.beersInDelivery+")");
 				break;
 			case HouseModel.DUMPSTER:
-				if (lOwner.equals(hmodel.lDumpster)) {
-					super.drawAgent(g, x, y, Color.yellow, -1);
-				}
-				g.setColor(Color.black);   
-				drawString(g, x, y, defaultFont, "Dumpster ("+hmodel.trashCount+")");
+				super.drawAgent(g, x, y, Color.gray, -1);
+				g.setColor(Color.black);
+				drawString(g, x, y, defaultFont, "Dump ("+hmodel.trashCount+")");
 				break;
 			case HouseModel.CAN:
-				if (lOwner.equals(hmodel.lCan)) {
-					super.drawAgent(g, x, y, Color.yellow, -1);
-				}
-				g.setColor(Color.black);   
+				super.drawAgent(g, x, y, Color.red, -1);
+				g.setColor(Color.black);
 				drawString(g, x, y, defaultFont, "Can");
 				break;
-			case HouseModel.OWNER:
-				super.drawAgent(g, x, y, Color.red, -1);
-				String o = "Own";
-				if (hmodel.sipCount > 0) {
-					o +=  " ("+hmodel.sipCount+")";
-				}
+			case HouseModel.DEPOT:
+				super.drawAgent(g, x, y, Color.cyan, -1);
 				g.setColor(Color.black);
-				drawString(g, x, y, defaultFont, o);
+				drawString(g, x, y, defaultFont, "Depot");
+				break;
+			default:
+				super.drawObstacle(g,x,y);
 				break;
 		}
 		repaint();
@@ -73,32 +73,29 @@ public class HouseView extends GridWorldView {
 
 	@Override
 	public void drawAgent(Graphics g, int x, int y, Color c, int id) {
-		Location lOwner = hmodel.getAgPos(HouseModel.OWNER);
+		if (hmodel.carryingBeer.contains(id)) {
+			super.drawAgent(g, x, y, Color.green, -1);
+		} else if (hmodel.carryingCan.contains(id)) {
+			super.drawAgent(g, x, y, Color.red, -1);
+		} else if (hmodel.carryingTrash.contains(id)) {
+			super.drawAgent(g, x, y, Color.gray, -1);
+		} else {
+			super.drawAgent(g, x, y, Color.yellow, -1);
+		}
 		switch (id) {
 			case HouseModel.OWNER:
-				if (!lOwner.equals(hmodel.lFridge) && !lOwner.equals(hmodel.lDelivery) && !lOwner.equals(hmodel.lDumpster) && !lOwner.equals(hmodel.lCan)) {
-					c = Color.yellow;
-					//if (hmodel.carryingBeer) c = Color.orange;
-					super.drawAgent(g, x, y, c, -1);
-					g.setColor(Color.black);
-					super.drawString(g, x, y, defaultFont, "Owner");
-				}
+				g.setColor(Color.black);
+				super.drawString(g, x, y, defaultFont, "Owner");
 				break;
 			case HouseModel.CLEANER:
-				c = Color.yellow;
-				super.drawAgent(g, x, y, c, -1);
 				g.setColor(Color.black);
 				super.drawString(g, x, y, defaultFont, "Cleaner");
 				break;
 			case HouseModel.DUSTMAN:
-				c = Color.yellow;
-				super.drawAgent(g, x, y, c, -1);
 				g.setColor(Color.black);
 				super.drawString(g, x, y, defaultFont, "Dustman");
 				break;
 			case HouseModel.MOVER:
-				c = Color.yellow;
-				super.drawAgent(g, x, y, c, -1);
 				g.setColor(Color.black);
 				super.drawString(g, x, y, defaultFont, "Mover");
 				break;

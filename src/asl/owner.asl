@@ -62,6 +62,9 @@ filter(Query, health, [Beer]) :-
 	!initBot;
 	!setupTool("Owner", "Butler");
 	!createAssistant;
+	?bounds(BX, BY); +bounds(BX, BY);
+	?location(owner, O, X, Y); +location(owner, O, X, Y); +at(owner, X, Y);
+	?location(fridge, FO, FX, FY); +location(fridge, FO, FX, FY);
 	+ownerInit.
 
 +!cheerUp : ownerInit <-
@@ -260,6 +263,28 @@ filter(Query, health, [Beer]) :-
 +!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & asked(butler, beer) <-
 	.println("[!] Sigo esperando mi cerveza");
 	.wait(1000).
++!drinkBeer : mood(owner, despierto) & hasnot(owner, beer) & not asked(butler, beer) <-
+	.println("> Voy a por la cerveza");
+	.println("Desplazandose a fridge");
+	?location(fridge, _, FX, FY);
+	!goAtLocation(FX, FY, side);
+	.println("Cogiendo ", beer);
+	open(fridge);
+	.wait(200);
+	?stock(beer, fridge, StoredQtty);
+	if (StoredQtty > 0) {
+		get(beer, fridge);
+		hand_in(beer);
+		close(fridge);
+	} else {
+		close(fridge);
+		.println("> No quedan cervezas, pido una cerveza al butler");
+		.send(butler, tell, msg("Traeme una cerveza"));
+		+asked(butler, beer);
+	}
+	.println("Desplazandose al sofa");
+	?location(owner, _, X, Y);
+	!goAtLocation(X, Y, top).
 +!drinkBeer : not mood(owner, dormido) & hasnot(owner, beer) & not asked(butler, beer) <-
 	.println("> Pido una cerveza al butler");
 	.send(butler, tell, msg("Traeme una cerveza"));
@@ -287,11 +312,20 @@ filter(Query, health, [Beer]) :-
 	-has(owner, can);
 	.concat("He tirado una lata a ", PX, " ", PY, Msg);
 	.send(butler, tell, msg(Msg)).
-+has(owner, can) : mood(owner, amodorrado) | mood(owner, dormido) | mood(owner, despierto) | mood(owner, animado) <-
++has(owner, can) : mood(owner, amodorrado) | mood(owner, dormido) <-
 	.println("> Pido a butler que venga a por la lata");
 	.send(butler, tell, msg("Ven a por la lata")).
-+has(owner, can) : mood(owner, despierto) | mood(owner, animado) <- // TODO and remove from previous intention
-	.println("> Llevo la lata al cubo de basura").
++has(owner, can) : mood(owner, despierto) | mood(owner, animado) <-
+	.println("> Llevo la lata al cubo de basura");
+	get(can);
+	.println("Desplazandose a dumpster");
+	?location(dumpster, _, DumpX, DumpY);
+	!goAtLocation(DumpX, DumpY, side);
+	.println("Tirando ", can);
+	recycle(can);
+	.println("Desplazandose al sofa");
+	?location(owner, _, X, Y);
+	!goAtLocation(X, Y, top).
 
 +retrieved(can) : has(owner, can) <-
 	.abolish(has(owner, can)).
@@ -315,3 +349,38 @@ filter(Query, health, [Beer]) :-
 	.println("> Voy a estar ", NextMood);
 	-+mood(owner, NextMood);
 	.send(assistant, achieve, remember(mood(owner, NextMood))).
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN goAtLocation
+// -------------------------------------------------------------------------
+
++!goAtLocation(DX, DY, Placement) :
+	at(owner, DX, DY) |
+	(Placement == side & (at(owner, DX, DY+1) | at(owner, DX, DY-1) | at(owner, DX+1, DY) | at(owner(DX-1, DY))))
+<-
+	true.
++!goAtLocation(DX, DY, Placement) :
+	not at(owner, DX, DY) &
+	not (Placement == side & (at(owner, DX, DY+1) | at(owner, DX, DY-1) | at(owner, DX+1, DY) | at(owner(DX-1, DY))))
+<-
+	?at(owner, OX, OY); ?bounds(BX, BY);
+	.findall(obstacle(OX, OY), location(_, obstacle, OX, OY), Obstacles);
+	movement.getDirection(origin(OX, OY), destination(DX, DY, Placement), bounds(BX, BY), Obstacles, Direction);
+	move_towards(owner, Direction);
+	!updateLocationBelief(Direction);
+	!goAtLocation(DX, DY, Placement).
+
+// ## HELPER PLAN updateLocationBelief
+
++!updateLocationBelief(Direction) : Direction == right <-
+	?at(owner, X, Y);
+	-+at(owner, X+1, Y).
++!updateLocationBelief(Direction) : Direction == left <-
+	?at(owner, X, Y);
+	-+at(owner, X-1, Y).
++!updateLocationBelief(Direction) : Direction == down <-
+	?at(owner, X, Y);
+	-+at(owner, X, Y+1).
++!updateLocationBelief(Direction) : Direction == up <-
+	?at(owner, X, Y);
+	-+at(owner, X, Y-1).

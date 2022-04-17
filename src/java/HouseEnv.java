@@ -72,7 +72,7 @@ public class HouseEnv extends Environment {
 			addPercept(agent, Literal.parseLiteral("bounds("+(model.GSize-1)+","+(model.GSize-1)+")"));
 
 			addPercept(agent, Literal.parseLiteral("location(base,"+    "position,"+model.lBase.x+    ","+model.lBase.y+    ")"));
-			addPercept(agent, Literal.parseLiteral("location(owner,"+   "obstacle,"+model.lOwner.x+   ","+model.lOwner.y+   ")"));
+			addPercept(agent, Literal.parseLiteral("location(owner,"+   "obstacle,"+model.lSofa.x+    ","+model.lSofa.y+    ")"));
 			addPercept(agent, Literal.parseLiteral("location(fridge,"+  "obstacle,"+model.lFridge.x+  ","+model.lFridge.y+  ")"));
 			addPercept(agent, Literal.parseLiteral("location(delivery,"+"position,"+model.lDelivery.x+","+model.lDelivery.y+")"));
 			addPercept(agent, Literal.parseLiteral("location(dumpster,"+"obstacle,"+model.lDumpster.x+","+model.lDumpster.y+")"));
@@ -127,7 +127,6 @@ public class HouseEnv extends Environment {
 				String agent     = action.getTerm(0).toString();
 				String direction = action.getTerm(1).toString();
 				succeed = model.moveTowards(agent, direction);
-				updatePercepts(ag, updatedPercepts);
 			} else if (action.getFunctor().equals(deliverBeer.getFunctor())) {
 				if (action.getTerm(0).equals(deliverBeer.getTerm(0))) {
 					int beerNumber  = (int)((NumberTerm)((Structure)action).getTerm(1)).solve();

@@ -22,6 +22,7 @@ public class HouseModel extends GridWorldModel {
 	public static final int DUSTMAN  = 2;
 	public static final int MOVER    = 3;
 
+	public static final int SOFA     = 8;
 	public static final int FRIDGE   = 16;
 	public static final int DELIVERY = 32;
 	public static final int DUMPSTER = 64;
@@ -42,7 +43,7 @@ public class HouseModel extends GridWorldModel {
 	Set<Integer> carryingTrash = new HashSet<Integer>(); // agentCodes of agents carrying trash
 
 	Location lBase     = new Location(GSize/2, GSize/2);
-	Location lOwner    = new Location(GSize-1, GSize-1); 
+	Location lSofa     = new Location(GSize-1, GSize-1); 
 	Location lFridge   = new Location(0, 0);
 	Location lDelivery = new Location(0, GSize-1);
 	Location lDumpster = new Location(0, 1);
@@ -64,9 +65,10 @@ public class HouseModel extends GridWorldModel {
 		super(GSize, GSize, 4);
 
 		// Base location of agents
-		setAgPos(OWNER, lOwner);
+		setAgPos(OWNER, lSofa);
 
 		// initial location of various furniture
+		add(SOFA,     lSofa);
 		add(FRIDGE,   lFridge);
 		add(DELIVERY, lDelivery);
 		add(DUMPSTER, lDumpster);
@@ -200,7 +202,7 @@ public class HouseModel extends GridWorldModel {
 			sipCount = 10;
 			carryingBeer.remove(agentCode);
 			if (view != null)
-				view.update(lOwner.x,lOwner.y);
+				view.update(lSofa.x,lSofa.y);
 			return true;
 		}
 		return false;
@@ -285,7 +287,7 @@ public class HouseModel extends GridWorldModel {
 		if (sipCount > 0) {
 			sipCount--;
 			if (view != null)
-				view.update(lOwner.x,lOwner.y);
+				view.update(lSofa.x,lSofa.y);
 			return true;
 		}
 		return false;
