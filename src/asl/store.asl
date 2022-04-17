@@ -1,3 +1,5 @@
+// REMEMBER TO DELETE TMP IF THIS FILE IS CHANGED
+
 beer(5).
 money(200).
 price(beer, 3).
@@ -39,7 +41,7 @@ deliveryCost(butler, -1).
 	.save_agent(Filename).
 +!add(money, N) : money(M) <-
 	?filename(Filename);
-	-+beer(money, M+N);
+	-+money(M+N);
 	.save_agent(Filename).
 
 // -------------------------------------------------------------------------

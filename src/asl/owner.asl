@@ -93,8 +93,8 @@ filter(Query, conversation, [Topic]) :-
 !cheerUp.
 
 +!initOwner <-
-	!initBot;
-	!setupTool("Owner", "Butler");
+	!initBot; 
+	//!setupTool("Owner", "Butler"); //Uncomment to activate GUI
 	!createAssistant;
 	?bounds(BX, BY); +bounds(BX, BY);
 	?location(owner, O, X, Y); +location(owner, O, X, Y); +at(owner, X, Y);

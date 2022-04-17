@@ -130,7 +130,7 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 	?store(Store);
 	.random(X);
 	basemath.truncate(X*20, Time);
-	basemath.truncate(X*5,  Cost);
+	basemath.truncate(5-(X*5),  Cost);
 	+deliveryTime(butler, Time);
 	+deliveryCost(butler, Cost);
 	.send(Store, achieve, addDeliveryTime(butler, Time));
@@ -270,7 +270,7 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [finished, AuctionNum, Winner, Product, Qtty, Price]) &
 	.my_name(Self) & Self == Winner
 <-
-	.println("> He ganado la subasta ", AuctionNum, " de ", Product, "(x", Qtty, ")");
+	.println("> He ganado la subasta ", AuctionNum, " de ", Product, "(x", Qtty, "). He pagado:",Price);
 	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
 	.abolish(has(money, _)); +has(money, StoredMoney-Price); .send(Store, achieve, del(money, Price));
 	if (alliance(AuctionNum, master, me)) {
@@ -283,7 +283,7 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 			.concat("Por la alianza en la subasta ", AuctionNum, " te corresponden ", AssignedQtty, " cervezas a cambio de ", Price*(AssignedQtty/Qtty), " euros", Msg);
 			.send(M, tell, msg(Msg));
 		}
-		.abolish(has(money, _)); +has(money, StoredMoney+(Price*((Qtty-RemeaningQtty)/Qtty))); .send(Store, achieve, del(money, Price*((Qtty-RemeaningQtty)/Qtty)));
+		.abolish(has(money, _)); +has(money, StoredMoney-Price+Price/Qtty*(Qtty-RemeaningQtty)); .send(Store, achieve, add(money, Price/Qtty*(Qtty-RemeaningQtty)));
 		.println("> Me quedo con mi parte de ", RemeaningQtty);
 		.abolish(has(beer, _)); +has(beer, StoredBeer+RemeaningQtty); .send(Store, achieve, add(beer, RemeaningQtty));
 	} else {
@@ -336,7 +336,7 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 +!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [distribute, AuctionNum, Qtty, Product, Price]) <-
 	.println(Ag, " me entrega mi parte de la compra conjunta (", Qtty, " ", Product, ")");
 	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
-	.abolish(has(money, _)); +has(money, StoredMoney+Price); .send(Store, achieve, del(money, Price));
+	.abolish(has(money, _)); +has(money, StoredMoney-Price); .send(Store, achieve, del(money, Price));
 	.abolish(has(beer, _)); +has(beer, StoredBeer+Qtty); .send(Store, achieve, add(beer, Qtty));
 	-+cost(beer, Price/Qtty).
 
