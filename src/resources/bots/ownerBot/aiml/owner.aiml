@@ -30,6 +30,19 @@
 	</template>
 </category>
 
+<!-- RULES FOR CLEANER MESSAGES -->
+
+<category>
+  <pattern>Gracias por la *</pattern>
+  <template>
+    <retrieve>
+      <object><star/></object>
+    </retrieve>
+  </template>
+</category>
+
+<!-- RULES FOR BUTLER CONVERSATION -->
+
 <category>
   <pattern>Son las *:*:*</pattern>
   <template>

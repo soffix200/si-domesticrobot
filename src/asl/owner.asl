@@ -56,6 +56,8 @@ service(Query, bring) :-
 	checkTag("<bring>", Query).
 service(Query, pay) :-
 	checkTag("<pay>", Query).
+service(Query, retrieve) :-
+	checkTag("<retrieve>", Query).
 service(Query, health) :-
 	checkTag("<health>", Query).
 service(Query, conversation) :-
@@ -77,6 +79,8 @@ filter(Query, bring, [Status]) :-
 	tagValue("<status>", Query, Status).
 filter(Query, pay, [Amount]) :-
 	tagValue("<amount>", Query, Amount).
+filter(Query, retrieve, [Object]) :-
+	tagValue("<object>", Query, Object).
 filter(Query, health, [Beer]) :-
 	tagValue("<beer>", Query, Beer).
 filter(Query, conversation, [Topic]) :-
@@ -167,6 +171,17 @@ filter(Query, conversation, [Topic]) :-
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) <-
 	.println(Ag, " me ha pedido que le ceda ", Amount);
 	!pay(Ag, Amount).
+
+// # RETRIEVE SERVICE
++!doService(Query, Ag) : service(Query, retrieve) & filter(Query, retrieve, [Object]) &
+	has(owner, Object)
+<-
+	.println(Ag, " ha recogido mi ", Object);
+	.abolish(has(owner, Object)).
++!doService(Query, Ag) : service(Query, retrieve) & filter(Query, retrieve, [Object]) &
+	not has(owner, Object)
+<-
+	.println(Ag, " no ha podido recoger ", Object, ", no lo tengo").
 
 // # HEALTH SERVICE
 +!doService(Query, Ag) : service(Query, health) & filter(Query, health, [Beer]) & Beer == tooMuch <-
@@ -375,9 +390,6 @@ filter(Query, conversation, [Topic]) :-
 	.println("Desplazandose al sofa");
 	?location(owner, _, X, Y);
 	!goAtLocation(X, Y, top).
-
-+retrieved(can) : has(owner, can) <-
-	.abolish(has(owner, can)).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN wakeUp
