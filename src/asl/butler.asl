@@ -6,7 +6,7 @@ automaton(dustman, inactive).
 automaton(mover,   inactive).
 automaton(shopper, inactive).
 
-limit(min, fridge,   beer,  3 ). // Minimo de cervezas que deberia haber en el frigo, si hay menos se ordenan mas
+limit(min, fridge,   beer,  5 ). // Minimo de cervezas que deberia haber en el frigo, si hay menos se ordenan mas
 limit(max, dumpster, trash, 5 ).
 limit(max, owner,    beer,  10).
 limit(min, buy,      beer,  3 ). // Cantidad de cervezas a pedirle al super (en cada orden)
@@ -216,6 +216,7 @@ filter(Query, conversation, [Topic]) :-
 	+requestedPickUp(Product, Qtty, delivery).
 +!doService(Query, Ag) : service(Query, deliver) & filter(Query, deliver, [accepted, OrderId, Product, Qtty, Price]) <-
 	.println(Ag, " ha aceptado mi pedido de ", Qtty, " ", Product, " #", OrderId);
+	?price(Ag, Product, _, _, _, Payment);
 	if (Payment == beforeDelivery) {
 		+requestedPayment(Ag, OrderId, Product, Qtty, Price);
 	}.
@@ -331,7 +332,7 @@ filter(Query, conversation, [Topic]) :-
 	?location(Ag, DType, DX, DY); ?placement(DType, DPlacement);
 	?location(fridge, OType, OX, OY); ?placement(OType, OPlacement);
 	.send(mover, tell, move(beer, 1, location(fridge, OX, OY, OPlacement), location(Ag, DX, DY, DPlacement), Obstacles)).
-+!manageBeer : requestedPickUp(beer, Qtty, delivery) & not moving(_, beer, Qtty, delivery, fridge) <-
++!manageBeer : requestedPickUp(beer, Qtty, delivery) & not requestedPayment(Ag, OrderId, Product, Qtty, Price) & not moving(_, beer, Qtty, delivery, fridge) <-
 	.println("> Activo un automata para mover ", beer, ": ", delivery, "->", fridge);
 	+moving(mover, beer, Qtty, delivery, fridge);
 	if (automaton(mover, inactive)) {
@@ -372,6 +373,7 @@ filter(Query, conversation, [Topic]) :-
 	.println("> Devuelvo el pedido #", OrderId, ", ", owner, " no me ha concedido el dinero");
 	.concat("Lo siento pero debo rechazar la orden ", OrderId, Msg);
 	.send(Provider, tell, msg(Msg));
+	.abolish(requestedPickUp(beer, Qtty, delivery));
 	.abolish(requestedPayment(Provider, OrderId, Product, Qtty, Price));
 	.abolish(requestedMoney(owner, _));
 	.abolish(ordered(Product)).

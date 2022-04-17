@@ -148,7 +148,7 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 	} else {
 		+paymentMoment(afterDelivery);
 	}.
-+!setDeliveryMoment <- true.
++!setPaymentMoment <- true.
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN dialog
@@ -176,8 +176,10 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 
 // # ORDER SERVICE
 +!doService(Query, Ag) : service(Query, order) & filter(Query, order, [rejected, OrderId]) <-
+	?order(OrderId, Ag, Product, Qtty);
 	.println("Pedido ", OrderId, " rechazado por ", Ag);
 	.abolish(pendingPayment(OrderId, _));
+	.abolish(order(OrderId, _, _, _));
 	return(Product, Qtty).
 +!doService(Query, Ag) : service(Query, order) & filter(Query, order, [received, OrderId]) <-
 	.println("Pedido ", OrderId, " recibido por ", Ag).
@@ -189,6 +191,9 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 	.println("Pago de ", Amount, " recibido de ", Ag);
 	?store(Store); ?has(money, Balance);
 	.abolish(pendingPayment(OrderId, Amount));
+	if (paymentMoment(afterDelivery)) {
+		.abolish(order(OrderId, _, _, _));
+	}
 	.abolish(has(money, _)); +has(money, Balance+Amount);
 	.send(Store, achieve, add(money, Amount)).
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) &
@@ -424,7 +429,9 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 	basemath.truncate(OrderedQtty*Price+Cost, Amount);
 	.concat("He entregado el pedido ", OrderId, " que contiene ", OrderedQtty, " cervezas, el importe asciende a ", Amount, Msg);
 	.send(Ag, tell, msg(Msg));
-	.abolish(order(OrderId, _, _, _));
+	if (not pendingPayment(OrderId, _)) {
+		.abolish(order(OrderId, _, _, _));
+	}
 	.abolish(accepted(OrderId));
 	-+currentOrderId(OrderId+1);
 	!sellBeer.
