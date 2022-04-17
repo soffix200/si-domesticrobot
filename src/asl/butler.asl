@@ -170,6 +170,11 @@ filter(Query, conversation, [Topic]) :-
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [rejected, Amount]) <-
 	.println(Ag, " ha rechazado el pago de ", Amount, " que la habia pedido");
 	+cannotPay(owner, Amount).
++!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [returned, Amount]) <-
+	.println("He realizado un pago invalido a ", Ag, ", me lo ha devuelto");
+	?has(money, Balance);
+	.abolish(has(money, _)); +has(money, Balance + Amount);
+	.send(database, achieve, add(money, Amount)).
 
 // # BRING SERVICE
 +!doService(Query, Ag) : service(Query, bring) & filter(Query, bring, [Product]) <-
