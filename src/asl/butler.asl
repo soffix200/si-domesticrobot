@@ -364,7 +364,7 @@ filter(Query, conversation, [Topic]) :-
 	.abolish(requestedPayment(Provider, OrderId, Product, Qtty, Price));
 	.abolish(requestedMoney(owner, _)).
 +!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance < Price & not requestedMoney(owner, _) <-
-	.println("[!] No tengo dinero para pagar el pedido ", OrderId, ", se lo solicito a ", owner);
+	.println("[!] No tengo dinero para pagar el pedido ", OrderId, ", le solicito ", Price-Balance, " a ", owner);
 	.abolish(cannotPay(owner, _));
 	.concat("Necesito ", Price-Balance, " euros para comprar cervezas", Msg);
 	.send(owner, tell, msg(Msg));

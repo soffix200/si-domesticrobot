@@ -178,9 +178,12 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 +!doService(Query, Ag) : service(Query, order) & filter(Query, order, [rejected, OrderId]) <-
 	?order(OrderId, Ag, Product, Qtty);
 	.println("Pedido ", OrderId, " rechazado por ", Ag);
-	.abolish(pendingPayment(OrderId, _));
 	.abolish(order(OrderId, _, _, _));
-	return(Product, Qtty).
+	.abolish(accepted(OrderId));
+	.abolish(pendingPayment(OrderId, _));
+	if (paymentMoment(afterDelivery)) {
+		return(Product, Qtty);
+	}.
 +!doService(Query, Ag) : service(Query, order) & filter(Query, order, [received, OrderId]) <-
 	.println("Pedido ", OrderId, " recibido por ", Ag).
 
