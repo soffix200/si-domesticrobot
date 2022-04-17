@@ -72,12 +72,12 @@ obstacles([]).
 	-+status(active);
   .println("Intentando sacar la basura");
   .abolish(requestedTakeout(trash));
-  .println("Desplazándose a dumpster");
+  .println("Desplazandose a dumpster");
   ?dumpster(DumpX, DumpY, DumpPlacement);
   !goAtLocation(DumpX, DumpY, DumpPlacement);
   .println("Recogiendo la basura");
   collect(trash);
-  .println("Desplazándose a exit");
+  .println("Desplazandose a exit");
   ?exit(EX, EY, EPlacement);
   !goAtLocation(EX, EY, EPlacement);
   .send(butler, tell, tookout(success, trash));

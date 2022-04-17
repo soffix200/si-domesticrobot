@@ -73,11 +73,11 @@ available(Object, LocationDescriptor) :-
 	-+status(active);
 	.println("Intentando mover ", Qtty, " ", Object, " de ", ODescriptor, " a ", DDescriptor);
 	.abolish(requestedMovement(Object, Qtty, location(ODescriptor, OX, OY, OPlacement), location(DDescriptor, DX, DY, DPlacement)));
-	.println("Desplazándose a ", ODescriptor);
+	.println("Desplazandose a ", ODescriptor);
 	!goAtLocation(OX, OY, OPlacement);
 	.println("Cogiendo ", Qtty, " ", Object);
 	!pick(Object, Qtty, ODescriptor, DDescriptor);
-	.println("Desplazándose a ", DDescriptor);
+	.println("Desplazandose a ", DDescriptor);
 	!goAtLocation(DX, DY, DPlacement);
 	.println("Dejando ", Qtty, " ", Object);
 	!drop(Object, Qtty, DDescriptor);

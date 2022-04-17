@@ -6,10 +6,10 @@ automaton(dustman, inactive).
 automaton(mover,   inactive).
 automaton(shopper, inactive).
 
-limit(min, fridge,   beer,  3 ). // Mínimo de cervezas que debería haber en el frigo, si hay menos se ordenan más
+limit(min, fridge,   beer,  3 ). // Minimo de cervezas que deberia haber en el frigo, si hay menos se ordenan mas
 limit(max, dumpster, trash, 5 ).
 limit(max, owner,    beer,  10).
-limit(min, buy,      beer,  3 ). // Cantidad de cervezas a pedirle al súper (en cada orden)
+limit(min, buy,      beer,  3 ). // Cantidad de cervezas a pedirle al super (en cada orden)
 
 stored(beer,  fridge,   1).      // Si se comienza sin la creencia de tener cerveza, no se va a la nevera y
                                  // por ende hay que esperar a que el pedido llegue para comprobar el stock
@@ -167,7 +167,7 @@ filter(Query, conversation, [Topic]) :-
 	.abolish(has(money, _)); +has(money, Balance + Amount);
 	.send(database, achieve, add(money, Amount)).
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [rejected, Amount]) <-
-	.println(Ag, " ha rechazado el pago de ", Amount, " que la había pedido");
+	.println(Ag, " ha rechazado el pago de ", Amount, " que la habia pedido");
 	+cannotPay(owner, Amount).
 
 // # BRING SERVICE

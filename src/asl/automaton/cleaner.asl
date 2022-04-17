@@ -76,11 +76,11 @@ obstacles([]).
 	-+status(active);
 	.println("Intentando limpiar ", Object, " en (", X, ", ", Y, ")");
 	.abolish(requestedCleanup(Object, floor(X, Y)));
-	.println("Desplazándose a (", X, ", ", Y, ")");
+	.println("Desplazandose a (", X, ", ", Y, ")");
 	!goAtLocation(X, Y, top);
 	.println("Cogiendo ", Object);
 	!pick(Object, floor);
-	.println("Desplazándose a dumpster");
+	.println("Desplazandose a dumpster");
 	?dumpster(DumpX, DumpY);
 	!goAtLocation(DumpX, DumpY, side);
 	.println("Tirando ", Object);
@@ -95,11 +95,11 @@ obstacles([]).
 	-+status(active);
 	.println("Intentando recoger ", Object, " de ", Agent);
 	.abolish(requestedCleanup(Object, location(Agent, X, Y, Placement)));
-	.println("Desplazándose a ", Agent);
+	.println("Desplazandose a ", Agent);
 	!goAtLocation(X, Y, Placement);
 	.println("Cogiendo ", Object);
 	!pick(Object, Agent);
-	.println("Desplazándose a dumpster");
+	.println("Desplazandose a dumpster");
 	?dumpster(DumpX, DumpY);
 	!goAtLocation(DumpX, DumpY, side);
 	.println("Tirando ", Object);

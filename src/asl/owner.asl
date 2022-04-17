@@ -26,7 +26,7 @@ conversation(money, euforico  , "Cuanto dinero te queda ya? Dime que no te lo ha
 conversation(money, crispado  , "Butler, dime cuanto dinero te queda sin contar al que le has prendido fuego").
 conversation(money, amodorrado, "Butler, dime cuanto dinero te queda por gastar").
 
-conversation(chat , despierto , "A veces estoy un poco aburrido, pero agradezco mucho tu compañia").
+conversation(chat , despierto , "A veces estoy un poco aburrido, pero agradezco mucho tu compania").
 conversation(chat , animado   , "Deberias tomarte una cerveza tu tambien conmigo").
 conversation(chat , euforico  , "Que bien me lo pago contigo!! Eres el mejor amigo que se puede tener").
 conversation(chat , crispado  , "Robot, a veces no te da la sensacion de que vivimos en una realidad deformada por los canones establecidos y el capitalismo?").
