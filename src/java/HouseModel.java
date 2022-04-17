@@ -34,7 +34,7 @@ public class HouseModel extends GridWorldModel {
 
 	boolean fridgeOpen   = false; // whether the fridge is open
 	int sipCount         = 0;     // how many sip the owner did
-	int trashCount 		   = 0;     // how many trash cans are in dumpster
+	int trashCount       = 0;     // how many trash cans are in dumpster
 	int beersInFridge    = 3;     // how many beers are available
 	int beersInDelivery  = 0;     // how many beers have been delivered to the delivery location
 
