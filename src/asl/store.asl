@@ -1,5 +1,5 @@
-beer(0).
-money(100).
+beer(5).
+money(200).
 price(beer, 3).
 
 deliveryTime(butler, -1).

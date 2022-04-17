@@ -1,5 +1,5 @@
-time(auction,    10000).  // Time between auctions will be 10s
-time(bid,        1000).   // Time between bids will be 1s.
+time(auction,    4000).  // Time between auctions will be 10s
+time(bid,        500).   // Time between bids will be 1s.
 
 auction(0, beer, 10).
 
