@@ -336,7 +336,7 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 +!doService(Query, Ag) : service(Query, alliance) & filter(Query, alliance, [distribute, AuctionNum, Qtty, Product, Price]) <-
 	.println(Ag, " me entrega mi parte de la compra conjunta (", Qtty, " ", Product, ")");
 	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
-	.abolish(has(money, _)); +has(money, StoredMoney+Price); .send(Store, achieve, del(money, Price));
+	.abolish(has(money, _)); +has(money, StoredMoney-Price); .send(Store, achieve, del(money, Price));
 	.abolish(has(beer, _)); +has(beer, StoredBeer+Qtty); .send(Store, achieve, add(beer, Qtty));
 	-+cost(beer, Price/Qtty).
 
