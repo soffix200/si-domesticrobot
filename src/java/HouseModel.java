@@ -5,6 +5,14 @@ import java.util.Random;
 import java.util.Set;
 import java.util.HashSet;
 
+import java.io.File;  // Import the File class
+import java.io.FileWriter;   // Import the FileWriter class
+import java.io.FileNotFoundException;  // Import this class to handle errors
+import java.io.IOException;  // Import the IOException class to handle errors
+import java.util.Scanner; // Import the Scanner class to read text files
+
+import org.json.*;
+
 /** class that implements the Model of Domestic Robot application */
 public class HouseModel extends GridWorldModel {
 
@@ -63,6 +71,52 @@ public class HouseModel extends GridWorldModel {
 		add(DELIVERY, lDelivery);
 		add(DUMPSTER, lDumpster);
 		add(DEPOT,    lDepot);
+
+		loadSavedStatus();
+	}
+
+	private void loadSavedStatus() {
+		String content = "";
+		try {
+      File myObj = new File("tmp/environment.json");
+      Scanner myReader = new Scanner(myObj);
+      while (myReader.hasNextLine()) {
+        content += myReader.nextLine();
+      }
+      myReader.close();
+			JSONObject json = new JSONObject(content);
+			trashCount = json.getInt("trashCount");
+			beersInFridge = json.getInt("beersInFridge");
+    } catch (FileNotFoundException ex1) {
+      try {
+				File myObj = new File("tmp/environment.json");
+				myObj.createNewFile();
+				saveStatus();
+			} catch (IOException ex2) {
+				System.out.println("An error occurred.");
+				ex2.printStackTrace();
+			}
+    } catch (Exception ex3) {
+			System.out.println("An error occurred.");
+			ex3.printStackTrace();
+		}
+	}
+
+	private void saveStatus() {
+		try {
+			JSONObject json = new JSONObject();
+			json.put("trashCount", trashCount);
+			json.put("beersInFridge", beersInFridge);
+			FileWriter myWriter = new FileWriter("tmp/environment.json");
+      myWriter.write(json.toString());
+      myWriter.close();
+		} catch (IOException ex1) {
+			System.out.println("An error occurred.");
+			ex1.printStackTrace();
+		} catch (Exception ex2) {
+			System.out.println("An error occurred.");
+			ex2.printStackTrace();
+		}
 	}
 
 	int getAgentCode(String ag) {
@@ -125,6 +179,7 @@ public class HouseModel extends GridWorldModel {
 		if (fridgeOpen && carryingBeer.contains(agentCode)) {
 			beersInFridge += n;
 			carryingBeer.remove(agentCode);
+			saveStatus();
 			if (view != null)
 				view.update(lFridge.x,lFridge.y);
 			return true;
@@ -156,6 +211,7 @@ public class HouseModel extends GridWorldModel {
 		if (carryingCan.contains(agentCode)) {
 			trashCount++;
 			carryingCan.remove(agentCode);
+			saveStatus();
 			if (view != null)
 				view.update(lDumpster.x,lDumpster.y);
 			return true;
@@ -168,6 +224,7 @@ public class HouseModel extends GridWorldModel {
 		if (fridgeOpen && beersInFridge > 0 && !carryingBeer.contains(agentCode)) {
 			beersInFridge--;
 			carryingBeer.add(agentCode);
+			saveStatus();
 			if (view != null)
 				view.update(lFridge.x,lFridge.y);
 			return true;
@@ -216,6 +273,7 @@ public class HouseModel extends GridWorldModel {
 		if (trashCount > 0 && !carryingTrash.contains(agentCode)) {
 			trashCount = 0;
 			carryingTrash.add(agentCode);
+			saveStatus();
 			if (view != null)
 				view.update(lDumpster.x, lDumpster.y);
 			return true;
@@ -233,7 +291,6 @@ public class HouseModel extends GridWorldModel {
 		return false;
 	}
 
-	// TODO MAY NEED TO BE MORE THAN ONE CAN
 	boolean throwCan(Location loc) {
 		lCan = loc;
 		add(CAN, lCan);
