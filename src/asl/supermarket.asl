@@ -1,6 +1,5 @@
 currentOrderId(1).
 
-price(beer, 3).
 cost(beer, 2).
 
 limit(min, reeval, price, 20000).
@@ -97,6 +96,7 @@ filter(Query, auction, [Status, AuctionNum, Product, Qtty]) :-
 	}
 	.send(Store, askOne, beer(BeerQtty), beer(BeerQtty)); +has(beer, BeerQtty);
 	.send(Store, askOne, money(MoneyQtty), money(MoneyQtty));	+has(money, MoneyQtty);
+	.send(Store, askOne, price(beer, Price), price(beer, Price)); +price(beer, Price);
 	.send(Store, askOne, deliveryTime(butler, Time), deliveryTime(butler, Time));
 	.send(Store, askOne, deliveryCost(butler, Cost), deliveryCost(butler, Cost));
 	if (Time \== -1 & Cost \== -1) {
@@ -162,7 +162,8 @@ filter(Query, auction, [Status, AuctionNum, Product, Qtty]) :-
 <-
 	.println("La subasta ", AuctionNum, " ha comenzado. Pujo 1");
 	.concat("Me gustaria ofertar ", 1, " en la subasta ", AuctionNum, Msg);
-	.send(market, tell, msg(Msg)).
+	.send(market, tell, msg(Msg));
+	-+winningAuction(AuctionNum).
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [started, AuctionNum, Product, Qtty]) <-
 	.println("La subasta ", AuctionNum, " ha comenzado. No participo").
 
@@ -245,12 +246,16 @@ filter(Query, auction, [Status, AuctionNum, Product, Qtty]) :-
 	} else {
 		basemath.truncate(Cost, NewPrice);
 	}
+	?store(Store);
 	-+price(beer, NewPrice);
+	.send(Store, achieve, setPrice(beer, NewPrice));
 	!offerBeer.
 +!calculatePrice(beer) : currentOrderId(N) & lastEvaluatedOrderId(M) & N > M <- // Beers sold; price must be increased.
 	?price(beer, Price); ?cost(beer, Cost);
 	basemath.truncate(Price*1.2, NewPrice);
+	?store(Store);
 	-+price(beer, NewPrice);
+	.send(Store, achieve, setPrice(beer, NewPrice));
 	!offerBeer.
 
 // -------------------------------------------------------------------------

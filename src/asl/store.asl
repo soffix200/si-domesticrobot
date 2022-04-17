@@ -1,5 +1,6 @@
 beer(0).
 money(100).
+price(beer, 3).
 
 deliveryTime(butler, -1).
 deliveryCost(butler, -1).
@@ -19,15 +20,11 @@ deliveryCost(butler, -1).
 // DEFINITION FOR PLAN substract
 // -------------------------------------------------------------------------
 
-+!del(beer,N) : beer(M) & M >= N <-
++!del(beer, N) : beer(M) <-
 	?filename(Filename);
 	-+beer(M-N);
 	.save_agent(Filename).
-+!del(beer,N) : beer(M) & M < N <-
-	?filename(Filename);
-	// TODO response: not enough
-	.save_agent(Filename).
-+!del(money,N) : money(M) <-
++!del(money, N) : money(M) <-
 	?filename(Filename);
 	-+money(M-N);
 	.save_agent(Filename).
@@ -36,13 +33,22 @@ deliveryCost(butler, -1).
 // DEFINITION FOR PLAN add
 // -------------------------------------------------------------------------
 
-+!add(beer,N) : beer(M) <-
++!add(beer, N) : beer(M) <-
 	?filename(Filename);
 	-+beer(M+N);
 	.save_agent(Filename).
-+!add(money,N) : money(M) <-
++!add(money, N) : money(M) <-
 	?filename(Filename);
 	-+beer(money, M+N);
+	.save_agent(Filename).
+
+// -------------------------------------------------------------------------
+// DEFINITION FOR PLAN setPrice
+// -------------------------------------------------------------------------
+
++!setPrice(beer, Price) <-
+	?filename(Filename);
+	-+price(beer, Price);
 	.save_agent(Filename).
 
 // -------------------------------------------------------------------------

@@ -84,7 +84,7 @@ filter(Query, bid, [AuctionNum, Amount]) :-
   .concat("La subasta ", AuctionNum, " acaba de empezar, se subastan ", Qtty, " cervezas", Msg);
   .all_names(L);
   for (.member(Ag, L)) {
-    if (.substring("supermarket", Ag)) {
+    if (.substring("supermarket", Ag) & not .substring("store", Ag)) {
       .send(Ag, tell, msg(Msg));
     }
   }
@@ -103,7 +103,7 @@ filter(Query, bid, [AuctionNum, Amount]) :-
   .concat("La subasta ", AuctionNum, " de ", Qtty, " cervezas ahora tiene la puja mas alta por parte de ", Winner, " que ha ofrecido ", Max, Msg);
   .all_names(L);
   for (.member(Ag, L)) {
-    if (.substring("supermarket", Ag)) {
+    if (.substring("supermarket", Ag) & not .substring("store", Ag)) {
       .send(Ag, tell, msg(Msg));
     }
   }
@@ -124,7 +124,7 @@ filter(Query, bid, [AuctionNum, Amount]) :-
   .concat("La subasta ", AuctionNum, " ha terminado, ", Winner, " ha comprado ", Qtty, " cervezas por un valor total de ", Value, Msg);
   .all_names(L);
   for (.member(Ag, L)) {
-    if (.substring("supermarket", Ag)) {
+    if (.substring("supermarket", Ag) & not .substring("store", Ag)) {
       .send(Ag, tell, msg(Msg));
     }
   }
