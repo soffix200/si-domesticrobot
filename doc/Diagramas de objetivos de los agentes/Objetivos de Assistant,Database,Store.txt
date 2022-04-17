@@ -1,0 +1,1 @@
+Los tres agentes tienen como objetivo meramente manejar persistencia, salvado y entregando las creencias oportunas para cada caso según demanda.
