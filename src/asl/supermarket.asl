@@ -194,8 +194,9 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) &
 	not pendingPayment(OrderId, Amount)
 <-
-	.println("Pago de ", Amount, " recibido de ", Ag, " (invalido)").
-	// TODO return money
+	.println("Pago de ", Amount, " recibido de ", Ag, " (invalido)");
+	.concat("El pago no es valido, te devuelvo tus ", Amount, Msg);
+	.send(Ag, tell, msg(Msg)).
 
 // # AUCTION SERVICE (START)
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [started, AuctionNum, Product, Qtty]) &

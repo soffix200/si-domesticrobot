@@ -24,6 +24,16 @@
 </category>
 
 <category>
+  <pattern>El pago no es valido, te devuelvo tus *</pattern>
+  <template>
+    <pay>
+      <status>returned</status>
+      <amount><star/></amount>
+    </pay>
+  </template>
+</category>
+
+<category>
   <pattern>Traeme una cerveza</pattern>
   <template>
     <bring>
