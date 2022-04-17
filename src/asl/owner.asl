@@ -2,7 +2,7 @@ limit(max, talk,   waitTime,         4000).
 limit(min, talk,   waitTime,         1000).
 limit(min, nap,    time,           120000).
 limit(max, nap,    time,           720000).
-limit(max, mood,   sipMoodCount,        6).
+limit(max, mood,   sipMoodCount,       12).
 limit(max, butler, dailyPayment,       50).
 limit(max, owner,  monthlyPension,   2000).
 limit(max, owner,  cleanChance,        10).

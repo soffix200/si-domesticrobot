@@ -6,10 +6,10 @@ automaton(dustman, inactive).
 automaton(mover,   inactive).
 automaton(shopper, inactive).
 
-limit(min, fridge,   beer,  5 ). // Minimo de cervezas que deberia haber en el frigo, si hay menos se ordenan mas
-limit(max, dumpster, trash, 5 ).
+limit(min, fridge,   beer,   5). // Minimo de cervezas que deberia haber en el frigo, si hay menos se ordenan mas
+limit(max, dumpster, trash,  5).
 limit(max, owner,    beer,  10).
-limit(min, buy,      beer,  3 ). // Cantidad de cervezas a pedirle al super (en cada orden)
+limit(min, buy,      beer,   3). // Cantidad de cervezas a pedirle al super (en cada orden)
 
 stored(beer,  fridge,   1).      // Si se comienza sin la creencia de tener cerveza, no se va a la nevera y
                                  // por ende hay que esperar a que el pedido llegue para comprobar el stock
