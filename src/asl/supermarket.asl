@@ -270,7 +270,7 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 +!doService(Query, Ag) : service(Query, auction) & filter(Query, auction, [finished, AuctionNum, Winner, Product, Qtty, Price]) &
 	.my_name(Self) & Self == Winner
 <-
-	.println("> He ganado la subasta ", AuctionNum, " de ", Product, "(x", Qtty, ")",Price);
+	.println("> He ganado la subasta ", AuctionNum, " de ", Product, "(x", Qtty, ",)",Price);
 	?has(beer, StoredBeer); ?has(money, StoredMoney); ?store(Store);
 	.abolish(has(money, _)); +has(money, StoredMoney-Price); .send(Store, achieve, del(money, Price));
 	if (alliance(AuctionNum, master, me)) {
