@@ -1,11 +1,11 @@
-limit(max, talk,  waitTime,       10000 ).
-limit(min, talk,  waitTime,       2000  ).
-limit(min, nap,   time,           120000).
-limit(max, nap,   time,           720000).
-limit(max, mood,  sipMoodCount,   6     ).
-limit(max, butler, dailyPayment,   50    ).
-limit(max, owner, monthlyPension, 2000  ).
-limit(max, owner, cleanChance,    10    ).
+limit(max, talk,   waitTime,         4000).
+limit(min, talk,   waitTime,         1000).
+limit(min, nap,    time,           120000).
+limit(max, nap,    time,           720000).
+limit(max, mood,   sipMoodCount,        6).
+limit(max, butler, dailyPayment,      50).
+limit(max, owner,  monthlyPension,   2000).
+limit(max, owner,  cleanChance,        10).
 
 nextMood(Current, Next) :- Current == despierto  & Next = animado.
 nextMood(Current, Next) :- Current == animado    & Next = euforico.
@@ -13,6 +13,36 @@ nextMood(Current, Next) :- Current == euforico   & Next = crispado.
 nextMood(Current, Next) :- Current == crispado   & Next = amodorrado.
 nextMood(Current, Next) :- Current == amodorrado & Next = dormido.
 nextMood(Current, Next) :- Current == dormido    & Next = despierto.
+
+conversation(time , despierto , "Hola butler, que hora es?").
+conversation(time , animado   , "Hola butler, que hora tenemos por aqui?").
+conversation(time , euforico  , "Ei dime que hora es colega").
+conversation(time , crispado  , "Dime que hora es para poder irme ya a dormir").
+conversation(time , amodorrado, "Que hora tenemos amigo mio?").
+
+conversation(money, despierto , "Hola butler, podrias decirme cuanto dinero te queda del que te he dado?").
+conversation(money, animado   , "Hola butler, cuanto dinero te sobra").
+conversation(money, euforico  , "Cuanto dinero te queda ya? Dime que no te lo has gastado todo").
+conversation(money, crispado  , "Butler, dime cuanto dinero te queda sin contar al que le has prendido fuego").
+conversation(money, amodorrado, "Butler, dime cuanto dinero te queda por gastar").
+
+conversation(chat , despierto , "A veces estoy un poco aburrido, pero agradezco mucho tu compañia").
+conversation(chat , animado   , "Deberias tomarte una cerveza tu tambien conmigo").
+conversation(chat , euforico  , "Que bien me lo pago contigo!! Eres el mejor amigo que se puede tener").
+conversation(chat , crispado  , "Robot, a veces no te da la sensacion de que vivimos en una realidad deformada por los canones establecidos y el capitalismo?").
+conversation(chat , amodorrado, "Siempre he tenido la misma duda, ¿Tu no duermes nunca?").
+
+conversation(time , response, despierto , "Muchas gracias").
+conversation(time , response, animado   , "Gracias!!").
+conversation(time , response, euforico  , "Que dices para eso ya ni duermo").
+conversation(time , response, crispado  , "Todavia? Menuda basura").
+conversation(time , response, amodorrado, "Creo que me tocara meterme en el sobre en breves").
+
+conversation(money, response, despierto , "Muchas gracias, tu siempre tan servicial").
+conversation(money, response, animado   , "Uf este mes va a ser complicado").
+conversation(money, response, euforico  , "Mucho me parece, bebamos otra, ah perdon que tu no bebes").
+conversation(money, response, crispado  , "Dios mio, siempre igual, no voy a volver a beber").
+conversation(money, response, amodorrado, "A estas alturas ya todo me da igual, te daba el doble por irme ya a mi cama").
 
 healthConstraint(Product) :-
 	.date(YY,MM,DD) &
@@ -28,6 +58,8 @@ service(Query, pay) :-
 	checkTag("<pay>", Query).
 service(Query, health) :-
 	checkTag("<health>", Query).
+service(Query, conversation) :-
+	checkTag("<conversation>", Query).
 
 checkTag(Tag, String) :-
 	.substring(Tag, String).
@@ -47,6 +79,8 @@ filter(Query, pay, [Amount]) :-
 	tagValue("<amount>", Query, Amount).
 filter(Query, health, [Beer]) :-
 	tagValue("<beer>", Query, Beer).
+filter(Query, conversation, [Topic]) :-
+	tagValue("<topic>", Query, Topic).
 
 // -------------------------------------------------------------------------
 // PRIORITIES AND PLAN INITIALIZATION
@@ -112,6 +146,7 @@ filter(Query, health, [Beer]) :-
 // -------------------------------------------------------------------------
 
 +!dialog : ownerInit & msg(Msg)[source(Ag)] <-
+	.println("<- [", Ag, "]: ", Msg);
 	.abolish(msg(Msg)[source(Ag)]);
 	chatSincrono(Msg, Answer);
 	!doService(Answer, Ag);
@@ -137,10 +172,18 @@ filter(Query, health, [Beer]) :-
 	.date(YY,MM,DD);
 	+healthConstraint(beer, YY,MM,DD).
 
+// # CONVERSATION SERVICE
++!doService(Query, Ag) : service(Query, conversation) & filter(Query, conversation, [Topic]) <-
+	?conversation(Topic, response, Mood, Msg);
+	.println("-> [", Ag, "] ", Msg);
+	.send(butler, tell, msg(Msg)).
+
 // # COMMUNICATION SERVICE
-+!doService(Answer, Ag) : not service(Query, Service) <-
++!doService(Answer, Ag) : not service(Answer, Service) & Answer \== "I have no answer for that." <-
 	.println("-> [", Ag, "] ", Answer);
 	.send(Ag, tell, answer(Answer)).
++!doService(Answer, Ag) : not service(Answer, Service) & Answer == "I have no answer for that." <-
+	true.
 
 // ## HELPER PLAN pay(Ag, Amount)
 
@@ -185,8 +228,10 @@ filter(Query, health, [Beer]) :-
 // DEFINITION FOR PLAN talkButler
 // -------------------------------------------------------------------------
 
-+!talkButler : ownerInit & not mood(owner, dormido) <- // TODO different messages for each mood
-	.send(butler, tell, msg("Test message")); // TODO IMPLEMENT AIML
++!talkButler : ownerInit & mood(owner, Mood) & Mood \== dormido <-
+	.random([time, money, chat], Topic);
+	?conversation(Topic, Mood, Msg);
+	.send(butler, tell, msg(Msg));
 	.random(X);
 	?limit(min, talk, waitTime, MinWaitTime);
 	?limit(max, talk, waitTime, MaxWaitTime);

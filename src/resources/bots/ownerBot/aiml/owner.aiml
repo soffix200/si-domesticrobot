@@ -30,4 +30,61 @@
 	</template>
 </category>
 
+<category>
+  <pattern>Son las *:*:*</pattern>
+  <template>
+    <conversation>
+      <topic>time</topic>
+			<hour><star/></hour>
+			<minute><star index="2"/></minute>
+			<second><star index="3"/></second>
+    </conversation>
+  </template>
+</category>
+
+<category>
+  <pattern>Me queda *</pattern>
+  <template>
+    <conversation>
+      <topic>money</topic>
+			<amount><star/></amount>
+    </conversation>
+  </template>
+</category>
+
+<category>
+  <pattern>^ placer ^</pattern>
+  <template>
+    Tu siempre tan servicial
+  </template>
+</category>
+
+<category>
+  <pattern>^ deber ^ otro ^</pattern>
+  <template>
+    Tienes que empezar a soltarte un poco, ya tenemos confianza
+  </template>
+</category>
+
+<category>
+  <pattern>^ no ^ sentimientos ^</pattern>
+  <template>
+    Ven aqui que te doy un beso
+  </template>
+</category>
+
+<category>
+  <pattern>^ parando ^ cervezas ^</pattern>
+  <template>
+    Ni se te ocurra repetirlo o te desenchufo
+  </template>
+</category>
+
+<category>
+  <pattern>^ proposito ^ satisfacer ^</pattern>
+  <template>
+    Yo tambien te quiero
+  </template>
+</category>
+
 </aiml>

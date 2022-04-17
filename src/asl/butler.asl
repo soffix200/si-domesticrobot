@@ -49,6 +49,8 @@ service(Query, offer) :-
 	checkTag("<offer>", Query).
 service(Query, deliver) :-
 	checkTag("<deliver>", Query).
+service(Query, conversation) :-
+	checkTag("<conversation>", Query).
 
 checkTag(Tag, String) :-
 	.substring(Tag, String).
@@ -84,6 +86,8 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	tagValue("<product>", Query, Product) &
 	tagValue("<quantity>", Query, Qtty) &
 	tagValue("<price>", Query, Price).
+filter(Query, conversation, [Topic]) :-
+	tagValue("<topic>", Query, Topic).
 
 // -------------------------------------------------------------------------
 // PRIORITIES AND PLAN INITIALIZATION
@@ -145,7 +149,7 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 // -------------------------------------------------------------------------
 
 +!dialog : butlerInit & msg(Msg)[source(Ag)] <-
-	// .println("<- [", Ag, "]: ", Msg);
+	.println("<- [", Ag, "]: ", Msg);
 	.abolish(msg(Msg)[source(Ag)]);
 	chatSincrono(Msg, Answer);
 	!doService(Answer, Ag);
@@ -195,11 +199,25 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	.println(Ag, " ha entregado mi pedido de ", Qtty, " ", Product, " #", OrderId);
 	+requestedPayment(Ag, OrderId, Product, Qtty, Price).
 
+// # CONVERSATION SERVICE
++!doService(Query, Ag) : service(Query, conversation) & filter(Query, conversation, [time]) <-
+	.time(HH,MM,SS);
+	.concat("Son las ", HH, ":", MM, ":", SS, Msg);
+	.println("-> [", Ag, "] ", Msg);
+	.send(Ag, tell, msg(Msg)).
++!doService(Query, Ag) : service(Query, conversation) & filter(Query, conversation, [money]) <-
+	?has(money, Balance);
+	.concat("Me queda ", Balance, Msg);
+	.println("-> [", Ag, "] ", Msg);
+	.send(Ag, tell, msg(Msg)).
+
 // # COMMUNICATION SERVICE
-+!doService(Answer, Ag) : not service(Query, Service) <-
++!doService(Answer, Ag) : not service(Answer, Service) & Answer \== "I have no answer for that." <-
 	.println("-> [", Ag, "] ", Answer);
 	.send(Ag, tell, answer(Answer)).
-
++!doService(Answer, Ag) : not service(Answer, Service) & Answer == "I have no answer for that." <-
+	true.
+	
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN cleanHouse
 // -------------------------------------------------------------------------
