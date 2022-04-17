@@ -1,3 +1,5 @@
+// REMEMBER TO DELETE TMP IF THIS FILE IS CHANGED
+
 beer(5).
 money(200).
 price(beer, 3).
