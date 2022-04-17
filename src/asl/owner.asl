@@ -3,7 +3,7 @@ limit(min, talk,   waitTime,         1000).
 limit(min, nap,    time,           120000).
 limit(max, nap,    time,           720000).
 limit(max, mood,   sipMoodCount,        6).
-limit(max, butler, dailyPayment,      50).
+limit(max, butler, dailyPayment,       50).
 limit(max, owner,  monthlyPension,   2000).
 limit(max, owner,  cleanChance,        10).
 
@@ -363,9 +363,6 @@ filter(Query, conversation, [Topic]) :-
 	-has(owner, can);
 	.concat("He tirado una lata a ", PX, " ", PY, Msg);
 	.send(butler, tell, msg(Msg)).
-+has(owner, can) : mood(owner, amodorrado) | mood(owner, dormido) <-
-	.println("> Pido a butler que venga a por la lata");
-	.send(butler, tell, msg("Ven a por la lata")).
 +has(owner, can) : mood(owner, despierto) <-
 	.println("> Llevo la lata al cubo de basura");
 	get(can);
@@ -390,6 +387,9 @@ filter(Query, conversation, [Topic]) :-
 	.println("Desplazandose al sofa");
 	?location(owner, _, X, Y);
 	!goAtLocation(X, Y, top).
++has(owner, can) <-
+	.println("> Pido a butler que venga a por la lata");
+	.send(butler, tell, msg("Ven a por la lata")).
 
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN wakeUp
