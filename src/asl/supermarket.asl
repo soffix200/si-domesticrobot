@@ -130,7 +130,7 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 	?store(Store);
 	.random(X);
 	basemath.truncate(X*20, Time);
-	basemath.truncate(X*5,  Cost);
+	basemath.truncate(5-(X*5),  Cost);
 	+deliveryTime(butler, Time);
 	+deliveryCost(butler, Cost);
 	.send(Store, achieve, addDeliveryTime(butler, Time));
