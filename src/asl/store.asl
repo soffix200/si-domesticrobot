@@ -39,7 +39,7 @@ deliveryCost(butler, -1).
 	.save_agent(Filename).
 +!add(money, N) : money(M) <-
 	?filename(Filename);
-	-+beer(money, M+N);
+	-+money(M+N);
 	.save_agent(Filename).
 
 // -------------------------------------------------------------------------
