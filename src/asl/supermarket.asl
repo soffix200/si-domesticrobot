@@ -2,7 +2,7 @@ currentOrderId(1).
 
 cost(beer, 2).
 
-// paymentMoment(beforeDelivery | afterDelivery). // If not set here, defined randomly
+//paymentMoment(beforeDelivery | afterDelivery). // If not set here, defined randomly. If set, must delete "!setPaymentMoment;"
 
 limit(min, reeval, price, 20000).
 limit(min, stock,  beer,  10).
