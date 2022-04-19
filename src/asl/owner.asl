@@ -371,6 +371,7 @@ filter(Query, conversation, [Topic]) :-
 	!goAtLocation(DumpX, DumpY, side);
 	.println("Tirando ", can);
 	recycle(can);
+	.abolish(has(owner, can));
 	.println("Desplazandose al sofa");
 	?location(owner, _, X, Y);
 	!goAtLocation(X, Y, top).
@@ -384,6 +385,7 @@ filter(Query, conversation, [Topic]) :-
 	!goAtLocation(DumpX, DumpY, side);
 	.println("Tirando ", can);
 	recycle(can);
+	.abolish(has(owner, can));
 	.println("Desplazandose al sofa");
 	?location(owner, _, X, Y);
 	!goAtLocation(X, Y, top).
