@@ -135,13 +135,60 @@
 </category>
 
 <category>
+  <pattern>Hola butler, que hora es</pattern>
+  <template>
+    <conversation>
+      <topic>time</topic>
+      <mood>despierto</mood>
+    </conversation>
+  </template>
+</category>
+<category>
+  <pattern>Hola butler, que hora tenemos por aqui</pattern>
+  <template>
+    <conversation>
+      <topic>time</topic>
+      <mood>animado</mood>
+    </conversation>
+  </template>
+</category>
+<category>
+  <pattern>Ei dime que hora es colega</pattern>
+  <template>
+    <conversation>
+      <topic>time</topic>
+      <mood>euforico</mood>
+    </conversation>
+  </template>
+</category>
+<category>
+  <pattern>Dime que hora es para poder irme ya a dormir</pattern>
+  <template>
+    <conversation>
+      <topic>time</topic>
+      <mood>crispado</mood>
+    </conversation>
+  </template>
+</category>
+<category>
+  <pattern>Que hora tenemos amigo mio</pattern>
+  <template>
+    <conversation>
+      <topic>time</topic>
+      <mood>amodorrado</mood>
+    </conversation>
+  </template>
+</category>
+<category>
   <pattern>^ hora ^</pattern>
   <template>
     <conversation>
       <topic>time</topic>
+      <mood>despierto</mood>
     </conversation>
   </template>
 </category>
+
 
 <category>
   <pattern>^ dinero ^</pattern>

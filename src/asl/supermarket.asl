@@ -354,16 +354,25 @@ filter(Query, alliance, [Action, AuctionNum]) :-
 	.println("-> [", Ag, "] ", Answer);
 	.send(Ag, tell, answer(Answer)).
 
+// ####################################################################
+
++instantBuy(beer, Qtty, Amount) <-
+	?store(Store);
+	.abolish(has(beer, _)); +has(beer, StoredBeer-Qtty); .send(Store, achieve, del(beer, Qtty));
+	.abolish(has(money, _)); +has(money, StoredMoney+Amount); .send(Store, achieve, add(money, Amount));
+	.abolish(instantBuy(beer, _, _)).
+
 // -------------------------------------------------------------------------
 // DEFINITION FOR PLAN offerBeer
 // -------------------------------------------------------------------------
 
 +!offerBeer : supermarketInit & has(beer, Qtty) & Qtty > 0 <-
-	?price(beer, Price); ?deliveryTime(butler, Time); ?deliveryCost(butler, Cost); ?paymentMoment(Moment);
+	?price(beer, Price); ?deliveryTime(butler, Time); ?cost(beer, Cost); ?deliveryCost(butler, DeliveryCost); ?paymentMoment(Moment);
+	.send(tienda, tell, price(beer, Price, Cost, DeliveryCost, Time));
 	if (Moment == beforeDelivery) {
-		.concat("Vendo beer a ", Price, " ", Cost, " envio el pedido llega en ", Time, " pago al contado", Msg);
+		.concat("Vendo beer a ", Price, " ", DeliveryCost, " envio el pedido llega en ", Time, " pago al contado", Msg);
 	} else {
-		.concat("Vendo beer a ", Price, " ", Cost, " envio el pedido llega en ", Time, " pago contrarreembolso", Msg);
+		.concat("Vendo beer a ", Price, " ", DeliveryCost, " envio el pedido llega en ", Time, " pago contrarreembolso", Msg);
 	}
 	.println("> ", Msg);
 	.send(butler, tell, msg(Msg));

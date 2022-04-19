@@ -168,6 +168,31 @@ filter(Query, conversation, [Topic]) :-
 	.println(Ag, " me ha dicho que no le quedan cervezas").
 
 // # PAY SERVICE
++!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) &
+	mood(owner, animado)
+<-
+	.println(Ag, " me ha pedido que le ceda ", Amount, " y estoy animado");
+	!pay(Ag, Amount);
+	?conversation(money, animado, Msg);
+	.send(butler, tell, msg(Msg)).
++!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) &
+	mood(owner, euforico)
+<-
+	.println(Ag, " me ha pedido que le ceda ", Amount, " y estoy eufórico");
+	!pay(Ag, Amount*1.2);
+	.send(butler, tell, msg("Traemelo rapidito")).
++!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) &
+	mood(owner, crispado)
+<-
+	.println(Ag, " me ha pedido que le ceda ", Amount, " y estoy crispado");
+	.concat("No puedo pagarte ", Amount, Msg);
+	.send(butler, tell, msg(Msg));
+	.send(butler, tell, msg("Estoy puto enfadado")).
++!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) &
+	mood(owner, amodorrado)
+<-
+	.println(Ag, " me ha pedido que le ceda ", Amount, " y estoy amodorrado");
+	!pay(Ag, Amount*0.8).
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [Amount]) <-
 	.println(Ag, " me ha pedido que le ceda ", Amount);
 	!pay(Ag, Amount).

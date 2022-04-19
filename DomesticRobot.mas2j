@@ -17,8 +17,11 @@ MAS domestic_robot {
 		supermarket 
 			agentArchClass MixedAgentArch
 			agentArchClass jaca.CAgentArch
-			#5;
+			#3;
 		market
+			agentArchClass MixedAgentArch
+			agentArchClass jaca.CAgentArch;
+		tienda
 			agentArchClass MixedAgentArch
 			agentArchClass jaca.CAgentArch;
 

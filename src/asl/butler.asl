@@ -9,7 +9,8 @@ automaton(shopper, inactive).
 limit(min, fridge,   beer,   5). // Minimo de cervezas que deberia haber en el frigo, si hay menos se ordenan mas
 limit(max, dumpster, trash,  5).
 limit(max, owner,    beer,  10).
-limit(min, buy,      beer,   3). // Cantidad de cervezas a pedirle al super (en cada orden)
+limit(min, buy,      beer,  10). // Cantidad de cervezas a pedirle al super (en cada orden)
+limit(max, buyDelay, beer,  20).
 
 stored(beer,  fridge,   1).      // Si se comienza sin la creencia de tener cerveza, no se va a la nevera y
                                  // por ende hay que esperar a que el pedido llegue para comprobar el stock
@@ -87,6 +88,9 @@ filter(Query, deliver, [Status, OrderId, Product, Qtty, Price]) :-
 	tagValue("<product>", Query, Product) &
 	tagValue("<quantity>", Query, Qtty) &
 	tagValue("<price>", Query, Price).
+filter(Query, conversation, [Topic, Mood]) :-
+	tagValue("<topic>", Query, Topic) &
+	tagValue("<mood>", Query, Mood).
 filter(Query, conversation, [Topic]) :-
 	tagValue("<topic>", Query, Topic).
 
@@ -166,6 +170,7 @@ filter(Query, conversation, [Topic]) :-
 	.println("He recibido un pago de ", Amount, " de ", Ag);
 	?has(money, Balance);
 	.abolish(has(money, _)); +has(money, Balance + Amount);
+	.abolish(requestedMoney(Ag, _));
 	.send(database, achieve, add(money, Amount)).
 +!doService(Query, Ag) : service(Query, pay) & filter(Query, pay, [rejected, Amount]) <-
 	.println(Ag, " ha rechazado el pago de ", Amount, " que la habia pedido");
@@ -207,21 +212,28 @@ filter(Query, conversation, [Topic]) :-
 	-ordered(beer).
 +!doService(Query, Ag) : service(Query, deliver) & filter(Query, deliver, [delivered, OrderId, Product, Qtty, Price]) <-
 	.println(Ag, " ha entregado mi pedido de ", Qtty, " ", Product, " #", OrderId);
-	?price(Ag, Product, _, _, _, Payment);
-	if (Payment == afterDelivery) {
-		+requestedPayment(Ag, OrderId, Product, Qtty, Price);
-	}
+	// ?price(Ag, Product, _, _, _, Payment);
+	// if (Payment == afterDelivery) {
+	// 	+requestedPayment(Ag, OrderId, Product, Qtty, Price);
+	// }
 	.concat("He recibido la orden ", OrderId, Msg);
 	.send(Ag, tell, msg(Msg));
 	+requestedPickUp(Product, Qtty, delivery).
 +!doService(Query, Ag) : service(Query, deliver) & filter(Query, deliver, [accepted, OrderId, Product, Qtty, Price]) <-
-	.println(Ag, " ha aceptado mi pedido de ", Qtty, " ", Product, " #", OrderId);
-	?price(Ag, Product, _, _, _, Payment);
-	if (Payment == beforeDelivery) {
+	// .println(Ag, " ha aceptado mi pedido de ", Qtty, " ", Product, " #", OrderId);
+	// ?price(Ag, Product, _, _, _, Payment);
+	// if (Payment == beforeDelivery) {
 		+requestedPayment(Ag, OrderId, Product, Qtty, Price);
-	}.
+	// }.
+	.
 
 // # CONVERSATION SERVICE
++!doService(Query, Ag) : service(Query, conversation) & filter(Query, conversation, [time, Mood]) <-
+	-+perceivedMood(owner, Mood);
+	.time(HH,MM,SS);
+	.concat("Son las ", HH, ":", MM, ":", SS, Msg);
+	.println("-> [", Ag, "] ", Msg);
+	.send(Ag, tell, msg(Msg)).
 +!doService(Query, Ag) : service(Query, conversation) & filter(Query, conversation, [time]) <-
 	.time(HH,MM,SS);
 	.concat("Son las ", HH, ":", MM, ":", SS, Msg);
@@ -345,11 +357,16 @@ filter(Query, conversation, [Topic]) :-
 	?location(delivery, OType, OX, OY); ?placement(OType, OPlacement);
 	?location(fridge, DType, DX, DY); ?placement(DType, DPlacement);
 	.send(mover, tell, move(beer, Qtty, location(delivery, OX, OY, OPlacement), location(fridge, DX, DY, DPlacement), Obstacles)).
-+!manageBeer : not overLimit(min, beer, fridge) & not ordered(beer) & limit(min, buy, beer, BatchSize) & cheapest(Provider, beer, Price, BatchSize) <-
-	.println("> Tengo menos cerveza de la que deberia, voy a comprar mas en ", Provider);
++!manageBeer : not overLimit(min, beer, fridge) & not ordered(beer) & limit(min, buy, beer, BatchSize) <-
+	.println("> Tengo menos cerveza de la que deberia, voy a comprar mas en ", tienda);
 	if (BatchSize > 0) {
 		.concat("Me gustaria comprarte ", BatchSize, " cervezas", Msg);
-		.send(Provider, tell, msg(Msg));
+		if (perceivedMood(owner, crispado) | perceivedMood(owner, amodorrado) | perceivedMood(owner, dormido)) {
+			?limit(max, buyDelay, beer, WaitTime);
+			.println("[!] Retraso la compra por ", WaitTime, " segundos; owner ha bebido mucho");
+			.wait(WaitTime*1000);
+		}
+		.send(tienda, tell, msg(Msg));
 	} else {
 		.println("No puedo comprar cervezas en lotes de ", BatchSize);
 	}
@@ -363,12 +380,6 @@ filter(Query, conversation, [Topic]) :-
 	+has(money, Balance-Price);
 	.abolish(requestedPayment(Provider, OrderId, Product, Qtty, Price));
 	.abolish(requestedMoney(owner, _)).
-+!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance < Price & not requestedMoney(owner, _) <-
-	.println("[!] No tengo dinero para pagar el pedido ", OrderId, ", le solicito ", Price-Balance, " a ", owner);
-	.abolish(cannotPay(owner, _));
-	.concat("Necesito ", Price-Balance, " euros para comprar cervezas", Msg);
-	.send(owner, tell, msg(Msg));
-	+requestedMoney(owner, Price-Balance).
 +!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance < Price & cannotPay(owner, _) <-
 	.println("> Devuelvo el pedido #", OrderId, ", ", owner, " no me ha concedido el dinero");
 	.concat("Lo siento pero debo rechazar la orden ", OrderId, Msg);
@@ -376,7 +387,14 @@ filter(Query, conversation, [Topic]) :-
 	.abolish(requestedPickUp(beer, Qtty, delivery));
 	.abolish(requestedPayment(Provider, OrderId, Product, Qtty, Price));
 	.abolish(requestedMoney(owner, _));
+	.abolish(cannotPay(owner, _));
 	.abolish(ordered(Product)).
++!manageBeer : requestedPayment(Provider, OrderId, Product, Qtty, Price) & has(money, Balance) & Balance < Price & not requestedMoney(owner, _) <-
+	.println("[!] No tengo dinero para pagar el pedido ", OrderId, ", le solicito ", Price-Balance, " a ", owner);
+	.abolish(cannotPay(owner, _));
+	.concat("Necesito ", Price-Balance, " euros para comprar cervezas", Msg);
+	.send(owner, tell, msg(Msg));
+	+requestedMoney(owner, Price-Balance).
 +!manageBeer : asked(Ag, beer) & healthConstraint(beer, Ag, Msg) <-
 	.println("[!] ", Ag, " no puede beber mas ", beer, " por hoy");
 	.send(Ag, tell, msg(Msg));
