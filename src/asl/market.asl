@@ -1,145 +1,67 @@
-time(auction,    4000).  // Time between auctions will be 4s
-time(bid,        500).   // Time between bids will be 0.5s.
+time(auction, 180000). // Time between auctions will be 180s
+time(bid,     500).    // Time between bids will be 5s.
 
-auction(0, beer, 10).
+!startAuction(0, beer, 10).
 
-// -------------------------------------------------------------------------
-// SERVICE INIT AND HELPER METHODS
-// -------------------------------------------------------------------------
+// --------------------------------------------------------------------
 
-service(Query, bid) :-
-	checkTag("<bid>", Query).
-
-checkTag(Tag, String) :-
-	.substring(Tag, String).
-
-tagValue(Tag, Query, Literal) :-
-	.substring(Tag, Query, Fst) &
-	.length(Tag, N) &
-	.delete(0, Tag, RestTag) &
-	.concat("</", RestTag, EndTag) &
-	.substring(EndTag, Query, End) &
-	.substring(Query, Parse, Fst+N, End) &
-	.term2string(Literal, Parse).
-
-filter(Query, bid, [AuctionNum, Amount]) :-
-	tagValue("<auction-num>", Query, AuctionNum) &
-	tagValue("<amount>", Query, Amount).
-
-// -------------------------------------------------------------------------
-// PRIORITIES AND PLAN INITIALIZATION
-// -------------------------------------------------------------------------
-
-!initMarket.
-!dialog.
-!auction.
-
-+!initMarket <-
-  !initBot;
-  +marketInit.
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN initBot
-// -------------------------------------------------------------------------
-
-+!initBot <-
-	makeArtifact("marketBot", "bot.ChatBOT", ["marketBot"], BotId);
-	focus(BotId).
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN dialog
-// -------------------------------------------------------------------------
-
-+!dialog : marketInit & msg(Msg)[source(Ag)] <-
-	.abolish(msg(Msg)[source(Ag)]);
-	chatSincrono(Msg, Answer);
-	!doService(Answer, Ag);
-	!dialog.
-+!dialog <- !dialog.
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR ACTION SERVICES
-// -------------------------------------------------------------------------
-
-// # PAYMENT SERVICE
-+!doService(Query, Ag) : service(Query, bid) & filter(Query, bid, [AuctionNum, Amount]) <-
-	.println("He recibido una puja de ", Amount, " de ", Ag, " para la subasta ", AuctionNum);
-  +bid(AuctionNum, Amount, Ag).
-
-// # COMMUNICATION SERVICE
-+!doService(Answer, Ag) : not service(Query, Service) <-
-	.println("-> [", Ag, "] ", Answer);
-	.send(Ag, tell, answer(Answer)).
-
-// -------------------------------------------------------------------------
-// DEFINITION FOR PLAN auction
-// -------------------------------------------------------------------------
-
-+!auction : marketInit & not auctionInProgress <-
-  ?auction(AuctionNum, Product, Qtty); ?time(bid, Delay);
-	.println("[E] Comenzara la subasta ", AuctionNum, " (", Product, "x", Qtty, ")");
++!startAuction(AuctionNum, Product, Qtty) : not auctionInProgress & time(auction, Cd) <-
 	+auctionInProgress;
-  +numBids(AuctionNum, 0);
-  +bids(AuctionNum, []);
-  .concat("La subasta ", AuctionNum, " acaba de empezar, se subastan ", Qtty, " cervezas", Msg);
-  .all_names(L);
-  for (.member(Ag, L)) {
-    if (.substring("supermarket", Ag) & not .substring("store", Ag)) {
-      .send(Ag, tell, msg(Msg));
-    }
-  }
-  .wait(Delay*2);
-  !auction.
-+!auction : marketInit &
-  auctionInProgress & auction(AuctionNum, Product, Qtty) & numBids(AuctionNum, LastNumBids) &
-  .findall(Value, bid(AuctionNum, Value, Bidder), BidValuesList) & .length(BidValuesList, CurrentNumBids) & CurrentNumBids > LastNumBids
+	.concat("Comenzará la subasta ", AuctionNum, ": ", Product, "x", Qtty);
+	.println(M);
+	.broadcast(tell, msg(M));
+	.wait(Cd).
+	!startAuction(AuctionNum+1, Product, Qtty).
++!startAuction(AuctionNum, Product, Qtty) : auctionInProgress <-
+	!startAuction(AuctionNum, Product, Qtty).
+
++placeBid(AuctionNum, Bid)[source(Bidder)] :
+	time(bid, Cd) &
+	.findall(bid(Value, Agent), placeBid(AuctionNum, Value)[source(Agent)], List) &
+	.max(List, bid(Value, Winner)) &
+	.length(List, NumBids) &
+	Winner == Bidder
 <-
-  ?time(bid, BidTime);
-  .max(BidValuesList, Max);
-  ?bid(AuctionNum, Max, Winner);
-  -+winner(AuctionNum, Winner, Max);
-  -+numBids(AuctionNum, CurrentNumBids);
-  .println("> La puja mas alta para la subasta ", AuctionNum, " (", Product, "x", Qtty, ") es de ", Winner, " por ", Max);
-  .concat("La subasta ", AuctionNum, " de ", Qtty, " cervezas ahora tiene la puja mas alta por parte de ", Winner, " que ha ofrecido ", Max, Msg);
-  .all_names(L);
-  for (.member(Ag, L)) {
-    if (.substring("supermarket", Ag) & not .substring("store", Ag)) {
-      .send(Ag, tell, msg(Msg));
-    }
-  }
-  .wait(BidTime);
-  !auction.
-+!auction : marketInit &
-  auctionInProgress & auction(AuctionNum, Product, Qtty) & numBids(AuctionNum, LastNumBids) &
-  .findall(Value, bid(AuctionNum, Value, Bidder), BidValuesList) & .length(BidValuesList, CurrentNumBids) & CurrentNumBids <= LastNumBids &
-  winner(AuctionNum, Winner, Value)
+	.println("La puja de ", Bidder, " por valor de ", Bid, " ha sido registrada");
+	+waiting(NumBids);
+	.send(Bidder, tell, msg("Tu puja ha sido registrada"));
+	.concat(Bidder, " ha pujado ", Value, M);
+	.broadcast(tell, msg(M));
+	.wait(Cd);
+	-waiting(NumBids);
+	!releaseAuctionResult;
++placeBid(AuctionNum, Bid)[source(Bidder)] :
+	.findall(bid(Value, Agent), placeBid(AuctionNum, Value)[source(Agent)], List) &
+	.max(List, bid(Value, Winner)) &
+	.length(List, NumBids) &
+	Winner != Bidder
 <-
-  ?time(auction, Cd);
-  -bids(AuctionNum, Bids);
-  -winner(AuctionNum, Winner, Value);
-  -+auction(AuctionNum+1, Product, Qtty);
-  .abolish(bid(AuctionNum, _, _));
-	.print("> El ganador de la subasta ", AuctionNum, " es ", Winner);
-  .concat("La subasta ", AuctionNum, " ha terminado, ", Winner, " ha comprado ", Qtty, " cervezas por un valor total de ", Value, Msg);
-  .all_names(L);
-  for (.member(Ag, L)) {
-    if (.substring("supermarket", Ag) & not .substring("store", Ag)) {
-      .send(Ag, tell, msg(Msg));
-    }
-  }
-  .wait(Cd);
+	.println("La puja de ", Bidder, " por valor de ", Bid, " no es lo suficientemente elevada");
+	.abolish(placeBid(AuctionNum, Bid)[source(Bidder)]);
+	.send(Bidder, tell, msg("Tu puja es demasiado baja"));
+
++!releaseAuctionResult :
+	.findall(waiting(N), waiting(N), List) &
+	.length(List, NumAwaits) & NumAwaits > 0
+<-
+	.println("Esperando recibir más pujas...").
++!releaseAuctionResult :
+	.findall(waiting(N), waiting(N), AwaitList) &
+	.length(AwaitList, NumAwaits) & NumAwaits == 0 &
+	.findall(bid(Value, Agent), placeBid(AuctionNum, Value)[source(Agent)], BidList) &
+	.length(BidList, Count) & Count == 0 &
+<-
 	-auctionInProgress;
-  !auction.
-+!auction : marketInit &
-  auctionInProgress & auction(AuctionNum, Product, Qtty) & numBids(AuctionNum, LastNumBids) &
-  .findall(Value, bid(AuctionNum, Value, Bidder), BidValuesList) & .length(BidValuesList, CurrentNumBids) & CurrentNumBids <= LastNumBids &
-  not winner(AuctionNum, Winner, Value)
+	.println("Subasta terminada. No se recibieron pujas").
++!releaseAuctionResult :
+	.findall(waiting(N), waiting(N), AwaitList) &
+	.length(AwaitList, NumAwaits) & NumAwaits == 0 &
+	.findall(bid(Value, Agent), placeBid(AuctionNum, Value)[source(Agent)], BidList) &
+	.length(BidList, Count) & Count > 0 &
 <-
-  ?time(auction, Cd);
-	.println("> Subasta terminada. No se recibieron pujas");
-  -+auction(AuctionNum+1, Product, Qtty);
-  .abolish(bid(AuctionNum, _, _));
-  .wait(Cd);
 	-auctionInProgress;
-  !auction.
-+!auction <- !auction.
+	.max(BidList, bid(Value, Winner));
+	.concat("El ganador de la subasta ", AuctionNum, " es ", Winner, M);
+	.print(M);
+	.broadcast(tell, msg(M));
+	.abolish(placeBid(AuctionNum,_)).
