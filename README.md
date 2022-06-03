@@ -54,9 +54,9 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 ## Contact
 
-Victor Figueroa Maceira - vfmaceira@esei.uvigo.es
+Victor Figueroa Maceira - crashyspyro@gmail.com
 
-Iago Barreiro Río - ibarreiro@esei.uvigo.es
+Iago Barreiro Río - i.barreiro.rio@gmail.com
 
 Santiago Pérez Acuña - santiago@perezacuna.com
 
